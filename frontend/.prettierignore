@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+
+# Production
+.next/
+out/
+build/
+
+# Generated files
+next-env.d.ts
+
+# Package manager
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
+# Environment files
+.env*
+
+# Cache and logs
+.cache/
+*.log
