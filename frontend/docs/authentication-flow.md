@@ -18,14 +18,32 @@ sequenceDiagram
     Frontend->>Identity Platform: OAuth2認証リクエスト
     Identity Platform->>User: Googleログイン画面
     User->>Identity Platform: 認証情報入力
-    Identity Platform->>Frontend: IDトークン返却
-    Frontend->>NextJS API: IDトークン送信
-    NextJS API->>Identity Platform: トークン検証
-    Identity Platform->>NextJS API: ユーザー情報返却
+    Identity Platform->>Frontend: 認証コード返却
+    Frontend->>NextJS API: 認証コード送信
+    NextJS API->>Identity Platform: IDトークン・リフレッシュトークン取得
+    Identity Platform->>NextJS API: トークン返却
+    NextJS API->>Identity Platform: IDトークン検証
     NextJS API->>Database: ユーザー情報保存/更新
-    NextJS API->>Frontend: セッションCookie設定
+    NextJS API->>Frontend: セッション・リフレッシュトークンCookie設定
     Frontend->>User: ダッシュボードへリダイレクト
 ```
+
+## トークンの種類と役割
+
+### IDトークン
+- **用途**: ユーザーの身元確認
+- **有効期限**: 1時間
+- **内容**: ユーザー情報（email、name、picture等）を含むJWT
+
+### リフレッシュトークン
+- **用途**: 新しいIDトークンの取得
+- **有効期限**: 無期限（ただしユーザーが無効化可能）
+- **保存場所**: httpOnlyのCookieで安全に保管
+
+### セッショントークン（アプリ独自）
+- **用途**: アプリ内でのセッション管理
+- **有効期限**: 1時間（IDトークンと同期）
+- **内容**: 最小限のユーザー情報を含むJWT
 
 ## クライアント側の実装
 
@@ -52,8 +70,8 @@ export function GoogleSignInButton() {
       redirect_uri: `${window.location.origin}/api/auth/callback/google`,
       response_type: 'code',
       scope: 'openid email profile',
-      access_type: 'offline',
-      prompt: 'consent',
+      access_type: 'offline', // リフレッシュトークンを取得
+      prompt: 'consent', // リフレッシュトークンを確実に取得
     })
 
     window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params}`
@@ -88,7 +106,8 @@ export function GoogleSignInButton() {
 ```typescript
 // app/api/auth/callback/google/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { createSession } from '@/external/lib/auth/identity-platform'
+import { createSession, verifyIdToken } from '@/external/lib/auth/identity-platform'
+import { upsertUser } from '@/external/db/users'
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams
@@ -132,8 +151,8 @@ export async function GET(request: NextRequest) {
     // データベースにユーザー情報を保存/更新
     await upsertUser(userInfo)
     
-    // セッション作成
-    const session = await createSession(tokens.id_token)
+    // セッション作成（リフレッシュトークンも保存）
+    const session = await createSession(tokens.id_token, tokens.refresh_token)
     
     if (!session.success) {
       throw new Error('Session creation failed')
@@ -147,6 +166,41 @@ export async function GET(request: NextRequest) {
       new URL('/login?error=authentication_failed', request.url)
     )
   }
+}
+```
+
+### トークンリフレッシュエンドポイント
+
+```typescript
+// app/api/auth/refresh/route.ts
+import { NextRequest, NextResponse } from 'next/server'
+import { refreshTokens } from '@/external/lib/auth/identity-platform'
+
+export async function GET(request: NextRequest) {
+  const redirect = request.nextUrl.searchParams.get('redirect') || '/dashboard'
+  
+  const result = await refreshTokens()
+  
+  if (!result.success) {
+    return NextResponse.redirect(new URL('/login', request.url))
+  }
+  
+  // 元のページへリダイレクト
+  return NextResponse.redirect(new URL(redirect, request.url))
+}
+
+// クライアントからのAJAXリクエスト用
+export async function POST() {
+  const result = await refreshTokens()
+  
+  if (!result.success) {
+    return NextResponse.json(
+      { error: 'Token refresh failed' },
+      { status: 401 }
+    )
+  }
+  
+  return NextResponse.json({ success: true })
 }
 ```
 
@@ -200,33 +254,66 @@ export async function getUserByEmail(email: string) {
   return data.users?.[0]
 }
 
-// カスタムクレームの設定
-export async function setCustomClaims(
-  uid: string, 
-  claims: Record<string, any>
-) {
-  // Service Account認証が必要
-  const accessToken = await getServiceAccountToken()
-  
+// リフレッシュトークンの無効化
+export async function revokeRefreshTokens(uid: string) {
   const response = await fetch(
-    `https://identitytoolkit.googleapis.com/v1/projects/${process.env.GCP_PROJECT_ID}/accounts/${uid}:setCustomClaims`,
+    `${IDENTITY_PLATFORM_BASE_URL}/accounts:update?key=${API_KEY}`,
     {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ customClaims: claims }),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        localId: uid,
+        validSince: Math.floor(Date.now() / 1000),
+      }),
     }
   )
 
   if (!response.ok) {
-    throw new Error('Failed to set custom claims')
+    throw new Error('Failed to revoke tokens')
   }
 }
 ```
 
-### データベース連携
+### クライアント側の自動トークンリフレッシュ
+
+```typescript
+// shared/hooks/useAuth.tsx
+'use client'
+
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+
+export function useAuth() {
+  const router = useRouter()
+
+  useEffect(() => {
+    // 定期的にトークンをリフレッシュ
+    const interval = setInterval(async () => {
+      try {
+        const response = await fetch('/api/auth/refresh', {
+          method: 'POST',
+        })
+        
+        if (!response.ok) {
+          router.push('/login')
+        }
+      } catch (error) {
+        console.error('Token refresh failed:', error)
+      }
+    }, 50 * 60 * 1000) // 50分ごと（IDトークンの有効期限1時間より前）
+
+    return () => clearInterval(interval)
+  }, [router])
+}
+
+// app/providers.tsx でグローバルに使用
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  useAuth()
+  return <>{children}</>
+}
+```
+
+## データベース連携
 
 ```typescript
 // external/db/users.ts
@@ -238,10 +325,10 @@ import { eq } from 'drizzle-orm'
 export async function upsertUser(identityUser: IdentityPlatformUser) {
   const userData = {
     email: identityUser.email!,
-    name: identityUser.displayName || identityUser.email!.split('@')[0],
+    name: identityUser.name || identityUser.email!.split('@')[0],
     emailVerified: identityUser.emailVerified,
-    picture: identityUser.photoUrl,
-    identityPlatformId: identityUser.localId,
+    picture: identityUser.picture,
+    identityPlatformId: identityUser.uid,
     lastLoginAt: new Date(),
   }
 
@@ -336,13 +423,25 @@ export default async function DashboardPage() {
 // app/api/auth/signout/route.ts
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
+import { getSession } from '@/external/lib/auth/session'
+import { revokeRefreshTokens } from '@/external/lib/auth/identity-platform-api'
 
 export async function POST() {
-  // セッションCookieを削除
-  cookies().delete('session')
+  try {
+    // 現在のセッション取得
+    const session = await getSession()
+    
+    if (session) {
+      // Identity Platform側でリフレッシュトークンを無効化
+      await revokeRefreshTokens(session.userId)
+    }
+  } catch (error) {
+    console.error('Failed to revoke tokens:', error)
+  }
   
-  // Identity Platform側でもトークンを無効化したい場合
-  // await revokeRefreshTokens(userId)
+  // Cookie削除
+  cookies().delete('session')
+  cookies().delete('refresh-token')
   
   return NextResponse.json({ success: true })
 }
@@ -350,8 +449,9 @@ export async function POST() {
 
 ## セキュリティのベストプラクティス
 
-1. **CSRF対策**: State パラメータを使用してOAuth2フローを保護
-2. **PKCE**: 認証コード横取り攻撃を防ぐためPKCEを実装
-3. **セキュアCookie**: httpOnly, secure, sameSite属性を設定
-4. **トークンローテーション**: 定期的にセッショントークンを更新
-5. **レート制限**: 認証エンドポイントにレート制限を実装
+1. **リフレッシュトークンの安全な保管**: httpOnly Cookieで保存し、JavaScriptからアクセス不可に
+2. **短いIDトークン有効期限**: 1時間に設定し、定期的にリフレッシュ
+3. **CSRF対策**: State パラメータを使用してOAuth2フローを保護
+4. **PKCE**: 認証コード横取り攻撃を防ぐため、今後実装予定
+5. **トークンローテーション**: リフレッシュ時に新しいリフレッシュトークンも発行
+6. **適切なスコープ**: 必要最小限の権限のみを要求（openid email profile）

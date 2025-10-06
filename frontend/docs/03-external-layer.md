@@ -64,97 +64,209 @@ export async function createUserAction(formData: FormData) {
 
 ```
 external/
-├── db/                  # データベース関連
-│   ├── client.ts       # DB接続設定
-│   ├── schema.ts       # スキーマ定義
-│   └── queries/        # 複雑なクエリ
+├── handler/            # エントリーポイント（Server Actions）
+│   ├── auth/          # 認証関連ハンドラー
+│   ├── user/          # ユーザー関連ハンドラー
+│   └── product/       # 商品関連ハンドラー
 │
-├── actions/            # Server Actions
-│   ├── auth.ts        # 認証関連アクション
-│   ├── users.ts       # ユーザー関連アクション
-│   └── products.ts    # 商品関連アクション
+├── service/            # ビジネスロジック層
+│   ├── auth/          # 認証サービス
+│   ├── user/          # ユーザーサービス
+│   └── product/       # 商品サービス
 │
-├── services/          # 外部API連携
-│   ├── email.ts      # メール送信サービス
-│   ├── storage.ts    # ファイルストレージ
-│   └── payment.ts    # 決済サービス
+├── domain/             # ドメインモデル・ビジネスルール
+│   ├── user/          # ユーザードメイン
+│   ├── product/       # 商品ドメイン
+│   └── order/         # 注文ドメイン
 │
-└── lib/              # ユーティリティ
-    ├── auth.ts       # 認証ヘルパー
-    └── crypto.ts     # 暗号化処理
+└── client/             # 外部システムとの通信
+    ├── db/            # データベースクライアント
+    │   ├── client.ts  # DB接続
+    │   └── schema/    # スキーマ定義
+    ├── gcp/           # Google Cloud Platform
+    │   └── identity-platform.ts
+    ├── email/         # メールサービス
+    └── storage/       # ストレージサービス
 ```
 
 ## 実装パターン
 
-### データベースクエリ
+### レイヤー間の連携
+
 ```typescript
-// external/db/queries/users.ts
-import 'server-only'
-import { db } from '../client'
-import { users, posts } from '../schema'
-import { eq } from 'drizzle-orm'
+// 1. Handler層（エントリーポイント）
+// external/handler/user/create.ts
+'use server'
 
-export async function getUserWithPosts(userId: number) {
-  return await db
-    .select()
-    .from(users)
-    .leftJoin(posts, eq(users.id, posts.authorId))
-    .where(eq(users.id, userId))
-}
-```
+import { createUserSchema } from '@/features/users/schemas'
+import { userService } from '@/external/service/user'
+import { revalidatePath } from 'next/cache'
 
-### 外部API連携
-```typescript
-// external/services/email.ts
-import 'server-only'
-import { Resend } from 'resend'
-
-const resend = new Resend(process.env.RESEND_API_KEY)
-
-export async function sendWelcomeEmail(email: string, name: string) {
-  return await resend.emails.send({
-    from: 'noreply@example.com',
-    to: email,
-    subject: 'Welcome!',
-    html: `<h1>Welcome, ${name}!</h1>`,
-  })
-}
-```
-
-### 認証処理
-```typescript
-// external/lib/auth.ts
-import 'server-only'
-import { cookies } from 'next/headers'
-import { SignJWT, jwtVerify } from 'jose'
-
-const secret = new TextEncoder().encode(process.env.JWT_SECRET!)
-
-export async function createSession(userId: number) {
-  const token = await new SignJWT({ userId })
-    .setProtectedHeader({ alg: 'HS256' })
-    .setIssuedAt()
-    .setExpirationTime('24h')
-    .sign(secret)
-
-  cookies().set('session', token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: 60 * 60 * 24, // 24時間
-  })
-}
-
-export async function verifySession() {
-  const sessionCookie = cookies().get('session')
-  if (!sessionCookie) return null
+export async function createUserAction(input: unknown) {
+  const validated = createUserSchema.safeParse(input)
+  
+  if (!validated.success) {
+    return {
+      success: false,
+      errors: validated.error.flatten().fieldErrors,
+    }
+  }
 
   try {
-    const { payload } = await jwtVerify(sessionCookie.value, secret)
-    return payload as { userId: number }
-  } catch {
-    return null
+    const user = await userService.createUser(validated.data)
+    revalidatePath('/users')
+    return { success: true, data: user }
+  } catch (error) {
+    return { 
+      success: false, 
+      error: 'ユーザーの作成に失敗しました' 
+    }
   }
+}
+
+// 2. Service層（ビジネスロジック）
+// external/service/user/index.ts
+import 'server-only'
+import { UserDomain, type CreateUserData } from '@/external/domain/user'
+import { userRepository } from '@/external/client/db/repository/user'
+import { emailClient } from '@/external/client/email'
+
+export const userService = {
+  async createUser(data: CreateUserData) {
+    // ドメインルールの検証
+    const userDomain = new UserDomain(data)
+    const errors = userDomain.validate()
+    
+    if (errors.length > 0) {
+      throw new Error(errors.join(', '))
+    }
+
+    // ユーザー作成
+    const user = await userRepository.create(userDomain.toEntity())
+    
+    // ウェルカムメール送信
+    await emailClient.sendWelcomeEmail(user.email, user.name)
+    
+    return user
+  },
+
+  async findByEmail(email: string) {
+    return await userRepository.findByEmail(email)
+  },
+}
+
+// 3. Domain層（ビジネスルール）
+// external/domain/user/index.ts
+export interface CreateUserData {
+  email: string
+  name: string
+  role: 'admin' | 'user' | 'guest'
+}
+
+export class UserDomain {
+  constructor(private data: CreateUserData) {}
+
+  validate(): string[] {
+    const errors: string[] = []
+    
+    // ビジネスルールの検証
+    if (this.data.email.includes('+')) {
+      errors.push('プラス記号を含むメールアドレスは使用できません')
+    }
+    
+    if (this.data.role === 'admin' && !this.data.email.endsWith('@company.com')) {
+      errors.push('管理者は会社のメールアドレスを使用する必要があります')
+    }
+    
+    return errors
+  }
+
+  toEntity() {
+    return {
+      email: this.data.email.toLowerCase(),
+      name: this.data.name.trim(),
+      role: this.data.role,
+      emailVerified: false,
+      createdAt: new Date(),
+    }
+  }
+}
+
+// 4. Client層（外部システム連携）
+// external/client/db/repository/user.ts
+import 'server-only'
+import { db } from '../client'
+import { users } from '../schema/users'
+import { eq } from 'drizzle-orm'
+
+export const userRepository = {
+  async create(userData: any) {
+    const [user] = await db
+      .insert(users)
+      .values(userData)
+      .returning()
+    
+    return user
+  },
+
+  async findByEmail(email: string) {
+    return await db
+      .select()
+      .from(users)
+      .where(eq(users.email, email))
+      .limit(1)
+  },
+}
+```
+
+### Google Cloud Identity Platform連携
+
+```typescript
+// external/client/gcp/identity-platform.ts
+import 'server-only'
+import { cookies } from 'next/headers'
+import jwt from 'jsonwebtoken'
+
+const IDENTITY_PLATFORM_BASE_URL = `https://identitytoolkit.googleapis.com/v1`
+const API_KEY = process.env.GCP_IDENTITY_PLATFORM_API_KEY
+
+export const identityPlatformClient = {
+  async verifyIdToken(idToken: string) {
+    const response = await fetch(
+      `${IDENTITY_PLATFORM_BASE_URL}/accounts:lookup?key=${API_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken }),
+      }
+    )
+
+    if (!response.ok) {
+      throw new Error('Token verification failed')
+    }
+
+    const data = await response.json()
+    return data.users?.[0]
+  },
+
+  async refreshToken(refreshToken: string) {
+    const response = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        refresh_token: refreshToken,
+        client_id: process.env.GCP_CLIENT_ID!,
+        client_secret: process.env.GCP_CLIENT_SECRET!,
+        grant_type: 'refresh_token',
+      }),
+    })
+    
+    if (!response.ok) {
+      throw new Error('Token refresh failed')
+    }
+    
+    return await response.json()
+  },
 }
 ```
 

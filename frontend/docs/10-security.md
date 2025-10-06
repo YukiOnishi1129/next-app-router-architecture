@@ -56,7 +56,7 @@ export async function verifyIdToken(idToken: string) {
 }
 
 // セッションの作成
-export async function createSession(idToken: string) {
+export async function createSession(idToken: string, refreshToken?: string) {
   const user = await verifyIdToken(idToken)
   if (!user) {
     return { success: false, error: 'Invalid token' }
@@ -67,7 +67,7 @@ export async function createSession(idToken: string) {
     email: user.email,
     name: user.name,
     picture: user.picture,
-    exp: Math.floor(Date.now() / 1000) + (60 * 60 * 24 * 5), // 5日間
+    exp: Math.floor(Date.now() / 1000) + (60 * 60), // 1時間（IDトークンの有効期限に合わせる）
   }
 
   // JWTセッショントークンの生成
@@ -77,15 +77,70 @@ export async function createSession(idToken: string) {
     { algorithm: 'HS256' }
   )
   
+  // セッショントークンを設定
   cookies().set('session', sessionToken, {
-    maxAge: 60 * 60 * 24 * 5, // 5日間
+    maxAge: 60 * 60 * 24 * 7, // 7日間
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     path: '/',
   })
   
+  // リフレッシュトークンを別のCookieに保存
+  if (refreshToken) {
+    cookies().set('refresh-token', refreshToken, {
+      maxAge: 60 * 60 * 24 * 30, // 30日間
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+    })
+  }
+  
   return { success: true }
+}
+
+// トークンのリフレッシュ
+export async function refreshTokens() {
+  const refreshToken = cookies().get('refresh-token')?.value
+  
+  if (!refreshToken) {
+    return { success: false, error: 'No refresh token' }
+  }
+  
+  try {
+    // Google OAuth2のトークンリフレッシュエンドポイント
+    const response = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        refresh_token: refreshToken,
+        client_id: process.env.GCP_CLIENT_ID!,
+        client_secret: process.env.GCP_CLIENT_SECRET!,
+        grant_type: 'refresh_token',
+      }),
+    })
+    
+    if (!response.ok) {
+      throw new Error('Token refresh failed')
+    }
+    
+    const tokens = await response.json()
+    
+    // 新しいIDトークンで検証とセッション作成
+    const user = await verifyIdToken(tokens.id_token)
+    if (!user) {
+      throw new Error('Invalid refreshed token')
+    }
+    
+    // 新しいトークンでセッションを更新
+    await createSession(tokens.id_token, tokens.refresh_token)
+    
+    return { success: true, idToken: tokens.id_token }
+  } catch (error) {
+    console.error('Token refresh error:', error)
+    return { success: false, error: 'Failed to refresh token' }
+  }
 }
 ```
 
@@ -117,8 +172,22 @@ export async function middleware(request: NextRequest) {
     const decoded = jwt.verify(session.value, process.env.JWT_SECRET!) as any
     
     // トークンの有効期限チェック
-    if (decoded.exp < Math.floor(Date.now() / 1000)) {
-      throw new Error('Token expired')
+    const now = Math.floor(Date.now() / 1000)
+    if (decoded.exp < now) {
+      // セッションが期限切れの場合、リフレッシュトークンで更新を試みる
+      const refreshToken = request.cookies.get('refresh-token')?.value
+      
+      if (!refreshToken) {
+        throw new Error('No refresh token')
+      }
+      
+      // トークンリフレッシュAPI呼び出し
+      // 注：Middlewareでは外部APIを呼び出すべきではないので、
+      // 実際にはクライアント側でリフレッシュを処理するか、
+      // 専用のAPIルートにリダイレクトする
+      return NextResponse.redirect(
+        new URL(`/api/auth/refresh?redirect=${pathname}`, request.url)
+      )
     }
     
     // カスタムクレームによる認可
@@ -139,6 +208,7 @@ export async function middleware(request: NextRequest) {
   } catch (error) {
     const response = NextResponse.redirect(new URL('/login', request.url))
     response.cookies.delete('session')
+    response.cookies.delete('refresh-token')
     return response
   }
 }
