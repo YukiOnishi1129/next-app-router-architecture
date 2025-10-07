@@ -2,6 +2,7 @@ import "server-only";
 
 import { z } from "zod";
 import { getSessionServer } from "../auth/query.server";
+import { UserId } from "@/external/domain";
 import {
   requestRepository,
   userManagementService,
@@ -40,8 +41,9 @@ export async function listMyRequestsServer(
     const currentUser = await requireSessionUser();
     const validated = paginationSchema.parse(params ?? {});
 
+    const requesterId = UserId.create(currentUser.id);
     const requests = await requestRepository.findByRequesterId(
-      currentUser.id,
+      requesterId,
       validated.limit,
       validated.offset
     );
@@ -71,8 +73,9 @@ export async function listAssignedRequestsServer(
     const currentUser = await requireSessionUser();
     const validated = paginationSchema.parse(params ?? {});
 
+    const assigneeId = UserId.create(currentUser.id);
     const requests = await requestRepository.findByAssigneeId(
-      currentUser.id,
+      assigneeId,
       validated.limit,
       validated.offset
     );

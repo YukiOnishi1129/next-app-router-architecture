@@ -52,8 +52,8 @@ export {
   listAllRequestsAction as getAllRequests,
 } from "./query.action";
 
+import type { RequestCommandResponse } from "./command.action";
 export type { RequestCommandResponse } from "./command.action";
 export type { RequestListInput, RequestListResponse } from "./query.action";
 
-import type { RequestCommandResponse } from "./command.action";
 export type RequestResponse = RequestCommandResponse;

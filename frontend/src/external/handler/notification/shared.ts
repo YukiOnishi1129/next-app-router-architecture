@@ -1,5 +1,6 @@
 import { NotificationService } from "@/external/service/NotificationService";
 import { UserManagementService } from "@/external/service/auth/UserManagementService";
+import { Notification } from "@/external/domain/notification/notification";
 
 export const notificationService = new NotificationService();
 export const userManagementService = new UserManagementService();
@@ -18,19 +19,9 @@ export type NotificationDto = {
 };
 
 export function mapNotificationToDto(
-  notification: ReturnType<typeof notificationService.markAsRead>
+  notification: Notification
 ): NotificationDto {
-  const json = (
-    notification as unknown as {
-      toJSON: () => ReturnType<
-        InstanceType<typeof notificationService>["markAsRead"]
-      > extends Promise<infer N>
-        ? N extends { toJSON: () => infer T }
-          ? T
-          : never
-        : never;
-    }
-  ).toJSON();
+  const json = notification.toJSON();
   return {
     id: json.id,
     userId: json.recipientId,

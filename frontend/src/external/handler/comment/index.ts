@@ -6,7 +6,7 @@ export {
   deleteCommentAction,
 } from "./command.action";
 
-export { listCommentsAction } from "./query.action";
+export { listCommentsAction, getCommentThreadAction } from "./query.action";
 
 export {
   createCommentServer,
@@ -14,7 +14,7 @@ export {
   deleteCommentServer,
 } from "./command.server";
 
-export { listCommentsServer } from "./query.server";
+export { listCommentsServer, getCommentThreadServer } from "./query.server";
 
 // Backwards-compatible aliases (legacy names)
 export {
@@ -34,10 +34,7 @@ export {
   deleteCommentAction as deleteCommentActionLegacy,
 } from "./command.action";
 
-export {
-  listCommentsAction as getCommentsAction,
-  getCommentThreadAction as getCommentThreadAction,
-} from "./query.action";
+export { listCommentsAction as getCommentsAction } from "./query.action";
 
 export {
   createCommentServer as addCommentServer,
@@ -45,14 +42,10 @@ export {
   deleteCommentServer as deleteCommentServerLegacy,
 } from "./command.server";
 
-export {
-  listCommentsServer as getCommentsServer,
-  getCommentThreadServer as getCommentThreadServer,
-} from "./query.server";
+export { listCommentsServer as getCommentsServer } from "./query.server";
 
 export type {
   CreateCommentInput,
-  CreateCommentResponse,
   UpdateCommentInput,
   UpdateCommentResponse,
   DeleteCommentInput,
@@ -61,12 +54,11 @@ export type {
 
 export type {
   ListCommentsInput,
-  ListCommentsResponse,
   GetCommentThreadResponse,
 } from "./query.server";
 
-import type { CreateCommentResponse } from "./command.server";
-import type { ListCommentsResponse } from "./query.server";
+import type { CreateCommentResponse } from "./command.action";
+import type { ListCommentsResponse } from "./query.action";
 
 export type CommentResponse = CreateCommentResponse;
 export type CommentListResponse = ListCommentsResponse;

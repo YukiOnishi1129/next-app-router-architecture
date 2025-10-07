@@ -1,5 +1,8 @@
 "use server";
 
+import { NotificationCommandResponse } from "./command.action";
+import { ListNotificationsResponse } from "./query.action";
+
 export {
   markNotificationReadAction,
   markAllNotificationsReadAction,
@@ -41,7 +44,6 @@ export type {
   MarkNotificationReadInput,
   MarkAllNotificationsReadInput,
   UpdateNotificationPreferencesInput,
-  NotificationCommandResponse,
   UpdateNotificationPreferencesResponse,
 } from "./command.server";
 
@@ -50,3 +52,8 @@ export type {
   ListNotificationsResponse,
   GetNotificationPreferencesResponse,
 } from "./query.server";
+
+export type { NotificationCommandResponse } from "./command.server";
+
+export type NotificationResponse = NotificationCommandResponse;
+export type NotificationListResponse = ListNotificationsResponse;

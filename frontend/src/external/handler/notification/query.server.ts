@@ -5,6 +5,7 @@ import { getSessionServer } from "../auth/query.server";
 import {
   notificationService,
   userManagementService,
+  mapNotificationToDto,
   type NotificationDto,
 } from "./shared";
 
@@ -58,16 +59,7 @@ export async function listNotificationsServer(
 
     return {
       success: true,
-      notifications: result.notifications.map((notification) => ({
-        id: notification.getId().getValue(),
-        userId: notification.getRecipientId().getValue(),
-        type: notification.getType(),
-        title: notification.getTitle(),
-        message: notification.getMessage(),
-        metadata: undefined,
-        read: notification.getIsRead(),
-        createdAt: notification.getCreatedAt().toISOString(),
-      })),
+      notifications: result.notifications.map(mapNotificationToDto),
       total: result.total,
       unreadCount: result.unreadCount,
       limit: validated.limit,
