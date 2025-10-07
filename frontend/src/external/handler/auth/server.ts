@@ -1,12 +1,14 @@
-"use server";
+import "server-only";
 
 import { z } from "zod";
+import { cookies } from "next/headers";
 import { AuthenticationService } from "@/external/service/auth/AuthenticationService";
 import { UserManagementService } from "@/external/service/auth/UserManagementService";
-import { AuditService, AuditContext } from "@/external/service/AuditService";
-import { cookies } from "next/headers";
+import {
+  AuditService,
+  type AuditContext,
+} from "@/external/service/AuditService";
 
-// Validation schemas
 const signInSchema = z.object({
   email: z.email(),
   password: z.string().min(6),
@@ -24,11 +26,10 @@ const sessionSchema = z.object({
   userId: z.string().optional(),
 });
 
-type SignInInput = z.input<typeof signInSchema>;
-type SignUpInput = z.input<typeof signUpSchema>;
-type SessionInput = z.input<typeof sessionSchema>;
+export type SignInInput = z.input<typeof signInSchema>;
+export type SignUpInput = z.input<typeof signUpSchema>;
+export type SessionInput = z.input<typeof sessionSchema>;
 
-// Response types
 export type SignInResponse = {
   success: boolean;
   error?: string;
@@ -57,7 +58,6 @@ export type SessionResponse = {
   isAuthenticated: boolean;
 };
 
-// Initialize services
 const authService = new AuthenticationService({
   apiKey: process.env.GCP_IDENTITY_PLATFORM_API_KEY!,
   projectId: process.env.GCP_PROJECT_ID!,
@@ -66,51 +66,43 @@ const authService = new AuthenticationService({
 const userManagementService = new UserManagementService();
 const auditService = new AuditService();
 
-/**
- * Sign in with email and password
- */
-export async function signIn(data: SignInInput): Promise<SignInResponse> {
+const SERVER_CONTEXT: AuditContext = {
+  ipAddress: "server",
+  userAgent: "server-action",
+};
+
+export async function signInServer(data: SignInInput): Promise<SignInResponse> {
   try {
     const validated = signInSchema.parse(data);
 
-    // Authenticate with email/password
     const authResult = await authService.signInWithEmailPassword(
       validated.email,
       validated.password
     );
 
-    // Get or create user in our system
     const user = await userManagementService.getOrCreateUser({
       email: authResult.userInfo.email,
       name: authResult.userInfo.name,
       externalId: authResult.userInfo.id,
     });
 
-    // Log authentication
-    const auditContext: AuditContext = {
-      ipAddress: "server",
-      userAgent: "server-action",
-    };
-    await auditService.logUserLogin(user, auditContext);
+    await auditService.logUserLogin(user, SERVER_CONTEXT);
 
-    // Store auth tokens in secure cookies
     const cookieStore = await cookies();
 
-    // Store ID token (no refresh token for short sessions)
     cookieStore.set("auth-token", authResult.idToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: 60 * 60 * 24, // 1 day for short sessions
+      maxAge: 60 * 60 * 24,
       path: "/",
     });
 
-    // Store user ID for quick lookups
     cookieStore.set("user-id", user.getId().getValue(), {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: 60 * 60 * 24, // 1 day
+      maxAge: 60 * 60 * 24,
       path: "/",
     });
 
@@ -133,21 +125,16 @@ export async function signIn(data: SignInInput): Promise<SignInResponse> {
   }
 }
 
-/**
- * Sign up with email and password
- */
-export async function signUp(data: SignUpInput): Promise<SignUpResponse> {
+export async function signUpServer(data: SignUpInput): Promise<SignUpResponse> {
   try {
     const validated = signUpSchema.parse(data);
 
-    // Sign up with email/password
     const authResult = await authService.signUpWithEmailPassword(
       validated.email,
       validated.password,
       validated.name
     );
 
-    // Create user in our system
     const user = await userManagementService.getOrCreateUser({
       email: authResult.userInfo.email,
       name:
@@ -157,31 +144,23 @@ export async function signUp(data: SignUpInput): Promise<SignUpResponse> {
       externalId: authResult.userInfo.id,
     });
 
-    // Log user creation
-    const auditContext: AuditContext = {
-      ipAddress: "server",
-      userAgent: "server-action",
-    };
-    await auditService.logUserLogin(user, auditContext);
+    await auditService.logUserLogin(user, SERVER_CONTEXT);
 
-    // Store auth tokens in secure cookies
     const cookieStore = await cookies();
 
-    // Store ID token (no refresh token for short sessions)
     cookieStore.set("auth-token", authResult.idToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: 60 * 60 * 24, // 1 day for short sessions
+      maxAge: 60 * 60 * 24,
       path: "/",
     });
 
-    // Store user ID for quick lookups
     cookieStore.set("user-id", user.getId().getValue(), {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: 60 * 60 * 24, // 1 day
+      maxAge: 60 * 60 * 24,
       path: "/",
     });
 
@@ -204,42 +183,30 @@ export async function signUp(data: SignUpInput): Promise<SignUpResponse> {
   }
 }
 
-/**
- * Sign out current user
- */
-export async function signOut(): Promise<SignOutResponse> {
+export async function signOutServer(userId?: string): Promise<SignOutResponse> {
   try {
     const cookieStore = await cookies();
-    const userId = cookieStore.get("user-id")?.value;
+    const storedUserId = userId ?? cookieStore.get("user-id")?.value;
     const token = cookieStore.get("auth-token")?.value;
 
-    if (!userId || !token) {
+    if (!storedUserId || !token) {
       return {
         success: false,
         error: "No active session",
       };
     }
 
-    // Get user for audit logging
-    const user = await userManagementService.findUserById(userId);
+    const user = await userManagementService.findUserById(storedUserId);
     if (user) {
-      // Revoke authentication (optional, depends on implementation)
       try {
         await authService.revokeAuthentication(token);
       } catch (error) {
-        // Log error but continue with sign out
         console.error("Failed to revoke token:", error);
       }
 
-      // Log sign out
-      const auditContext: AuditContext = {
-        ipAddress: "server",
-        userAgent: "server-action",
-      };
-      await auditService.logUserLogout(user, auditContext);
+      await auditService.logUserLogout(user, SERVER_CONTEXT);
     }
 
-    // Clear auth cookies
     cookieStore.delete("auth-token");
     cookieStore.delete("user-id");
 
@@ -254,10 +221,7 @@ export async function signOut(): Promise<SignOutResponse> {
   }
 }
 
-/**
- * Get current session
- */
-export async function getSession(
+export async function getSessionServer(
   data?: SessionInput
 ): Promise<SessionResponse> {
   try {
@@ -267,36 +231,23 @@ export async function getSession(
     const storedUserId = cookieStore.get("user-id")?.value;
 
     if (!token || !storedUserId) {
-      return {
-        isAuthenticated: false,
-      };
+      return { isAuthenticated: false };
     }
 
-    // Verify token is still valid
     const tokenInfo = await authService.verifyToken(token);
     if (!tokenInfo) {
-      // Token is invalid, clear cookies
       cookieStore.delete("auth-token");
       cookieStore.delete("user-id");
-
-      return {
-        isAuthenticated: false,
-      };
+      return { isAuthenticated: false };
     }
 
-    // Get user from database
     const user = await userManagementService.findUserById(storedUserId);
     if (!user) {
-      return {
-        isAuthenticated: false,
-      };
+      return { isAuthenticated: false };
     }
 
-    // If userId is provided, verify it matches the authenticated user
     if (validated.userId && validated.userId !== user.getId().getValue()) {
-      return {
-        isAuthenticated: false,
-      };
+      return { isAuthenticated: false };
     }
 
     return {
@@ -305,29 +256,22 @@ export async function getSession(
     };
   } catch (error) {
     console.error("Session error:", error);
-    return {
-      isAuthenticated: false,
-    };
+    return { isAuthenticated: false };
   }
 }
 
-/**
- * Check if user has permission
- */
-export async function checkPermission(permission: string): Promise<boolean> {
-  try {
-    const session = await getSession();
-    if (!session.isAuthenticated || !session.user) {
-      return false;
-    }
-
-    const user = await userManagementService.findUserById(session.user.id);
-    if (!user) {
-      return false;
-    }
-
-    return userManagementService.hasPermission(user, permission);
-  } catch {
+export async function checkPermissionServer(
+  permission: string
+): Promise<boolean> {
+  const session = await getSessionServer();
+  if (!session.isAuthenticated || !session.user) {
     return false;
   }
+
+  const user = await userManagementService.findUserById(session.user.id);
+  if (!user) {
+    return false;
+  }
+
+  return userManagementService.hasPermission(user, permission);
 }
