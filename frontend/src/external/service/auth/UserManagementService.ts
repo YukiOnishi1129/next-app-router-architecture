@@ -1,18 +1,12 @@
 /**
  * User Management Service
- * 
+ *
  * This service handles user database operations only.
  * It does not make any external API calls.
  */
 
-import {
-  User,
-  UserId,
-  Email,
-  UserRole,
-  UserStatus,
-} from '@/external/domain';
-import { UserRepository } from '@/external/repository/UserRepository';
+import { User, UserId, Email, UserRole, UserStatus } from "@/external/domain";
+import { UserRepository } from "@/external/repository/UserRepository";
 
 export interface UserProfile {
   id: string;
@@ -70,9 +64,11 @@ export class UserManagementService {
    */
   async createUser(data: CreateUserData): Promise<User> {
     // Check if user already exists
-    const existingUser = await this.userRepository.findByEmail(new Email(data.email));
+    const existingUser = await this.userRepository.findByEmail(
+      new Email(data.email)
+    );
     if (existingUser) {
-      throw new Error('User with this email already exists');
+      throw new Error("User with this email already exists");
     }
 
     // Create new user
@@ -143,7 +139,7 @@ export class UserManagementService {
   async updateUser(userId: string, data: UpdateUserData): Promise<User> {
     const user = await this.userRepository.findById(UserId.create(userId));
     if (!user) {
-      throw new Error('User not found');
+      throw new Error("User not found");
     }
 
     // Update profile if name or email changed
@@ -178,12 +174,17 @@ export class UserManagementService {
    * Get or create user
    */
   async getOrCreateUser(data: CreateUserData): Promise<User> {
-    const existingUser = await this.userRepository.findByEmail(new Email(data.email));
-    
+    const existingUser = await this.userRepository.findByEmail(
+      new Email(data.email)
+    );
+
     if (existingUser) {
       // Update user info if needed
       if (existingUser.getName() !== data.name) {
-        existingUser.updateProfile(data.name, existingUser.getEmail().getValue());
+        existingUser.updateProfile(
+          data.name,
+          existingUser.getEmail().getValue()
+        );
         await this.userRepository.save(existingUser);
       }
       return existingUser;
@@ -198,7 +199,7 @@ export class UserManagementService {
   async deleteUser(userId: string): Promise<void> {
     const user = await this.userRepository.findById(UserId.create(userId));
     if (!user) {
-      throw new Error('User not found');
+      throw new Error("User not found");
     }
 
     await this.userRepository.delete(user.getId());
@@ -234,7 +235,7 @@ export class UserManagementService {
    */
   hasPermission(user: User, permission: string): boolean {
     const permissions = this.getPermissionsForRoles(user.getRoles());
-    return permissions.includes('*') || permissions.includes(permission);
+    return permissions.includes("*") || permissions.includes(permission);
   }
 
   /**
@@ -262,23 +263,20 @@ export class UserManagementService {
    */
   private getPermissionsForRoles(roles: UserRole[]): string[] {
     const permissionMap: Record<UserRole, string[]> = {
-      [UserRole.ADMIN]: ['*'], // Admin has all permissions
+      [UserRole.ADMIN]: ["*"], // Admin has all permissions
       [UserRole.MEMBER]: [
-        'request.view',
-        'request.create',
-        'request.update.own',
-        'request.view.own',
-        'user.view.self',
-        'user.update.self',
+        "request.view",
+        "request.create",
+        "request.update.own",
+        "request.view.own",
+        "user.view.self",
+        "user.update.self",
       ],
-      [UserRole.GUEST]: [
-        'request.view',
-        'user.view.self',
-      ],
+      [UserRole.GUEST]: ["request.view", "user.view.self"],
     };
 
     const allPermissions = new Set<string>();
-    
+
     roles.forEach((role) => {
       const rolePermissions = permissionMap[role] || [];
       rolePermissions.forEach((permission) => allPermissions.add(permission));

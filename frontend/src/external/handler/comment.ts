@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import { CommentService } from "@/external/service";
+import { Comment } from "@/external/domain";
 import { getSession } from "./auth";
 
 // Validation schemas
@@ -35,22 +36,13 @@ type GetCommentsInput = z.input<typeof getCommentsSchema>;
 export type CommentResponse = {
   success: boolean;
   error?: string;
-  comment?: {
-    id: string;
-    content: string;
-    requestId: string;
-    authorId: string;
-    parentId?: string;
-    createdAt: string;
-    updatedAt: string;
-    isEdited: boolean;
-  };
+  comment?: CommentDto;
 };
 
 export type CommentListResponse = {
   success: boolean;
   error?: string;
-  comments?: Array<CommentResponse["comment"]>;
+  comments?: Array<CommentDto>;
   total?: number;
   limit?: number;
   offset?: number;
@@ -58,6 +50,46 @@ export type CommentListResponse = {
 
 // Initialize services
 const commentService = new CommentService();
+
+type CommentDto = {
+  id: string;
+  content: string;
+  requestId: string;
+  authorId: string;
+  parentId?: string;
+  createdAt: string;
+  updatedAt: string;
+  isEdited: boolean;
+};
+
+function mapCommentToDto(comment: Comment, parentId?: string): CommentDto {
+  const base = {
+    id: comment.getId().getValue(),
+    content: comment.getContent().getValue(),
+    requestId: comment.getRequestId().getValue(),
+    authorId: comment.getAuthorId().getValue(),
+    createdAt: comment.getCreatedAt().toISOString(),
+    updatedAt: comment.getUpdatedAt().toISOString(),
+    isEdited: comment.isEdited(),
+  };
+
+  if (parentId) {
+    return { ...base, parentId };
+  }
+
+  // Attempt to read parentId from comment if domain exposes it in the future
+  const maybeParent = (
+    comment as unknown as {
+      getParentId?: () => { getValue(): string };
+    }
+  ).getParentId?.();
+
+  if (maybeParent) {
+    return { ...base, parentId: maybeParent.getValue() };
+  }
+
+  return base;
+}
 
 /**
  * Add a comment to a request
@@ -89,15 +121,7 @@ export async function addComment(
 
     return {
       success: true,
-      comment: {
-        id: comment.getId().getValue(),
-        content: comment.getContent().getValue(),
-        requestId: comment.getRequestId().getValue(),
-        authorId: comment.getAuthorId().getValue(),
-        createdAt: comment.getCreatedAt().toISOString(),
-        updatedAt: comment.getUpdatedAt().toISOString(),
-        isEdited: comment.isEdited(),
-      },
+      comment: mapCommentToDto(comment, validated.parentId),
     };
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -142,15 +166,7 @@ export async function updateComment(
 
     return {
       success: true,
-      comment: {
-        id: comment.getId().getValue(),
-        content: comment.getContent().getValue(),
-        requestId: comment.getRequestId().getValue(),
-        authorId: comment.getAuthorId().getValue(),
-        createdAt: comment.getCreatedAt().toISOString(),
-        updatedAt: comment.getUpdatedAt().toISOString(),
-        isEdited: comment.isEdited(),
-      },
+      comment: mapCommentToDto(comment),
     };
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -239,15 +255,7 @@ export async function getComments(
 
     return {
       success: true,
-      comments: result.comments.map((c) => ({
-        id: c.getId().getValue(),
-        content: c.getContent().getValue(),
-        requestId: c.getRequestId().getValue(),
-        authorId: c.getAuthorId().getValue(),
-        createdAt: c.getCreatedAt().toISOString(),
-        updatedAt: c.getUpdatedAt().toISOString(),
-        isEdited: c.isEdited(),
-      })),
+      comments: result.comments.map((comment) => mapCommentToDto(comment)),
       total: result.total,
       limit: result.limit,
       offset: result.offset,
@@ -289,15 +297,7 @@ export async function getCommentThread(
 
     return {
       success: true,
-      comments: result.comments.map((c) => ({
-        id: c.getId().getValue(),
-        content: c.getContent().getValue(),
-        requestId: c.getRequestId().getValue(),
-        authorId: c.getAuthorId().getValue(),
-        createdAt: c.getCreatedAt().toISOString(),
-        updatedAt: c.getUpdatedAt().toISOString(),
-        isEdited: c.isEdited(),
-      })),
+      comments: result.comments.map((comment) => mapCommentToDto(comment)),
       total: result.comments.length,
     };
   } catch (error) {

@@ -1,168 +1,210 @@
-/**
- * Example test file for AuthenticationService
- * 
- * This demonstrates how the new architecture enables easier testing
- * by mocking only the external client, not the entire service.
- */
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { AuthenticationService } from "../AuthenticationService";
+import { IdentityPlatformClient } from "@/external/client/gcp/identity-platform";
 
-import { AuthenticationService } from '../AuthenticationService';
-import { IdentityPlatformClient } from '@/external/client/gcp/identity-platform';
+const createIdentityPlatformClientMock = () => ({
+  signUpWithEmailPassword: vi.fn(),
+  signInWithEmailPassword: vi.fn(),
+  sendEmailVerification: vi.fn(),
+  getUserInfo: vi.fn(),
+  verifyIdToken: vi.fn(),
+  refreshIdToken: vi.fn(),
+  sendPasswordResetEmail: vi.fn(),
+  updateUserProfile: vi.fn(),
+  deleteUserAccount: vi.fn(),
+});
 
-// Mock the external client
-jest.mock('@/external/client/gcp/identity-platform');
+type IdentityPlatformClientMock = ReturnType<
+  typeof createIdentityPlatformClientMock
+>;
 
-describe('AuthenticationService', () => {
-  let authService: AuthenticationService;
-  let mockClient: jest.Mocked<IdentityPlatformClient>;
+vi.mock("@/external/client/gcp/identity-platform", async () => {
+  const actual = await vi.importActual<
+    typeof import("@/external/client/gcp/identity-platform")
+  >("@/external/client/gcp/identity-platform");
+
+  const factory = vi
+    .fn(
+      (..._args: ConstructorParameters<typeof actual.IdentityPlatformClient>) =>
+        createIdentityPlatformClientMock()
+    )
+    .mockName("IdentityPlatformClient");
+
+  return {
+    ...actual,
+    IdentityPlatformClient:
+      factory as unknown as typeof actual.IdentityPlatformClient,
+  };
+});
+
+describe("AuthenticationService (Identity Platform)", () => {
+  let service: AuthenticationService;
+  let mockClient: IdentityPlatformClientMock;
 
   beforeEach(() => {
-    // Clear all mocks
-    jest.clearAllMocks();
-
-    // Create service instance
-    authService = new AuthenticationService({
-      apiKey: 'test-api-key',
-      projectId: 'test-project',
+    vi.clearAllMocks();
+    service = new AuthenticationService({
+      apiKey: "fake-api-key",
+      projectId: "fake-project",
     });
 
-    // Get mock instance
-    mockClient = (IdentityPlatformClient as jest.MockedClass<typeof IdentityPlatformClient>)
-      .mock.instances[0] as jest.Mocked<IdentityPlatformClient>;
+    const MockIdentityPlatformClient = vi.mocked(IdentityPlatformClient);
+    const lastResult =
+      MockIdentityPlatformClient.mock.results[
+        MockIdentityPlatformClient.mock.results.length - 1
+      ];
+
+    if (!lastResult || lastResult.type !== "return") {
+      throw new Error("IdentityPlatformClient was not instantiated");
+    }
+
+    mockClient = lastResult.value as unknown as IdentityPlatformClientMock;
   });
 
-  describe('authenticateWithGoogleCode', () => {
-    it('should exchange code for tokens and return user info', async () => {
-      // Arrange
-      const mockCode = 'test-auth-code';
-      const mockRedirectUri = 'http://localhost:3000/callback';
-      
-      mockClient.exchangeCodeForToken.mockResolvedValue({
-        access_token: 'test-access-token',
-        expires_in: '3600',
-        token_type: 'Bearer',
-        refresh_token: 'test-refresh-token',
-        id_token: 'test-id-token',
-        user_id: 'test-user-id',
-        project_id: 'test-project',
-      });
-
-      mockClient.signInWithGoogleIdToken.mockResolvedValue({
-        idToken: 'new-id-token',
-        refreshToken: 'new-refresh-token',
-        expiresIn: '3600',
-        localId: 'user-123',
-        email: 'test@example.com',
-        displayName: 'Test User',
-        photoUrl: 'https://example.com/photo.jpg',
+  describe("signUpWithEmailPassword", () => {
+    it("signs up, fetches user info, and sends verification email", async () => {
+      mockClient.signUpWithEmailPassword.mockResolvedValue({
+        idToken: "id-token",
+        refreshToken: "refresh-token",
+        expiresIn: "3600",
+        localId: "user-123",
+        email: "test@example.com",
+        displayName: "Test User",
         registered: true,
       });
 
       mockClient.getUserInfo.mockResolvedValue({
-        localId: 'user-123',
-        email: 'test@example.com',
-        displayName: 'Test User',
-        photoUrl: 'https://example.com/photo.jpg',
-        emailVerified: true,
-        createdAt: '1234567890000',
-        lastLoginAt: '1234567890000',
-        providerUserInfo: [
-          {
-            providerId: 'google.com',
-            displayName: 'Test User',
-            photoUrl: 'https://example.com/photo.jpg',
-            email: 'test@example.com',
-          },
-        ],
+        localId: "user-123",
+        email: "test@example.com",
+        displayName: "Test User",
+        emailVerified: false,
+        createdAt: "1234567890",
+        lastLoginAt: "1234567890",
       });
 
-      // Act
-      const result = await authService.authenticateWithGoogleCode(mockCode, mockRedirectUri);
+      mockClient.sendEmailVerification.mockResolvedValue(undefined);
 
-      // Assert
-      expect(result).toEqual({
-        idToken: 'new-id-token',
-        refreshToken: 'new-refresh-token',
-        userInfo: {
-          id: 'user-123',
-          email: 'test@example.com',
-          name: 'Test User',
-          picture: 'https://example.com/photo.jpg',
-          emailVerified: true,
-        },
-        expiresAt: expect.any(Date),
-      });
-
-      expect(mockClient.exchangeCodeForToken).toHaveBeenCalledWith(mockCode, mockRedirectUri);
-      expect(mockClient.signInWithGoogleIdToken).toHaveBeenCalledWith('test-id-token');
-      expect(mockClient.getUserInfo).toHaveBeenCalledWith('new-id-token');
-    });
-
-    it('should throw error when code exchange fails', async () => {
-      // Arrange
-      mockClient.exchangeCodeForToken.mockRejectedValue(
-        new Error('Invalid authorization code')
+      const result = await service.signUpWithEmailPassword(
+        "test@example.com",
+        "password",
+        "Test User"
       );
 
-      // Act & Assert
-      await expect(
-        authService.authenticateWithGoogleCode('invalid-code', 'http://localhost:3000/callback')
-      ).rejects.toThrow('Google authentication failed: Invalid authorization code');
+      expect(mockClient.signUpWithEmailPassword).toHaveBeenCalledWith({
+        email: "test@example.com",
+        password: "password",
+        displayName: "Test User",
+      });
+      expect(mockClient.getUserInfo).toHaveBeenCalledWith("id-token");
+      expect(mockClient.sendEmailVerification).toHaveBeenCalledWith("id-token");
+
+      expect(result).toMatchObject({
+        idToken: "id-token",
+        refreshToken: "refresh-token",
+        userInfo: {
+          id: "user-123",
+          email: "test@example.com",
+          name: "Test User",
+          emailVerified: false,
+        },
+      });
+      expect(result.expiresAt.getTime()).toBeGreaterThan(Date.now());
     });
   });
 
-  describe('verifyToken', () => {
-    it('should return user info for valid token', async () => {
-      // Arrange
-      const mockToken = 'valid-token';
-      mockClient.getUserInfo.mockResolvedValue({
-        localId: 'user-123',
-        email: 'test@example.com',
-        emailVerified: true,
-        createdAt: '1234567890000',
-        lastLoginAt: '1234567890000',
+  describe("signInWithEmailPassword", () => {
+    it("returns auth result with user profile", async () => {
+      mockClient.signInWithEmailPassword.mockResolvedValue({
+        idToken: "id-token",
+        refreshToken: "refresh-token",
+        expiresIn: "3600",
+        localId: "user-123",
+        email: "test@example.com",
+        displayName: "Test User",
+        registered: true,
       });
 
-      // Act
-      const result = await authService.verifyToken(mockToken);
+      mockClient.getUserInfo.mockResolvedValue({
+        localId: "user-123",
+        email: "test@example.com",
+        displayName: "Test User",
+        emailVerified: true,
+        createdAt: "1234567890",
+        lastLoginAt: "1234567890",
+      });
 
-      // Assert
-      expect(result).toBeTruthy();
-      expect(result?.email).toBe('test@example.com');
-      expect(mockClient.getUserInfo).toHaveBeenCalledWith(mockToken);
+      const result = await service.signInWithEmailPassword(
+        "test@example.com",
+        "password"
+      );
+
+      expect(mockClient.signInWithEmailPassword).toHaveBeenCalledWith({
+        email: "test@example.com",
+        password: "password",
+      });
+      expect(mockClient.getUserInfo).toHaveBeenCalledWith("id-token");
+      expect(result.userInfo.emailVerified).toBe(true);
+      expect(result.expiresAt.getTime()).toBeGreaterThan(Date.now());
+    });
+  });
+
+  describe("verifyToken", () => {
+    it("returns user info when token is valid", async () => {
+      mockClient.verifyIdToken.mockResolvedValue(true);
+      mockClient.getUserInfo.mockResolvedValue({
+        localId: "user-123",
+        email: "test@example.com",
+        emailVerified: true,
+        createdAt: "1234567890",
+        lastLoginAt: "1234567890",
+      });
+
+      const result = await service.verifyToken("valid-token");
+
+      expect(mockClient.verifyIdToken).toHaveBeenCalledWith("valid-token");
+      expect(mockClient.getUserInfo).toHaveBeenCalledWith("valid-token");
+      expect(result?.email).toBe("test@example.com");
     });
 
-    it('should return null for invalid token', async () => {
-      // Arrange
-      mockClient.getUserInfo.mockRejectedValue(new Error('Invalid token'));
+    it("returns null when token verification fails", async () => {
+      mockClient.verifyIdToken.mockResolvedValue(false);
 
-      // Act
-      const result = await authService.verifyToken('invalid-token');
+      const result = await service.verifyToken("invalid-token");
 
-      // Assert
+      expect(mockClient.verifyIdToken).toHaveBeenCalledWith("invalid-token");
+      expect(mockClient.getUserInfo).not.toHaveBeenCalled();
       expect(result).toBeNull();
     });
   });
 
-  describe('refreshToken', () => {
-    it('should refresh token successfully', async () => {
-      // Arrange
-      const mockRefreshToken = 'old-refresh-token';
+  describe("refreshToken", () => {
+    it("returns refreshed token data", async () => {
       mockClient.refreshIdToken.mockResolvedValue({
-        idToken: 'new-id-token',
-        refreshToken: 'new-refresh-token',
-        expiresIn: '3600',
-        localId: 'user-123',
+        idToken: "new-id-token",
+        refreshToken: "new-refresh-token",
+        expiresIn: "3600",
+        localId: "user-123",
       });
 
-      // Act
-      const result = await authService.refreshToken(mockRefreshToken);
+      const result = await service.refreshToken("old-refresh-token");
 
-      // Assert
-      expect(result.token).toBe('new-id-token');
-      expect(result.refreshToken).toBe('new-refresh-token');
-      expect(result.userId).toBe('user-123');
-      expect(result.expiresAt).toBeInstanceOf(Date);
-      expect(mockClient.refreshIdToken).toHaveBeenCalledWith(mockRefreshToken);
+      expect(mockClient.refreshIdToken).toHaveBeenCalledWith(
+        "old-refresh-token"
+      );
+      expect(result).toEqual({
+        token: "new-id-token",
+        refreshToken: "new-refresh-token",
+      });
+    });
+
+    it("returns null when refresh fails", async () => {
+      mockClient.refreshIdToken.mockRejectedValue(
+        new Error("invalid refresh token")
+      );
+
+      const result = await service.refreshToken("bad-token");
+
+      expect(result).toBeNull();
     });
   });
 });
