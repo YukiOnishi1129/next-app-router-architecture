@@ -21,42 +21,64 @@ const client = postgres(connectionString)
 export const db = drizzle(client)
 ```
 
-### 2. Server Actionsの活用
-フォーム送信やデータ変更処理にServer Actionsを使用。
+### 2. CQRS構成のハンドラー
+ExternalのhandlerはCommand/Queryを明確に分離し、Server FunctionsとServer Actionsの2層で管理します。
+
+```
+external/handler/
+└── auth/
+    ├── shared.ts              # 共通サービス/コンテキスト
+    ├── command.server.ts      # Server-only command handlers
+    ├── command.action.ts      # Server Actions (command)
+    ├── query.server.ts        # Server-only query handlers
+    └── query.action.ts        # Server Actions (query)
+```
+
+Commandファイルでは「作成・更新・削除」などの状態変更を、Queryファイルでは「取得系」を扱います。命名は[AIP-190](https://google.aip.dev/190)に準拠し、例えば`createSessionServer`, `deleteSessionServer`, `getSessionServer`など動詞+リソースで統一します。
+
+Server-only関数をServer Actionから利用することで、クライアントコンポーネントはActionを透過的に呼び出せるようにします。
 
 ```typescript
-// external/actions/users.ts
-'use server'
+// external/handler/auth/command.server.ts
+import "server-only";
+import { z } from "zod";
+import { cookies } from "next/headers";
+import { authService, userManagementService, auditService, SERVER_CONTEXT } from "./shared";
 
-import { z } from 'zod'
-import { db } from '../db/client'
-import { users } from '../db/schema'
-import { revalidatePath } from 'next/cache'
+const createSessionSchema = z.object({
+  email: z.email(),
+  password: z.string().min(6),
+  redirectUrl: z.string().url().optional(),
+});
 
-const createUserSchema = z.object({
-  name: z.string().min(1),
-  email: z.string().email(),
-})
+export type CreateSessionInput = z.input<typeof createSessionSchema>;
 
-export async function createUserAction(formData: FormData) {
-  const validatedFields = createUserSchema.safeParse({
-    name: formData.get('name'),
-    email: formData.get('email'),
-  })
+export async function createSessionServer(data: CreateSessionInput) {
+  const validated = createSessionSchema.parse(data);
+  const authResult = await authService.signInWithEmailPassword(
+    validated.email,
+    validated.password
+  );
+  const user = await userManagementService.getOrCreateUser({
+    email: authResult.userInfo.email,
+    name: authResult.userInfo.name,
+    externalId: authResult.userInfo.id,
+  });
+  await auditService.logUserLogin(user, SERVER_CONTEXT);
 
-  if (!validatedFields.success) {
-    return {
-      errors: validatedFields.error.flatten().fieldErrors,
-    }
-  }
+  const cookieStore = await cookies();
+  cookieStore.set("auth-token", authResult.idToken, { httpOnly: true, path: "/" });
+  cookieStore.set("user-id", user.getId().getValue(), { httpOnly: true, path: "/" });
 
-  try {
-    await db.insert(users).values(validatedFields.data)
-    revalidatePath('/users')
-    return { success: true }
-  } catch (error) {
-    return { error: 'ユーザーの作成に失敗しました' }
-  }
+  return { success: true, redirectUrl: validated.redirectUrl ?? "/dashboard" };
+}
+
+// external/handler/auth/command.action.ts
+'use server';
+import { createSessionServer, type CreateSessionInput } from "./command.server";
+
+export async function createSessionAction(data: CreateSessionInput) {
+  return createSessionServer(data);
 }
 ```
 
@@ -90,6 +112,35 @@ external/
 ```
 
 ## 実装パターン
+
+### ハンドラーのCommand/Query分割
+
+External handlerはCQRSスタイルで構成し、クエリとコマンドを明確に分けます。
+
+- `*_server.ts`: `import "server-only"` を宣言し、直接サービスやリポジトリを呼び出す純粋なサーバー関数。
+- `*_action.ts`: Server Actionとしてエクスポートし、クライアントコンポーネントやRSCから呼び出し可能にするラッパー。
+- `shared.ts`: 同一リソース内で共通利用するサービス初期化やコンテキスト。
+
+命名は[Google AIP-190](https://google.aip.dev/190)に基づき、操作 + リソース形 (例: `createSessionServer`, `listUsersServer`) を採用します。
+
+```typescript
+// external/handler/auth/command.server.ts
+export async function createSessionServer(data: CreateSessionInput) { ... }
+export async function createUserServer(data: CreateUserInput) { ... }
+export async function deleteSessionServer(userId?: string) { ... }
+
+// external/handler/auth/query.server.ts
+export async function getSessionServer(data?: GetSessionInput) { ... }
+export async function checkPermissionServer(permission: string) { ... }
+
+// external/handler/auth/command.action.ts
+'use server'
+export async function createSessionAction(data: CreateSessionInput) {
+  return createSessionServer(data)
+}
+```
+
+これにより、Server Components / API Route / Client Components からの呼び出し先を明確化し、テストや責務の分離が容易になります。
 
 ### レイヤー間の連携
 

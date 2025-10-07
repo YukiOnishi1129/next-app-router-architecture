@@ -1,17 +1,25 @@
 "use server";
 
-export { signInAction, signUpAction, signOutAction } from "./command.action";
+export {
+  createSessionAction,
+  createUserAction,
+  deleteSessionAction,
+} from "./command.action";
 
 export { getSessionAction, checkPermissionAction } from "./query.action";
 
-export { signInServer, signUpServer, signOutServer } from "./command.server";
+export {
+  createSessionServer,
+  createUserServer,
+  deleteSessionServer,
+} from "./command.server";
 
 export { getSessionServer, checkPermissionServer } from "./query.server";
 
 export {
-  signInAction as signIn,
-  signUpAction as signUp,
-  signOutAction as signOut,
+  createSessionAction as createSession,
+  createUserAction as createUser,
+  deleteSessionAction as deleteSession,
 } from "./command.action";
 
 export {
@@ -22,11 +30,11 @@ export {
 } from "./query.action";
 
 export type {
-  SignInInput,
-  SignUpInput,
-  SignInResponse,
-  SignUpResponse,
-  SignOutResponse,
+  CreateSessionInput,
+  CreateUserInput,
+  CreateSessionResponse,
+  CreateUserResponse,
+  DeleteSessionResponse,
 } from "./command.server";
 
-export type { SessionInput, SessionResponse } from "./query.server";
+export type { GetSessionInput, GetSessionResponse } from "./query.server";

@@ -101,176 +101,129 @@ export function GoogleSignInButton() {
 
 ## サーバー側の実装
 
-### OAuth2 コールバックハンドラー
+External handler では Command/Query を分離し、Server-only 関数と Server Action を組み合わせて利用します。命名は [AIP-190](https://google.aip.dev/190) に準拠し、操作 + リソース（例: `createSessionServer`, `getSessionServer`, `deleteSessionServer`）とします。
+
+### Command: セッション作成・削除
 
 ```typescript
-// app/api/auth/callback/google/route.ts
-import { NextRequest, NextResponse } from 'next/server'
-import { createSession, verifyIdToken } from '@/external/lib/auth/identity-platform'
-import { upsertUser } from '@/external/db/users'
+// external/handler/auth/command.server.ts
+export async function createSessionServer(data: CreateSessionInput) {
+  const validated = createSessionSchema.parse(data)
 
-export async function GET(request: NextRequest) {
-  const searchParams = request.nextUrl.searchParams
-  const code = searchParams.get('code')
+  const authResult = await authService.signInWithEmailPassword(
+    validated.email,
+    validated.password
+  )
 
-  if (!code) {
-    return NextResponse.redirect(new URL('/login?error=no_code', request.url))
+  const user = await userManagementService.getOrCreateUser({
+    email: authResult.userInfo.email,
+    name: authResult.userInfo.name,
+    externalId: authResult.userInfo.id,
+  })
+
+  await auditService.logUserLogin(user, SERVER_CONTEXT)
+
+  const cookieStore = await cookies()
+  cookieStore.set('auth-token', authResult.idToken, { httpOnly: true, path: '/' })
+  cookieStore.set('user-id', user.getId().getValue(), { httpOnly: true, path: '/' })
+
+  return {
+    success: true,
+    redirectUrl: validated.redirectUrl ?? '/dashboard',
+  }
+}
+
+export async function deleteSessionServer(userId?: string) {
+  const cookieStore = await cookies()
+  const storedUserId = userId ?? cookieStore.get('user-id')?.value
+  const token = cookieStore.get('auth-token')?.value
+
+  if (!storedUserId || !token) {
+    return { success: false, error: 'No active session' }
   }
 
-  try {
-    // 認証コードをIDトークンに交換（Google OAuth2 Token Endpoint）
-    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        code,
-        client_id: process.env.GCP_CLIENT_ID!,
-        client_secret: process.env.GCP_CLIENT_SECRET!,
-        redirect_uri: `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/callback/google`,
-        grant_type: 'authorization_code',
-      }),
-    })
-
-    if (!tokenResponse.ok) {
-      throw new Error('Token exchange failed')
+  const user = await userManagementService.findUserById(storedUserId)
+  if (user) {
+    try {
+      await authService.revokeAuthentication(token)
+    } catch (error) {
+      console.error('Failed to revoke token:', error)
     }
 
-    const tokens = await tokenResponse.json()
-    
-    if (!tokens.id_token) {
-      throw new Error('No ID token received')
-    }
-
-    // Identity Platform APIでユーザー情報取得・検証
-    const userInfo = await verifyIdToken(tokens.id_token)
-    
-    if (!userInfo) {
-      throw new Error('Token verification failed')
-    }
-    
-    // データベースにユーザー情報を保存/更新
-    await upsertUser(userInfo)
-    
-    // セッション作成（リフレッシュトークンも保存）
-    const session = await createSession(tokens.id_token, tokens.refresh_token)
-    
-    if (!session.success) {
-      throw new Error('Session creation failed')
-    }
-
-    // ダッシュボードへリダイレクト
-    return NextResponse.redirect(new URL('/dashboard', request.url))
-  } catch (error) {
-    console.error('Authentication error:', error)
-    return NextResponse.redirect(
-      new URL('/login?error=authentication_failed', request.url)
-    )
+    await auditService.logUserLogout(user, SERVER_CONTEXT)
   }
+
+  cookieStore.delete('auth-token')
+  cookieStore.delete('user-id')
+
+  return { success: true }
+}
+
+// external/handler/auth/command.action.ts
+'use server'
+export async function createSessionAction(data: CreateSessionInput) {
+  return createSessionServer(data)
+}
+
+export async function deleteSessionAction(userId?: string) {
+  return deleteSessionServer(userId)
 }
 ```
 
-### トークンリフレッシュエンドポイント
+### Query: セッション取得・権限確認
 
 ```typescript
-// app/api/auth/refresh/route.ts
-import { NextRequest, NextResponse } from 'next/server'
-import { refreshTokens } from '@/external/lib/auth/identity-platform'
+// external/handler/auth/query.server.ts
+export async function getSessionServer(data?: GetSessionInput) {
+  const validated = getSessionSchema.parse(data ?? {})
+  const cookieStore = await cookies()
+  const token = cookieStore.get('auth-token')?.value
+  const storedUserId = cookieStore.get('user-id')?.value
 
-export async function GET(request: NextRequest) {
-  const redirect = request.nextUrl.searchParams.get('redirect') || '/dashboard'
-  
-  const result = await refreshTokens()
-  
-  if (!result.success) {
-    return NextResponse.redirect(new URL('/login', request.url))
+  if (!token || !storedUserId) {
+    return { isAuthenticated: false }
   }
-  
-  // 元のページへリダイレクト
-  return NextResponse.redirect(new URL(redirect, request.url))
+
+  const tokenInfo = await authService.verifyToken(token)
+  if (!tokenInfo) {
+    cookieStore.delete('auth-token')
+    cookieStore.delete('user-id')
+    return { isAuthenticated: false }
+  }
+
+  const user = await userManagementService.findUserById(storedUserId)
+  if (!user || (validated.userId && validated.userId !== user.getId().getValue())) {
+    return { isAuthenticated: false }
+  }
+
+  return {
+    user: userManagementService.toUserProfile(user),
+    isAuthenticated: true,
+  }
 }
 
-// クライアントからのAJAXリクエスト用
-export async function POST() {
-  const result = await refreshTokens()
-  
-  if (!result.success) {
-    return NextResponse.json(
-      { error: 'Token refresh failed' },
-      { status: 401 }
-    )
-  }
-  
-  return NextResponse.json({ success: true })
-}
-```
-
-### Identity Platform API呼び出し
-
-```typescript
-// external/lib/auth/identity-platform-api.ts
-import 'server-only'
-
-const IDENTITY_PLATFORM_BASE_URL = 'https://identitytoolkit.googleapis.com/v1'
-const API_KEY = process.env.GCP_IDENTITY_PLATFORM_API_KEY
-
-// ユーザー情報取得
-export async function getUserInfo(idToken: string) {
-  const response = await fetch(
-    `${IDENTITY_PLATFORM_BASE_URL}/accounts:lookup?key=${API_KEY}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ idToken }),
-    }
-  )
-
-  if (!response.ok) {
-    throw new Error('Failed to get user info')
+export async function checkPermissionServer(permission: string) {
+  const session = await getSessionServer()
+  if (!session.isAuthenticated || !session.user) {
+    return false
   }
 
-  const data = await response.json()
-  return data.users?.[0]
+  const user = await userManagementService.findUserById(session.user.id)
+  if (!user) {
+    return false
+  }
+
+  return userManagementService.hasPermission(user, permission)
 }
 
-// メールでユーザー検索
-export async function getUserByEmail(email: string) {
-  const response = await fetch(
-    `${IDENTITY_PLATFORM_BASE_URL}/accounts:lookup?key=${API_KEY}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        email: [email],
-        returnSecureToken: false,
-      }),
-    }
-  )
-
-  if (!response.ok) {
-    return null
-  }
-
-  const data = await response.json()
-  return data.users?.[0]
+// external/handler/auth/query.action.ts
+'use server'
+export async function getSessionAction(data?: GetSessionInput) {
+  return getSessionServer(data)
 }
 
-// リフレッシュトークンの無効化
-export async function revokeRefreshTokens(uid: string) {
-  const response = await fetch(
-    `${IDENTITY_PLATFORM_BASE_URL}/accounts:update?key=${API_KEY}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        localId: uid,
-        validSince: Math.floor(Date.now() / 1000),
-      }),
-    }
-  )
-
-  if (!response.ok) {
-    throw new Error('Failed to revoke tokens')
-  }
+export async function checkPermissionAction(permission: string) {
+  return checkPermissionServer(permission)
 }
 ```
 
