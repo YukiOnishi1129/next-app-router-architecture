@@ -21,6 +21,34 @@ export function loadEnvFiles(): void {
       loadEnv({ path: envPath, override: true });
     }
   }
+
+  expandInterpolations();
+}
+
+function expandInterpolations() {
+  const pattern = /\$\{([A-Z0-9_]+)\}/g;
+  const env = process.env;
+
+  let replaced = false;
+
+  do {
+    replaced = false;
+
+    Object.entries(env).forEach(([key, value]) => {
+      if (typeof value !== "string") return;
+
+      const nextValue = value.replace(pattern, (_, varName) => {
+        const replacement = env[varName];
+        if (replacement === undefined) {
+          return "";
+        }
+        replaced = true;
+        return replacement;
+      });
+
+      env[key] = nextValue;
+    });
+  } while (replaced);
 }
 
 // Automatically load when this module is imported to keep scripts minimal.
