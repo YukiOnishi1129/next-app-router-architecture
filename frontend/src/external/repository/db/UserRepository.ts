@@ -1,6 +1,6 @@
 import { eq, inArray } from "drizzle-orm";
-import { db } from "../client/db/client";
-import { users } from "../client/db/schema";
+import { db } from "@/external/client/db/client";
+import { users } from "@/external/client/db/schema";
 import {
   UserRepository as IUserRepository,
   User,
@@ -8,7 +8,7 @@ import {
   Email,
   UserStatus,
   UserRole,
-} from "../domain";
+} from "@/external/domain";
 
 export class UserRepository implements IUserRepository {
   async findAll(): Promise<User[]> {

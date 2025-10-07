@@ -6,12 +6,14 @@ import {
   UserId,
   AuditLog,
 } from "@/external/domain";
-import { RequestRepository } from "@/external/repository/RequestRepository";
-import { UserRepository } from "@/external/repository/UserRepository";
-import { NotificationRepository } from "@/external/repository/NotificationRepository";
-import { AuditLogRepository } from "@/external/repository/AuditLogRepository";
-import { NotificationService } from "./NotificationService";
-import { AuditService } from "./AuditService";
+import {
+  RequestRepository,
+  UserRepository,
+  NotificationRepository,
+  AuditLogRepository,
+} from "@/external/repository";
+import { NotificationService } from "../notification/NotificationService";
+import { AuditService } from "../audit/AuditService";
 import { db } from "@/external/client/db/client";
 
 // Define ApprovalAction enum since it doesn't exist in the domain

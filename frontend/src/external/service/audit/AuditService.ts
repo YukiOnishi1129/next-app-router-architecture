@@ -5,8 +5,8 @@ import {
   AuditLog,
   AuditEventType,
 } from "@/external/domain";
-import { ApprovalAction } from "./RequestApprovalService";
-import { AuditLogRepository } from "@/external/repository/AuditLogRepository";
+import { ApprovalAction } from "../request/RequestApprovalService";
+import { AuditLogRepository } from "@/external/repository";
 
 export class AuditService {
   private auditLogRepository: AuditLogRepository;

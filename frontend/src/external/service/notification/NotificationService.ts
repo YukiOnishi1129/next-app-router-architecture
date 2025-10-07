@@ -4,13 +4,11 @@ import {
   Comment,
   User,
   UserId,
-  UserRole,
   Notification,
   NotificationId,
   NotificationType,
 } from "@/external/domain";
-import { NotificationRepository } from "@/external/repository/NotificationRepository";
-import { UserRepository } from "@/external/repository/UserRepository";
+import { NotificationRepository, UserRepository } from "@/external/repository";
 
 export interface NotificationChannel {
   sendNotification(notification: Notification, recipient: User): Promise<void>;

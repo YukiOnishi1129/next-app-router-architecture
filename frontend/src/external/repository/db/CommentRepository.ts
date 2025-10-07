@@ -1,12 +1,12 @@
 import { eq, and, desc, count } from "drizzle-orm";
-import { db } from "../client/db/client";
-import { comments } from "../client/db/schema";
+import { db } from "@/external/client/db/client";
+import { comments } from "@/external/client/db/schema";
 import {
   CommentRepository as ICommentRepository,
   Comment,
   CommentId,
   RequestId,
-} from "../domain";
+} from "@/external/domain";
 
 export class CommentRepository implements ICommentRepository {
   private applyPagination<T>(query: T, limit?: number, offset?: number): T {

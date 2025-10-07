@@ -1,6 +1,6 @@
 import { eq, and, gte, lte, desc } from "drizzle-orm";
-import { db } from "../client/db/client";
-import { auditLogs } from "../client/db/schema";
+import { db } from "@/external/client/db/client";
+import { auditLogs } from "@/external/client/db/schema";
 import {
   AuditLogRepository as IAuditLogRepository,
   AuditLog,
@@ -9,7 +9,7 @@ import {
   UserId,
   AuditLogFilter,
   AuditAction,
-} from "../domain";
+} from "@/external/domain";
 
 export class AuditLogRepository implements IAuditLogRepository {
   private applyPagination<

@@ -1,13 +1,13 @@
 import { eq, and, desc, count } from "drizzle-orm";
-import { db } from "../client/db/client";
-import { notifications } from "../client/db/schema";
+import { db } from "@/external/client/db/client";
+import { notifications } from "@/external/client/db/schema";
 import {
   NotificationRepository as INotificationRepository,
   Notification,
   NotificationId,
   NotificationType,
   UserId,
-} from "../domain";
+} from "@/external/domain";
 
 export class NotificationRepository implements INotificationRepository {
   private applyPagination<T>(query: T, limit?: number, offset?: number): T {

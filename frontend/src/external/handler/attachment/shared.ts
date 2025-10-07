@@ -1,5 +1,5 @@
 import { Attachment } from "@/external/domain/attachment";
-import { AttachmentService } from "@/external/service/AttachmentService";
+import { AttachmentService } from "@/external/service/attachment/AttachmentService";
 
 export const attachmentService = new AttachmentService();
 

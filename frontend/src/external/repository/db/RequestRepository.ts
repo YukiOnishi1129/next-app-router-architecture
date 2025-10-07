@@ -1,6 +1,6 @@
 import { eq, desc, count } from "drizzle-orm";
-import { db } from "../client/db/client";
-import { requests } from "../client/db/schema";
+import { db } from "@/external/client/db/client";
+import { requests } from "@/external/client/db/schema";
 import {
   RequestRepository as IRequestRepository,
   Request,
@@ -9,7 +9,7 @@ import {
   RequestStatus,
   RequestType,
   RequestPriority,
-} from "../domain";
+} from "@/external/domain";
 
 // Type mapping between domain and database
 type DbRequestType = "BUDGET" | "LEAVE" | "EQUIPMENT" | "OTHER";

@@ -1,12 +1,12 @@
 import { eq, and } from "drizzle-orm";
-import { db } from "../client/db/client";
-import { attachments } from "../client/db/schema";
+import { db } from "@/external/client/db/client";
+import { attachments } from "@/external/client/db/schema";
 import {
   AttachmentRepository as IAttachmentRepository,
   Attachment,
   AttachmentId,
   RequestId,
-} from "../domain";
+} from "@/external/domain";
 
 export class AttachmentRepository implements IAttachmentRepository {
   async findById(id: AttachmentId): Promise<Attachment | null> {

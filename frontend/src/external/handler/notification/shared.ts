@@ -1,4 +1,4 @@
-import { NotificationService } from "@/external/service/NotificationService";
+import { NotificationService } from "@/external/service/notification/NotificationService";
 import { UserManagementService } from "@/external/service/auth/UserManagementService";
 import { Notification } from "@/external/domain/notification/notification";
 

@@ -1,6 +1,6 @@
 import { User, UserId, UserRole } from "@/external/domain";
-import { UserRepository } from "@/external/repository/UserRepository";
-import { AuditService, AuditContext } from "./AuditService";
+import { UserRepository } from "@/external/repository";
+import { AuditService, AuditContext } from "../audit/AuditService";
 
 export interface AuthenticationResult {
   user: User;

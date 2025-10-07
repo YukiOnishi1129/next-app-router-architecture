@@ -96,6 +96,10 @@ external/
 │   ├── user/          # ユーザーサービス
 │   └── product/       # 商品サービス
 │
+├── repository/         # 永続化層
+│   ├── db/            # Drizzle ORM等の具体リポジトリ実装
+│   └── index.ts       # リポジトリの集約エクスポート
+│
 ├── domain/             # ドメインモデル・ビジネスルール
 │   ├── user/          # ユーザードメイン
 │   ├── product/       # 商品ドメイン
@@ -108,7 +112,32 @@ external/
     ├── gcp/           # Google Cloud Platform
     │   └── identity-platform.ts
     ├── email/         # メールサービス
-    └── storage/       # ストレージサービス
+└── storage/       # ストレージサービス
+```
+
+### リポジトリ層
+
+リポジトリはドメインのリポジトリインターフェースを実装し、データベースや外部システムへの永続化を担います。実装は `repository/db` 配下に置き、Drizzle等のクライアントを利用します。
+
+```typescript
+// external/repository/db/UserRepository.ts
+import "server-only";
+import { db } from "@/external/client/db/client";
+import { users } from "@/external/client/db/schema/users";
+import { eq } from "drizzle-orm";
+import { User } from "@/external/domain";
+
+export class UserRepository {
+  async findById(id: string): Promise<User | null> {
+    const [record] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, id))
+      .limit(1);
+
+    return record ? User.restore(record) : null;
+  }
+}
 ```
 
 ## 実装パターン

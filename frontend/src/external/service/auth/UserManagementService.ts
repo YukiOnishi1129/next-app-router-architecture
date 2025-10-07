@@ -6,7 +6,7 @@
  */
 
 import { User, UserId, Email, UserRole, UserStatus } from "@/external/domain";
-import { UserRepository } from "@/external/repository/UserRepository";
+import { UserRepository } from "@/external/repository";
 
 export interface UserProfile {
   id: string;

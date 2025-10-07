@@ -6,11 +6,13 @@ import {
   User,
   UserId,
 } from "@/external/domain";
-import { CommentRepository } from "@/external/repository/CommentRepository";
-import { RequestRepository } from "@/external/repository/RequestRepository";
-import { UserRepository } from "@/external/repository/UserRepository";
-import { NotificationService } from "./NotificationService";
-import { AuditService, type AuditContext } from "./AuditService";
+import {
+  CommentRepository,
+  RequestRepository,
+  UserRepository,
+} from "@/external/repository";
+import { NotificationService } from "../notification/NotificationService";
+import { AuditService, type AuditContext } from "../audit/AuditService";
 
 interface CommentContext {
   requestId: string;

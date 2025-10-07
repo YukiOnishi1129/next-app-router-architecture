@@ -12,7 +12,7 @@ import {
   UserRepository,
 } from "@/external/repository";
 import { AuditEventType } from "@/external/domain";
-import { AuditService, AuditContext } from "./AuditService";
+import { AuditService, AuditContext } from "../audit/AuditService";
 
 type UploadAttachmentParams = {
   requestId: string;

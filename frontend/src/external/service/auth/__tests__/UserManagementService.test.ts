@@ -6,11 +6,11 @@
 
 import { beforeEach, describe, expect, it, vi, type Mocked } from "vitest";
 import { UserManagementService } from "../UserManagementService";
-import { UserRepository } from "@/external/repository/UserRepository";
+import { UserRepository } from "@/external/repository/db/UserRepository";
 import { User, UserRole, UserStatus } from "@/external/domain";
 
 // Mock the repository
-vi.mock("@/external/repository/UserRepository");
+vi.mock("@/external/repository/db/UserRepository");
 
 describe("UserManagementService", () => {
   let userService: UserManagementService;

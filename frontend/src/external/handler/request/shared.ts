@@ -1,7 +1,7 @@
-import { RequestWorkflowService } from "@/external/service/RequestWorkflowService";
-import { RequestApprovalService } from "@/external/service/RequestApprovalService";
-import { NotificationService } from "@/external/service/NotificationService";
-import { AuditService } from "@/external/service/AuditService";
+import { RequestWorkflowService } from "@/external/service/request/RequestWorkflowService";
+import { RequestApprovalService } from "@/external/service/request/RequestApprovalService";
+import { NotificationService } from "@/external/service/notification/NotificationService";
+import { AuditService } from "@/external/service/audit/AuditService";
 import { UserManagementService } from "@/external/service/auth/UserManagementService";
 import { Request } from "@/external/domain";
 import {
@@ -9,7 +9,7 @@ import {
   RequestStatus,
   RequestType,
 } from "@/external/domain/request/request-status";
-import { RequestRepository } from "@/external/repository/RequestRepository";
+import { RequestRepository } from "@/external/repository";
 
 const notificationService = new NotificationService();
 const auditService = new AuditService();

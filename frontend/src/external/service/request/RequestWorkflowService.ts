@@ -7,9 +7,9 @@ import {
   User,
   UserId,
 } from "@/external/domain";
-import { RequestRepository } from "@/external/repository/RequestRepository";
-import { NotificationService } from "./NotificationService";
-import { AuditService } from "./AuditService";
+import { RequestRepository } from "@/external/repository";
+import { NotificationService } from "../notification/NotificationService";
+import { AuditService } from "../audit/AuditService";
 import { db } from "@/external/client/db/client";
 
 export interface CreateRequestDto {

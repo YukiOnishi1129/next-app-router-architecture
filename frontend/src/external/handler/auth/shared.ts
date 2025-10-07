@@ -3,7 +3,7 @@ import { UserManagementService } from "@/external/service/auth/UserManagementSer
 import {
   AuditService,
   type AuditContext,
-} from "@/external/service/AuditService";
+} from "@/external/service/audit/AuditService";
 
 export const authService = new AuthenticationService({
   apiKey: process.env.GCP_IDENTITY_PLATFORM_API_KEY!,
