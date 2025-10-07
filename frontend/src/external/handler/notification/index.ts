@@ -1,0 +1,52 @@
+"use server";
+
+export {
+  markNotificationReadAction,
+  markAllNotificationsReadAction,
+  updateNotificationPreferencesAction,
+  sendTestNotificationAction,
+} from "./command.action";
+
+export {
+  listNotificationsAction,
+  getNotificationPreferencesAction,
+} from "./query.action";
+
+export {
+  markNotificationReadServer,
+  markAllNotificationsReadServer,
+  updateNotificationPreferencesServer,
+  sendTestNotificationServer,
+} from "./command.server";
+
+export {
+  listNotificationsServer,
+  getNotificationPreferencesServer,
+} from "./query.server";
+
+// Backwards-compatible aliases
+export {
+  markNotificationReadAction as markNotificationAsRead,
+  markAllNotificationsReadAction as markAllNotificationsAsRead,
+  updateNotificationPreferencesAction as updateNotificationPreferences,
+  sendTestNotificationAction as sendTestNotification,
+} from "./command.action";
+
+export {
+  listNotificationsAction as getNotifications,
+  getNotificationPreferencesAction as getNotificationPreferences,
+} from "./query.action";
+
+export type {
+  MarkNotificationReadInput,
+  MarkAllNotificationsReadInput,
+  UpdateNotificationPreferencesInput,
+  NotificationCommandResponse,
+  UpdateNotificationPreferencesResponse,
+} from "./command.server";
+
+export type {
+  ListNotificationsInput,
+  ListNotificationsResponse,
+  GetNotificationPreferencesResponse,
+} from "./query.server";
