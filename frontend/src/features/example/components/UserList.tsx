@@ -1,46 +1,46 @@
-'use client'
+"use client";
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState } from "react";
 
 // Example component that fetches data
 interface User {
-  id: number
-  name: string
-  email: string
+  id: number;
+  name: string;
+  email: string;
 }
 
 async function getUsers(): Promise<User[]> {
   // Simulate API call
-  const response = await fetch('https://jsonplaceholder.typicode.com/users')
+  const response = await fetch("https://jsonplaceholder.typicode.com/users");
   if (!response.ok) {
-    throw new Error('Failed to fetch users')
+    throw new Error("Failed to fetch users");
   }
-  return response.json()
+  return response.json();
 }
 
 export default function UserList() {
-  const [users, setUsers] = useState<User[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     getUsers()
       .then((data) => {
-        setUsers(data)
-        setLoading(false)
+        setUsers(data);
+        setLoading(false);
       })
       .catch((err) => {
-        setError(err.message)
-        setLoading(false)
-      })
-  }, [])
+        setError(err.message);
+        setLoading(false);
+      });
+  }, []);
 
   if (loading) {
-    return <div>Loading...</div>
+    return <div>Loading...</div>;
   }
 
   if (error) {
-    return <div>Error: {error}</div>
+    return <div>Error: {error}</div>;
   }
 
   return (
@@ -50,16 +50,16 @@ export default function UserList() {
         {users.slice(0, 5).map((user) => (
           <li key={user.id} className="py-4" data-testid={`user-${user.id}`}>
             <div className="flex items-center space-x-4">
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium text-gray-900">
                   {user.name}
                 </p>
-                <p className="text-sm text-gray-500 truncate">{user.email}</p>
+                <p className="truncate text-sm text-gray-500">{user.email}</p>
               </div>
             </div>
           </li>
         ))}
       </ul>
     </div>
-  )
+  );
 }

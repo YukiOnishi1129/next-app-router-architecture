@@ -1,20 +1,20 @@
-import '@testing-library/jest-dom'
-import { cleanup } from '@testing-library/react'
-import { afterEach, vi } from 'vitest'
+import "@testing-library/jest-dom";
+import { cleanup } from "@testing-library/react";
+import { afterEach, vi } from "vitest";
 
 // Mock CSS imports
-vi.mock('../app/globals.css', () => ({}))
+vi.mock("../app/globals.css", () => ({}));
 
 // Import Next.js mocks
-import './mocks/next'
+import "./mocks/next";
 
 // Cleanup after each test case (e.g. clearing jsdom)
 afterEach(() => {
-  cleanup()
-})
+  cleanup();
+});
 
 // Mock Next.js router
-vi.mock('next/navigation', () => ({
+vi.mock("next/navigation", () => ({
   useRouter() {
     return {
       prefetch: vi.fn(),
@@ -23,44 +23,44 @@ vi.mock('next/navigation', () => ({
       refresh: vi.fn(),
       back: vi.fn(),
       forward: vi.fn(),
-    }
+    };
   },
   usePathname() {
-    return '/'
+    return "/";
   },
   useSearchParams() {
-    return new URLSearchParams()
+    return new URLSearchParams();
   },
   useParams() {
-    return {}
+    return {};
   },
-}))
+}));
 
 // Mock next-auth
-vi.mock('next-auth/react', () => ({
+vi.mock("next-auth/react", () => ({
   SessionProvider: ({ children }: { children: React.ReactNode }) => children,
   useSession: () => ({
     data: {
       user: {
-        name: 'Test User',
-        email: 'test@example.com',
-        image: '/test-avatar.png',
+        name: "Test User",
+        email: "test@example.com",
+        image: "/test-avatar.png",
       },
       expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
     },
-    status: 'authenticated',
+    status: "authenticated",
   }),
   signIn: vi.fn(),
   signOut: vi.fn(),
-}))
+}));
 
 // Mock the QueryProvider
-vi.mock('@/shared/providers/QueryProvider', () => ({
+vi.mock("@/shared/providers/QueryProvider", () => ({
   QueryProvider: ({ children }: { children: React.ReactNode }) => children,
-}))
+}));
 
 // Mock window.matchMedia
-Object.defineProperty(window, 'matchMedia', {
+Object.defineProperty(window, "matchMedia", {
   writable: true,
   value: vi.fn().mockImplementation((query) => ({
     matches: false,
@@ -72,18 +72,18 @@ Object.defineProperty(window, 'matchMedia', {
     removeEventListener: vi.fn(),
     dispatchEvent: vi.fn(),
   })),
-})
+});
 
 // Mock IntersectionObserver
 global.IntersectionObserver = vi.fn().mockImplementation(() => ({
   observe: vi.fn(),
   unobserve: vi.fn(),
   disconnect: vi.fn(),
-})) as any
+})) as any; // eslint-disable-line @typescript-eslint/no-explicit-any
 
 // Mock ResizeObserver
 global.ResizeObserver = vi.fn().mockImplementation(() => ({
   observe: vi.fn(),
   unobserve: vi.fn(),
   disconnect: vi.fn(),
-})) as any
+})) as any; // eslint-disable-line @typescript-eslint/no-explicit-any

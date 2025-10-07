@@ -40,13 +40,19 @@ describe("ContactForm Component", () => {
     // Fill in valid data for other fields
     await user.type(nameInput, "John Doe");
     await user.type(emailInput, "notanemail");
-    await user.type(messageInput, "This is a valid message with enough characters");
-    
+    await user.type(
+      messageInput,
+      "This is a valid message with enough characters"
+    );
+
     await user.click(submitButton);
 
-    await waitFor(() => {
-      expect(screen.getByText("Invalid email format")).toBeInTheDocument();
-    }, { timeout: 3000 });
+    await waitFor(
+      () => {
+        expect(screen.getByText("Invalid email format")).toBeInTheDocument();
+      },
+      { timeout: 3000 }
+    );
   });
 
   it("validates message length", async () => {

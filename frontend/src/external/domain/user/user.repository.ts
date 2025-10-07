@@ -1,7 +1,7 @@
-import { Repository } from '../shared/repository';
-import { User } from './user';
-import { UserId } from './user-id';
-import { Email } from '../shared/value-objects';
+import { Repository } from "../shared/repository";
+import { User } from "./user";
+import { UserId } from "./user-id";
+import { Email } from "../shared/value-objects";
 
 /**
  * User repository interface

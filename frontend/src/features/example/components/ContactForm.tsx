@@ -1,111 +1,113 @@
-'use client'
+"use client";
 
-import { useState, FormEvent } from 'react'
-import { Button } from '@/shared/components/ui/Button'
+import { useState, FormEvent } from "react";
+import { Button } from "@/shared/components/ui/Button";
 
 interface FormData {
-  name: string
-  email: string
-  message: string
+  name: string;
+  email: string;
+  message: string;
 }
 
 interface FormErrors {
-  name?: string
-  email?: string
-  message?: string
+  name?: string;
+  email?: string;
+  message?: string;
 }
 
 interface ContactFormProps {
-  onSubmit?: (data: FormData) => Promise<void>
+  onSubmit?: (data: FormData) => Promise<void>;
 }
 
 export function ContactForm({ onSubmit }: ContactFormProps) {
   const [formData, setFormData] = useState<FormData>({
-    name: '',
-    email: '',
-    message: '',
-  })
-  const [errors, setErrors] = useState<FormErrors>({})
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle')
+    name: "",
+    email: "",
+    message: "",
+  });
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<
+    "idle" | "success" | "error"
+  >("idle");
 
   const validateForm = (): boolean => {
-    const newErrors: FormErrors = {}
+    const newErrors: FormErrors = {};
 
     if (!formData.name.trim()) {
-      newErrors.name = 'Name is required'
+      newErrors.name = "Name is required";
     }
 
     if (!formData.email.trim()) {
-      newErrors.email = 'Email is required'
+      newErrors.email = "Email is required";
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Invalid email format'
+      newErrors.email = "Invalid email format";
     }
 
     if (!formData.message.trim()) {
-      newErrors.message = 'Message is required'
+      newErrors.message = "Message is required";
     } else if (formData.message.length < 10) {
-      newErrors.message = 'Message must be at least 10 characters'
+      newErrors.message = "Message must be at least 10 characters";
     }
 
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault()
-    setSubmitStatus('idle')
+    e.preventDefault();
+    setSubmitStatus("idle");
 
     if (!validateForm()) {
-      return
+      return;
     }
 
-    setIsSubmitting(true)
+    setIsSubmitting(true);
 
     try {
       if (onSubmit) {
-        await onSubmit(formData)
+        await onSubmit(formData);
       } else {
         // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 1000))
+        await new Promise((resolve) => setTimeout(resolve, 1000));
       }
-      
-      setSubmitStatus('success')
-      setFormData({ name: '', email: '', message: '' })
-      setErrors({})
-    } catch (error) {
-      setSubmitStatus('error')
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
 
-  const handleChange = (field: keyof FormData) => (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    setFormData((prev) => ({ ...prev, [field]: e.target.value }))
-    // Clear error for this field when user starts typing
-    if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: undefined }))
+      setSubmitStatus("success");
+      setFormData({ name: "", email: "", message: "" });
+      setErrors({});
+    } catch {
+      setSubmitStatus("error");
+    } finally {
+      setIsSubmitting(false);
     }
-  }
+  };
+
+  const handleChange =
+    (field: keyof FormData) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      setFormData((prev) => ({ ...prev, [field]: e.target.value }));
+      // Clear error for this field when user starts typing
+      if (errors[field]) {
+        setErrors((prev) => ({ ...prev, [field]: undefined }));
+      }
+    };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 max-w-md mx-auto p-6">
-      <h2 className="text-2xl font-bold mb-4">Contact Us</h2>
+    <form onSubmit={handleSubmit} className="mx-auto max-w-md space-y-4 p-6">
+      <h2 className="mb-4 text-2xl font-bold">Contact Us</h2>
 
       <div>
-        <label htmlFor="name" className="block text-sm font-medium mb-1">
+        <label htmlFor="name" className="mb-1 block text-sm font-medium">
           Name
         </label>
         <input
           id="name"
           type="text"
           value={formData.name}
-          onChange={handleChange('name')}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          onChange={handleChange("name")}
+          className="w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
           aria-invalid={!!errors.name}
-          aria-describedby={errors.name ? 'name-error' : undefined}
+          aria-describedby={errors.name ? "name-error" : undefined}
         />
         {errors.name && (
           <p id="name-error" className="mt-1 text-sm text-red-600">
@@ -115,17 +117,17 @@ export function ContactForm({ onSubmit }: ContactFormProps) {
       </div>
 
       <div>
-        <label htmlFor="email" className="block text-sm font-medium mb-1">
+        <label htmlFor="email" className="mb-1 block text-sm font-medium">
           Email
         </label>
         <input
           id="email"
           type="email"
           value={formData.email}
-          onChange={handleChange('email')}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          onChange={handleChange("email")}
+          className="w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
           aria-invalid={!!errors.email}
-          aria-describedby={errors.email ? 'email-error' : undefined}
+          aria-describedby={errors.email ? "email-error" : undefined}
         />
         {errors.email && (
           <p id="email-error" className="mt-1 text-sm text-red-600">
@@ -135,17 +137,17 @@ export function ContactForm({ onSubmit }: ContactFormProps) {
       </div>
 
       <div>
-        <label htmlFor="message" className="block text-sm font-medium mb-1">
+        <label htmlFor="message" className="mb-1 block text-sm font-medium">
           Message
         </label>
         <textarea
           id="message"
           value={formData.message}
-          onChange={handleChange('message')}
+          onChange={handleChange("message")}
           rows={4}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
           aria-invalid={!!errors.message}
-          aria-describedby={errors.message ? 'message-error' : undefined}
+          aria-describedby={errors.message ? "message-error" : undefined}
         />
         {errors.message && (
           <p id="message-error" className="mt-1 text-sm text-red-600">
@@ -154,25 +156,21 @@ export function ContactForm({ onSubmit }: ContactFormProps) {
         )}
       </div>
 
-      <Button
-        type="submit"
-        disabled={isSubmitting}
-        className="w-full"
-      >
-        {isSubmitting ? 'Sending...' : 'Send Message'}
+      <Button type="submit" disabled={isSubmitting} className="w-full">
+        {isSubmitting ? "Sending..." : "Send Message"}
       </Button>
 
-      {submitStatus === 'success' && (
-        <p className="text-green-600 text-sm" role="alert">
+      {submitStatus === "success" && (
+        <p className="text-sm text-green-600" role="alert">
           Message sent successfully!
         </p>
       )}
 
-      {submitStatus === 'error' && (
-        <p className="text-red-600 text-sm" role="alert">
+      {submitStatus === "error" && (
+        <p className="text-sm text-red-600" role="alert">
           Failed to send message. Please try again.
         </p>
       )}
     </form>
-  )
+  );
 }

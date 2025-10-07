@@ -1,22 +1,22 @@
-import { Email } from '../shared/value-objects';
-import { UserId } from './user-id';
+import { Email } from "../shared/value-objects";
+import { UserId } from "./user-id";
 
 /**
  * User status enum
  */
 export enum UserStatus {
-  ACTIVE = 'ACTIVE',
-  INACTIVE = 'INACTIVE',
-  SUSPENDED = 'SUSPENDED',
+  ACTIVE = "ACTIVE",
+  INACTIVE = "INACTIVE",
+  SUSPENDED = "SUSPENDED",
 }
 
 /**
  * User role enum
  */
 export enum UserRole {
-  ADMIN = 'ADMIN',
-  MEMBER = 'MEMBER',
-  GUEST = 'GUEST',
+  ADMIN = "ADMIN",
+  MEMBER = "MEMBER",
+  GUEST = "GUEST",
 }
 
 /**

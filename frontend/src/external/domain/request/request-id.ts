@@ -1,4 +1,4 @@
-import { UUID } from '../shared/value-objects';
+import { UUID } from "../shared/value-objects";
 
 /**
  * RequestId value object

@@ -1,6 +1,6 @@
-import { Specification } from '../../shared/specification';
-import { Request } from '../request';
-import { RequestPriority, RequestStatus } from '../request-status';
+import { Specification } from "../../shared/specification";
+import { Request } from "../request";
+import { RequestPriority, RequestStatus } from "../request-status";
 
 /**
  * Specification to identify urgent requests that need attention
@@ -19,7 +19,8 @@ export class UrgentRequestSpecification extends Specification<Request> {
     ) {
       const submittedAt = request.getSubmittedAt();
       if (submittedAt) {
-        const hoursSinceSubmission = (Date.now() - submittedAt.getTime()) / (1000 * 60 * 60);
+        const hoursSinceSubmission =
+          (Date.now() - submittedAt.getTime()) / (1000 * 60 * 60);
         return hoursSinceSubmission > 24;
       }
     }

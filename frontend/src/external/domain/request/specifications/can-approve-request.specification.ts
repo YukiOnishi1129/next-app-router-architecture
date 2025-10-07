@@ -1,11 +1,14 @@
-import { Specification } from '../../shared/specification';
-import { Request } from '../request';
-import { User, UserRole } from '../../user';
+import { Specification } from "../../shared/specification";
+import { Request } from "../request";
+import { User, UserRole } from "../../user";
 
 /**
  * Specification to check if a user can approve a request
  */
-export class CanApproveRequestSpecification extends Specification<{ request: Request; user: User }> {
+export class CanApproveRequestSpecification extends Specification<{
+  request: Request;
+  user: User;
+}> {
   isSatisfiedBy(candidate: { request: Request; user: User }): boolean {
     const { request, user } = candidate;
 
