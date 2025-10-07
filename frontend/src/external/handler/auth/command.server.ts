@@ -2,78 +2,51 @@ import "server-only";
 
 import { z } from "zod";
 import { cookies } from "next/headers";
-import { AuthenticationService } from "@/external/service/auth/AuthenticationService";
-import { UserManagementService } from "@/external/service/auth/UserManagementService";
 import {
-  AuditService,
-  type AuditContext,
-} from "@/external/service/AuditService";
+  authService,
+  userManagementService,
+  auditService,
+  SERVER_CONTEXT,
+} from "./shared";
 
-const signInSchema = z.object({
+const createSessionSchema = z.object({
   email: z.email(),
   password: z.string().min(6),
-  redirectUrl: z.url().optional(),
+  redirectUrl: z.string().url().optional(),
 });
 
-const signUpSchema = z.object({
+const createUserSchema = z.object({
   email: z.email(),
   password: z.string().min(6),
   name: z.string().min(1).optional(),
-  redirectUrl: z.url().optional(),
+  redirectUrl: z.string().url().optional(),
 });
 
-const sessionSchema = z.object({
-  userId: z.string().optional(),
-});
+export type CreateSessionInput = z.input<typeof createSessionSchema>;
+export type CreateUserInput = z.input<typeof createUserSchema>;
 
-export type SignInInput = z.input<typeof signInSchema>;
-export type SignUpInput = z.input<typeof signUpSchema>;
-export type SessionInput = z.input<typeof sessionSchema>;
-
-export type SignInResponse = {
+export type CreateSessionResponse = {
   success: boolean;
   error?: string;
   redirectUrl?: string;
 };
 
-export type SignUpResponse = {
+export type CreateUserResponse = {
   success: boolean;
   error?: string;
   redirectUrl?: string;
 };
 
-export type SignOutResponse = {
+export type DeleteSessionResponse = {
   success: boolean;
   error?: string;
 };
 
-export type SessionResponse = {
-  user?: {
-    id: string;
-    name: string;
-    email: string;
-    status: string;
-    roles: string[];
-  };
-  isAuthenticated: boolean;
-};
-
-const authService = new AuthenticationService({
-  apiKey: process.env.GCP_IDENTITY_PLATFORM_API_KEY!,
-  projectId: process.env.GCP_PROJECT_ID!,
-});
-
-const userManagementService = new UserManagementService();
-const auditService = new AuditService();
-
-const SERVER_CONTEXT: AuditContext = {
-  ipAddress: "server",
-  userAgent: "server-action",
-};
-
-export async function signInServer(data: SignInInput): Promise<SignInResponse> {
+export async function createSessionServer(
+  data: CreateSessionInput
+): Promise<CreateSessionResponse> {
   try {
-    const validated = signInSchema.parse(data);
+    const validated = createSessionSchema.parse(data);
 
     const authResult = await authService.signInWithEmailPassword(
       validated.email,
@@ -125,9 +98,11 @@ export async function signInServer(data: SignInInput): Promise<SignInResponse> {
   }
 }
 
-export async function signUpServer(data: SignUpInput): Promise<SignUpResponse> {
+export async function createUserServer(
+  data: CreateUserInput
+): Promise<CreateUserResponse> {
   try {
-    const validated = signUpSchema.parse(data);
+    const validated = createUserSchema.parse(data);
 
     const authResult = await authService.signUpWithEmailPassword(
       validated.email,
@@ -183,7 +158,9 @@ export async function signUpServer(data: SignUpInput): Promise<SignUpResponse> {
   }
 }
 
-export async function signOutServer(userId?: string): Promise<SignOutResponse> {
+export async function deleteSessionServer(
+  userId?: string
+): Promise<DeleteSessionResponse> {
   try {
     const cookieStore = await cookies();
     const storedUserId = userId ?? cookieStore.get("user-id")?.value;
@@ -219,59 +196,4 @@ export async function signOutServer(userId?: string): Promise<SignOutResponse> {
       error: error instanceof Error ? error.message : "Sign out failed",
     };
   }
-}
-
-export async function getSessionServer(
-  data?: SessionInput
-): Promise<SessionResponse> {
-  try {
-    const validated = sessionSchema.parse(data ?? {});
-    const cookieStore = await cookies();
-    const token = cookieStore.get("auth-token")?.value;
-    const storedUserId = cookieStore.get("user-id")?.value;
-
-    if (!token || !storedUserId) {
-      return { isAuthenticated: false };
-    }
-
-    const tokenInfo = await authService.verifyToken(token);
-    if (!tokenInfo) {
-      cookieStore.delete("auth-token");
-      cookieStore.delete("user-id");
-      return { isAuthenticated: false };
-    }
-
-    const user = await userManagementService.findUserById(storedUserId);
-    if (!user) {
-      return { isAuthenticated: false };
-    }
-
-    if (validated.userId && validated.userId !== user.getId().getValue()) {
-      return { isAuthenticated: false };
-    }
-
-    return {
-      user: userManagementService.toUserProfile(user),
-      isAuthenticated: true,
-    };
-  } catch (error) {
-    console.error("Session error:", error);
-    return { isAuthenticated: false };
-  }
-}
-
-export async function checkPermissionServer(
-  permission: string
-): Promise<boolean> {
-  const session = await getSessionServer();
-  if (!session.isAuthenticated || !session.user) {
-    return false;
-  }
-
-  const user = await userManagementService.findUserById(session.user.id);
-  if (!user) {
-    return false;
-  }
-
-  return userManagementService.hasPermission(user, permission);
 }
