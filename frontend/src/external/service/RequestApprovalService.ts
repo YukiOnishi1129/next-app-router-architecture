@@ -39,6 +39,55 @@ export class RequestApprovalService {
   }
 
   /**
+   * Start review process for a request
+   */
+  async startReview(requestId: string, reviewer: User): Promise<Request> {
+    const request = await this.processApproval(
+      requestId,
+      reviewer,
+      ApprovalAction.NEEDS_INFO
+    );
+
+    if (!request.isInReview()) {
+      throw new Error("Failed to move request into review state");
+    }
+
+    return request;
+  }
+
+  /**
+   * Approve request
+   */
+  async approveRequest(
+    requestId: string,
+    approver: User,
+    comment?: string
+  ): Promise<Request> {
+    return this.processApproval(
+      requestId,
+      approver,
+      ApprovalAction.APPROVED,
+      comment
+    );
+  }
+
+  /**
+   * Reject request
+   */
+  async rejectRequest(
+    requestId: string,
+    reviewer: User,
+    reason: string
+  ): Promise<Request> {
+    return this.processApproval(
+      requestId,
+      reviewer,
+      ApprovalAction.REJECTED,
+      reason
+    );
+  }
+
+  /**
    * Process approval action on a request
    */
   async processApproval(

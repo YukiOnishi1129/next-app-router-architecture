@@ -3,15 +3,16 @@
 import { z } from "zod";
 import { RequestWorkflowService } from "@/external/service/RequestWorkflowService";
 import { RequestApprovalService } from "@/external/service/RequestApprovalService";
-import { RequestRepository, UserRepository } from "@/external/domain";
 import { NotificationService } from "@/external/service/NotificationService";
 import { AuditService } from "@/external/service/AuditService";
+import { UserManagementService } from "@/external/service";
 import { getSession } from "./auth";
 import {
   RequestType,
   RequestPriority,
   RequestStatus,
 } from "@/external/domain/request/request-status";
+import { Request } from "@/external/domain";
 
 // Validation schemas
 const createRequestSchema = z.object({
@@ -58,47 +59,72 @@ const assignRequestSchema = z.object({
   assigneeId: z.string(),
 });
 
+type CreateRequestInput = z.input<typeof createRequestSchema>;
+type UpdateRequestInput = z.input<typeof updateRequestSchema>;
+type SubmitRequestInput = z.input<typeof submitRequestSchema>;
+type ReviewRequestInput = z.input<typeof reviewRequestSchema>;
+type ApproveRequestInput = z.input<typeof approveRequestSchema>;
+type RejectRequestInput = z.input<typeof rejectRequestSchema>;
+type CancelRequestInput = z.input<typeof cancelRequestSchema>;
+type AssignRequestInput = z.input<typeof assignRequestSchema>;
+
 // Response types
+type RequestDto = {
+  id: string;
+  title: string;
+  description: string;
+  type: RequestType;
+  priority: RequestPriority;
+  status: RequestStatus;
+  requesterId: string;
+  assigneeId?: string;
+  createdAt: string;
+  updatedAt: string;
+  submittedAt?: string;
+  reviewedAt?: string;
+  reviewerId?: string;
+};
+
 export type RequestResponse = {
   success: boolean;
   error?: string;
-  request?: {
-    id: string;
-    title: string;
-    description: string;
-    type: RequestType;
-    priority: RequestPriority;
-    status: RequestStatus;
-    requesterId: string;
-    assigneeId?: string;
-    createdAt: string;
-    updatedAt: string;
-    submittedAt?: string;
-    reviewedAt?: string;
-    reviewerId?: string;
-  };
+  request?: RequestDto;
 };
 
 export type RequestListResponse = {
   success: boolean;
   error?: string;
-  requests?: Array<RequestResponse["request"]>;
+  requests?: Array<RequestDto>;
   total?: number;
 };
 
+function mapRequestToDto(request: Request): RequestDto {
+  return {
+    id: request.getId().getValue(),
+    title: request.getTitle(),
+    description: request.getDescription(),
+    type: request.getType(),
+    priority: request.getPriority(),
+    status: request.getStatus(),
+    requesterId: request.getRequesterId().getValue(),
+    assigneeId: request.getAssigneeId()?.getValue(),
+    createdAt: request.getCreatedAt().toISOString(),
+    updatedAt: request.getUpdatedAt().toISOString(),
+    submittedAt: request.getSubmittedAt()?.toISOString() ?? undefined,
+    reviewedAt: request.getReviewedAt()?.toISOString() ?? undefined,
+    reviewerId: request.getReviewerId()?.getValue() ?? undefined,
+  };
+}
+
 // Initialize services
-const requestRepository = new RequestRepository();
-const userRepository = new UserRepository();
 const notificationService = new NotificationService();
 const auditService = new AuditService();
+const userService = new UserManagementService();
 const workflowService = new RequestWorkflowService(
-  requestRepository,
   notificationService,
   auditService
 );
 const approvalService = new RequestApprovalService(
-  requestRepository,
-  userRepository,
   notificationService,
   auditService
 );
@@ -106,7 +132,9 @@ const approvalService = new RequestApprovalService(
 /**
  * Create a new request
  */
-export async function createRequest(data: unknown): Promise<RequestResponse> {
+export async function createRequest(
+  data: CreateRequestInput
+): Promise<RequestResponse> {
   try {
     const session = await getSession();
     if (!session.isAuthenticated || !session.user) {
@@ -117,7 +145,7 @@ export async function createRequest(data: unknown): Promise<RequestResponse> {
     }
 
     const validated = createRequestSchema.parse(data);
-    const user = await userRepository.findById(session.user.id);
+    const user = await userService.findUserById(session.user.id);
     if (!user) {
       return {
         success: false,
@@ -128,16 +156,14 @@ export async function createRequest(data: unknown): Promise<RequestResponse> {
     const request = await workflowService.createRequest(user, {
       title: validated.title,
       description: validated.description,
-      category: validated.type as any, // Type mismatch between service and domain
-      priority: validated.priority as any,
-      metadata: validated.assigneeId
-        ? { assigneeId: validated.assigneeId }
-        : undefined,
+      type: validated.type,
+      priority: validated.priority,
+      assigneeId: validated.assigneeId,
     });
 
     return {
       success: true,
-      request: request.toJSON() as any,
+      request: mapRequestToDto(request),
     };
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -158,7 +184,9 @@ export async function createRequest(data: unknown): Promise<RequestResponse> {
 /**
  * Update a request
  */
-export async function updateRequest(data: unknown): Promise<RequestResponse> {
+export async function updateRequest(
+  data: UpdateRequestInput
+): Promise<RequestResponse> {
   try {
     const session = await getSession();
     if (!session.isAuthenticated || !session.user) {
@@ -169,7 +197,7 @@ export async function updateRequest(data: unknown): Promise<RequestResponse> {
     }
 
     const validated = updateRequestSchema.parse(data);
-    const user = await userRepository.findById(session.user.id);
+    const user = await userService.findUserById(session.user.id);
     if (!user) {
       return {
         success: false,
@@ -183,14 +211,14 @@ export async function updateRequest(data: unknown): Promise<RequestResponse> {
       {
         title: validated.title,
         description: validated.description,
-        category: validated.type as any,
-        priority: validated.priority as any,
+        type: validated.type,
+        priority: validated.priority,
       }
     );
 
     return {
       success: true,
-      request: request.toJSON() as any,
+      request: mapRequestToDto(request),
     };
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -211,7 +239,9 @@ export async function updateRequest(data: unknown): Promise<RequestResponse> {
 /**
  * Submit a request for approval
  */
-export async function submitRequest(data: unknown): Promise<RequestResponse> {
+export async function submitRequest(
+  data: SubmitRequestInput
+): Promise<RequestResponse> {
   try {
     const session = await getSession();
     if (!session.isAuthenticated || !session.user) {
@@ -222,31 +252,22 @@ export async function submitRequest(data: unknown): Promise<RequestResponse> {
     }
 
     const validated = submitRequestSchema.parse(data);
-    const request = await requestRepository.findById(validated.requestId);
-    if (!request) {
+    const user = await userService.findUserById(session.user.id);
+    if (!user) {
       return {
         success: false,
-        error: "Request not found",
+        error: "User not found",
       };
     }
 
-    // Verify ownership
-    if (request.getRequesterId().getValue() !== session.user.id) {
-      return {
-        success: false,
-        error: "Unauthorized",
-      };
-    }
-
-    request.submit();
-    await requestRepository.save(request);
-
-    // Send notifications
-    await notificationService.notifyRequestSubmitted(request);
+    const request = await workflowService.submitRequest(
+      validated.requestId,
+      user
+    );
 
     return {
       success: true,
-      request: request.toJSON() as any,
+      request: mapRequestToDto(request),
     };
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -267,7 +288,9 @@ export async function submitRequest(data: unknown): Promise<RequestResponse> {
 /**
  * Start reviewing a request
  */
-export async function reviewRequest(data: unknown): Promise<RequestResponse> {
+export async function reviewRequest(
+  data: ReviewRequestInput
+): Promise<RequestResponse> {
   try {
     const session = await getSession();
     if (!session.isAuthenticated || !session.user) {
@@ -278,7 +301,7 @@ export async function reviewRequest(data: unknown): Promise<RequestResponse> {
     }
 
     const validated = reviewRequestSchema.parse(data);
-    const reviewer = await userRepository.findById(session.user.id);
+    const reviewer = await userService.findUserById(session.user.id);
     if (!reviewer) {
       return {
         success: false,
@@ -293,7 +316,7 @@ export async function reviewRequest(data: unknown): Promise<RequestResponse> {
 
     return {
       success: true,
-      request: request.toJSON() as any,
+      request: mapRequestToDto(request),
     };
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -313,7 +336,9 @@ export async function reviewRequest(data: unknown): Promise<RequestResponse> {
 /**
  * Approve a request
  */
-export async function approveRequest(data: unknown): Promise<RequestResponse> {
+export async function approveRequest(
+  data: ApproveRequestInput
+): Promise<RequestResponse> {
   try {
     const session = await getSession();
     if (!session.isAuthenticated || !session.user) {
@@ -324,7 +349,7 @@ export async function approveRequest(data: unknown): Promise<RequestResponse> {
     }
 
     const validated = approveRequestSchema.parse(data);
-    const approver = await userRepository.findById(session.user.id);
+    const approver = await userService.findUserById(session.user.id);
     if (!approver) {
       return {
         success: false,
@@ -340,7 +365,7 @@ export async function approveRequest(data: unknown): Promise<RequestResponse> {
 
     return {
       success: true,
-      request: request.toJSON() as any,
+      request: mapRequestToDto(request),
     };
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -361,7 +386,9 @@ export async function approveRequest(data: unknown): Promise<RequestResponse> {
 /**
  * Reject a request
  */
-export async function rejectRequest(data: unknown): Promise<RequestResponse> {
+export async function rejectRequest(
+  data: RejectRequestInput
+): Promise<RequestResponse> {
   try {
     const session = await getSession();
     if (!session.isAuthenticated || !session.user) {
@@ -372,7 +399,7 @@ export async function rejectRequest(data: unknown): Promise<RequestResponse> {
     }
 
     const validated = rejectRequestSchema.parse(data);
-    const reviewer = await userRepository.findById(session.user.id);
+    const reviewer = await userService.findUserById(session.user.id);
     if (!reviewer) {
       return {
         success: false,
@@ -388,7 +415,7 @@ export async function rejectRequest(data: unknown): Promise<RequestResponse> {
 
     return {
       success: true,
-      request: request.toJSON() as any,
+      request: mapRequestToDto(request),
     };
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -409,7 +436,9 @@ export async function rejectRequest(data: unknown): Promise<RequestResponse> {
 /**
  * Cancel a request
  */
-export async function cancelRequest(data: unknown): Promise<RequestResponse> {
+export async function cancelRequest(
+  data: CancelRequestInput
+): Promise<RequestResponse> {
   try {
     const session = await getSession();
     if (!session.isAuthenticated || !session.user) {
@@ -420,7 +449,7 @@ export async function cancelRequest(data: unknown): Promise<RequestResponse> {
     }
 
     const validated = cancelRequestSchema.parse(data);
-    const user = await userRepository.findById(session.user.id);
+    const user = await userService.findUserById(session.user.id);
     if (!user) {
       return {
         success: false,
@@ -436,7 +465,7 @@ export async function cancelRequest(data: unknown): Promise<RequestResponse> {
 
     return {
       success: true,
-      request: request.toJSON() as any,
+      request: mapRequestToDto(request),
     };
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -457,7 +486,9 @@ export async function cancelRequest(data: unknown): Promise<RequestResponse> {
 /**
  * Assign a request to a user
  */
-export async function assignRequest(data: unknown): Promise<RequestResponse> {
+export async function assignRequest(
+  data: AssignRequestInput
+): Promise<RequestResponse> {
   try {
     const session = await getSession();
     if (!session.isAuthenticated || !session.user) {
@@ -468,35 +499,23 @@ export async function assignRequest(data: unknown): Promise<RequestResponse> {
     }
 
     const validated = assignRequestSchema.parse(data);
-    const request = await requestRepository.findById(validated.requestId);
-    if (!request) {
+    const actor = await userService.findUserById(session.user.id);
+    if (!actor) {
       return {
         success: false,
-        error: "Request not found",
+        error: "User not found",
       };
     }
 
-    // Check permissions
-    const user = await userRepository.findById(session.user.id);
-    if (!user || !user.isAdmin()) {
-      return {
-        success: false,
-        error: "Unauthorized",
-      };
-    }
-
-    request.assignTo(validated.assigneeId);
-    await requestRepository.save(request);
-
-    // Send notification to assignee
-    const assignee = await userRepository.findById(validated.assigneeId);
-    if (assignee) {
-      await notificationService.notifyAssignment(request, assignee);
-    }
+    const request = await workflowService.assignRequest(
+      validated.requestId,
+      actor,
+      validated.assigneeId
+    );
 
     return {
       success: true,
-      request: request.toJSON() as any,
+      request: mapRequestToDto(request),
     };
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -527,11 +546,13 @@ export async function getMyRequests(): Promise<RequestListResponse> {
       };
     }
 
-    const requests = await requestRepository.findByRequesterId(session.user.id);
+    const requests = await workflowService.getRequestsForRequester(
+      session.user.id
+    );
 
     return {
       success: true,
-      requests: requests.map((r) => r.toJSON() as any),
+      requests: requests.map(mapRequestToDto),
       total: requests.length,
     };
   } catch (error) {
@@ -555,11 +576,13 @@ export async function getAssignedRequests(): Promise<RequestListResponse> {
       };
     }
 
-    const requests = await requestRepository.findByAssigneeId(session.user.id);
+    const requests = await workflowService.getRequestsForAssignee(
+      session.user.id
+    );
 
     return {
       success: true,
-      requests: requests.map((r) => r.toJSON() as any),
+      requests: requests.map(mapRequestToDto),
       total: requests.length,
     };
   } catch (error) {
@@ -584,7 +607,7 @@ export async function getAllRequests(): Promise<RequestListResponse> {
     }
 
     // Check admin permission
-    const user = await userRepository.findById(session.user.id);
+    const user = await userService.findUserById(session.user.id);
     if (!user || !user.isAdmin()) {
       return {
         success: false,
@@ -592,11 +615,11 @@ export async function getAllRequests(): Promise<RequestListResponse> {
       };
     }
 
-    const requests = await requestRepository.findAll();
+    const requests = await workflowService.getAllRequests();
 
     return {
       success: true,
-      requests: requests.map((r) => r.toJSON() as any),
+      requests: requests.map(mapRequestToDto),
       total: requests.length,
     };
   } catch (error) {

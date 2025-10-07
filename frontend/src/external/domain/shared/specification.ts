@@ -29,7 +29,9 @@ class AndSpecification<T> extends Specification<T> {
   }
 
   isSatisfiedBy(candidate: T): boolean {
-    return this.left.isSatisfiedBy(candidate) && this.right.isSatisfiedBy(candidate);
+    return (
+      this.left.isSatisfiedBy(candidate) && this.right.isSatisfiedBy(candidate)
+    );
   }
 }
 
@@ -45,7 +47,9 @@ class OrSpecification<T> extends Specification<T> {
   }
 
   isSatisfiedBy(candidate: T): boolean {
-    return this.left.isSatisfiedBy(candidate) || this.right.isSatisfiedBy(candidate);
+    return (
+      this.left.isSatisfiedBy(candidate) || this.right.isSatisfiedBy(candidate)
+    );
   }
 }
 

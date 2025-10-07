@@ -9,6 +9,23 @@ import {
 } from "../domain";
 
 export class CommentRepository implements ICommentRepository {
+  private applyPagination<T>(query: T, limit?: number, offset?: number): T {
+    let result = query as unknown as {
+      limit: (value: number) => unknown;
+      offset: (value: number) => unknown;
+    };
+
+    if (limit !== undefined) {
+      result = result.limit(limit) as typeof result;
+    }
+
+    if (offset !== undefined) {
+      result = result.offset(offset) as typeof result;
+    }
+
+    return result as unknown as T;
+  }
+
   async findById(id: CommentId): Promise<Comment | null> {
     const result = await db
       .select()
@@ -28,7 +45,7 @@ export class CommentRepository implements ICommentRepository {
     limit?: number,
     offset?: number
   ): Promise<Comment[]> {
-    let query = db
+    const baseQuery = db
       .select()
       .from(comments)
       .where(
@@ -39,14 +56,7 @@ export class CommentRepository implements ICommentRepository {
       )
       .orderBy(desc(comments.createdAt));
 
-    if (limit !== undefined) {
-      query = query.limit(limit);
-    }
-
-    if (offset !== undefined) {
-      query = query.offset(offset);
-    }
-
+    const query = this.applyPagination(baseQuery, limit, offset);
     const result = await query;
     return result.map((row) => this.mapToDomainEntity(row));
   }

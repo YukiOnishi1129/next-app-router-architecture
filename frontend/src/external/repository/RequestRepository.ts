@@ -1,4 +1,4 @@
-import { eq, and, desc, count } from "drizzle-orm";
+import { eq, desc, count } from "drizzle-orm";
 import { db } from "../client/db/client";
 import { requests } from "../client/db/schema";
 import {
@@ -23,6 +23,24 @@ type DbRequestStatus =
   | "CANCELLED";
 
 export class RequestRepository implements IRequestRepository {
+  // Helper function to apply pagination
+  private applyPagination<T>(query: T, limit?: number, offset?: number): T {
+    let result = query as unknown as {
+      limit: (value: number) => unknown;
+      offset: (value: number) => unknown;
+    };
+
+    if (limit !== undefined) {
+      result = result.limit(limit) as typeof result;
+    }
+
+    if (offset !== undefined) {
+      result = result.offset(offset) as typeof result;
+    }
+
+    return result as unknown as T;
+  }
+
   async findById(id: RequestId): Promise<Request | null> {
     const result = await db
       .select()
@@ -42,21 +60,13 @@ export class RequestRepository implements IRequestRepository {
     limit?: number,
     offset?: number
   ): Promise<Request[]> {
-    let query = db
+    const baseQuery = db
       .select()
       .from(requests)
       .where(eq(requests.requesterId, requesterId.getValue()))
       .orderBy(desc(requests.createdAt));
 
-    // Type assertion to handle Drizzle's type limitations
-    const dynamicQuery = query as any;
-    if (limit !== undefined) {
-      query = dynamicQuery.limit(limit);
-    }
-    if (offset !== undefined) {
-      query = dynamicQuery.offset(offset);
-    }
-
+    const query = this.applyPagination(baseQuery, limit, offset);
     const result = await query;
     return result.map((row) => this.mapToDomainEntity(row));
   }
@@ -66,21 +76,23 @@ export class RequestRepository implements IRequestRepository {
     limit?: number,
     offset?: number
   ): Promise<Request[]> {
-    let query = db
+    const baseQuery = db
       .select()
       .from(requests)
       .where(eq(requests.assigneeId, assigneeId.getValue()))
       .orderBy(desc(requests.createdAt));
 
-    // Type assertion to handle Drizzle's type limitations
-    const dynamicQuery = query as any;
-    if (limit !== undefined) {
-      query = dynamicQuery.limit(limit);
-    }
-    if (offset !== undefined) {
-      query = dynamicQuery.offset(offset);
-    }
+    const query = this.applyPagination(baseQuery, limit, offset);
+    const result = await query;
+    return result.map((row) => this.mapToDomainEntity(row));
+  }
 
+  async findAll(limit?: number, offset?: number): Promise<Request[]> {
+    const baseQuery = db
+      .select()
+      .from(requests)
+      .orderBy(desc(requests.createdAt));
+    const query = this.applyPagination(baseQuery, limit, offset);
     const result = await query;
     return result.map((row) => this.mapToDomainEntity(row));
   }
@@ -90,21 +102,13 @@ export class RequestRepository implements IRequestRepository {
     limit?: number,
     offset?: number
   ): Promise<Request[]> {
-    let query = db
+    const baseQuery = db
       .select()
       .from(requests)
       .where(eq(requests.status, status as DbRequestStatus))
       .orderBy(desc(requests.createdAt));
 
-    // Type assertion to handle Drizzle's type limitations
-    const dynamicQuery = query as any;
-    if (limit !== undefined) {
-      query = dynamicQuery.limit(limit);
-    }
-    if (offset !== undefined) {
-      query = dynamicQuery.offset(offset);
-    }
-
+    const query = this.applyPagination(baseQuery, limit, offset);
     const result = await query;
     return result.map((row) => this.mapToDomainEntity(row));
   }
@@ -113,7 +117,7 @@ export class RequestRepository implements IRequestRepository {
     const result = await db
       .select({ value: count() })
       .from(requests)
-      .where(eq(requests.status, status));
+      .where(eq(requests.status, status as DbRequestStatus));
 
     return result[0]?.value ?? 0;
   }

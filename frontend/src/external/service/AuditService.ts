@@ -48,7 +48,7 @@ export class AuditService {
   async logRequestUpdated(
     requestId: string,
     updater: User,
-    changes: Record<string, any>,
+    changes: Record<string, any>, // eslint-disable-line @typescript-eslint/no-explicit-any
     context?: AuditContext
   ): Promise<void> {
     const auditLog = AuditLog.create({
@@ -87,6 +87,40 @@ export class AuditService {
         ipAddress: context?.ipAddress,
         userAgent: context?.userAgent,
         metadata: { reason },
+      },
+    });
+
+    await this.auditLogRepository.save(auditLog);
+  }
+
+  /**
+   * Log a generic action
+   */
+  async logAction(params: AuditActionParams): Promise<void> {
+    const {
+      action,
+      entityType,
+      entityId,
+      userId,
+      metadata,
+      eventType,
+      description,
+      context,
+    } = params;
+
+    const auditLog = AuditLog.create({
+      eventType: eventType ?? AuditEventType.SYSTEM_ERROR,
+      entityType,
+      entityId,
+      actorId: userId,
+      description: description ?? action,
+      context: {
+        ipAddress: context?.ipAddress,
+        userAgent: context?.userAgent,
+        metadata: {
+          action,
+          ...(metadata ?? {}),
+        },
       },
     });
 
@@ -174,7 +208,7 @@ export class AuditService {
   async logDataExport(
     user: User,
     exportType: string,
-    filters: Record<string, any>,
+    filters: Record<string, unknown>,
     context?: AuditContext
   ): Promise<void> {
     const auditLog = AuditLog.create({
@@ -202,8 +236,7 @@ export class AuditService {
    */
   async getAuditLogsForResource(
     resourceType: string,
-    resourceId: string,
-    limit?: number
+    resourceId: string
   ): Promise<AuditLog[]> {
     return this.auditLogRepository.findByEntityId(resourceType, resourceId);
   }
@@ -270,7 +303,7 @@ export class AuditService {
    * Format changes for audit log
    */
   private formatChanges(
-    changes: Record<string, any>
+    changes: Record<string, unknown>
   ): Record<string, { old: unknown; new: unknown }> | undefined {
     const formattedChanges: Record<string, { old: unknown; new: unknown }> = {};
 
@@ -315,4 +348,15 @@ export enum ResourceType {
   APPROVAL = "APPROVAL",
   NOTIFICATION = "NOTIFICATION",
   SYSTEM = "SYSTEM",
+}
+
+export interface AuditActionParams {
+  action: string;
+  entityType: string;
+  entityId: string;
+  userId: string;
+  metadata?: Record<string, unknown>;
+  eventType?: AuditEventType;
+  description?: string;
+  context?: AuditContext;
 }

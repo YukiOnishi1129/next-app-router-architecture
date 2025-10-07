@@ -1,4 +1,4 @@
-import { UUID } from '../value-objects';
+import { UUID } from "../value-objects";
 
 /**
  * Base class for all domain events

@@ -68,8 +68,10 @@ export class AuthenticationService {
 
       // Log sign out
       await this.auditService.logUserLogout(user, context);
-    } catch (error: any) {
-      throw new Error(`Sign out failed: ${error.message}`);
+    } catch (error: unknown) {
+      throw new Error(
+        `Sign out failed: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 

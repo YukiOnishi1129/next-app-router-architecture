@@ -10,6 +10,23 @@ import {
 } from "../domain";
 
 export class NotificationRepository implements INotificationRepository {
+  private applyPagination<T>(query: T, limit?: number, offset?: number): T {
+    let result = query as unknown as {
+      limit: (value: number) => unknown;
+      offset: (value: number) => unknown;
+    };
+
+    if (limit !== undefined) {
+      result = result.limit(limit) as typeof result;
+    }
+
+    if (offset !== undefined) {
+      result = result.offset(offset) as typeof result;
+    }
+
+    return result as unknown as T;
+  }
+
   async findById(id: NotificationId): Promise<Notification | null> {
     const result = await db
       .select()
@@ -29,20 +46,13 @@ export class NotificationRepository implements INotificationRepository {
     limit?: number,
     offset?: number
   ): Promise<Notification[]> {
-    let query = db
+    const baseQuery = db
       .select()
       .from(notifications)
       .where(eq(notifications.recipientId, recipientId.getValue()))
       .orderBy(desc(notifications.createdAt));
 
-    if (limit !== undefined) {
-      query = query.limit(limit);
-    }
-
-    if (offset !== undefined) {
-      query = query.offset(offset);
-    }
-
+    const query = this.applyPagination(baseQuery, limit, offset);
     const result = await query;
     return result.map((row) => this.mapToDomainEntity(row));
   }
@@ -96,7 +106,7 @@ export class NotificationRepository implements INotificationRepository {
     recipientId: UserId,
     limit?: number
   ): Promise<Notification[]> {
-    let query = db
+    const baseQuery = db
       .select()
       .from(notifications)
       .where(
@@ -107,10 +117,7 @@ export class NotificationRepository implements INotificationRepository {
       )
       .orderBy(desc(notifications.createdAt));
 
-    if (limit !== undefined) {
-      query = query.limit(limit);
-    }
-
+    const query = this.applyPagination(baseQuery, limit);
     const result = await query;
     return result.map((row) => this.mapToDomainEntity(row));
   }

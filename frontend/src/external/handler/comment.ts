@@ -1,14 +1,7 @@
 "use server";
 
 import { z } from "zod";
-import {
-  CommentRepository,
-  RequestRepository,
-  UserRepository,
-} from "@/external/domain";
-import { Comment } from "@/external/domain/comment";
-import { NotificationService } from "@/external/service/NotificationService";
-import { AuditService } from "@/external/service/AuditService";
+import { CommentService } from "@/external/service";
 import { getSession } from "./auth";
 
 // Validation schemas
@@ -32,6 +25,11 @@ const getCommentsSchema = z.object({
   limit: z.number().min(1).max(100).default(50),
   offset: z.number().min(0).default(0),
 });
+
+type AddCommentInput = z.input<typeof addCommentSchema>;
+type UpdateCommentInput = z.input<typeof updateCommentSchema>;
+type DeleteCommentInput = z.input<typeof deleteCommentSchema>;
+type GetCommentsInput = z.input<typeof getCommentsSchema>;
 
 // Response types
 export type CommentResponse = {
@@ -59,16 +57,14 @@ export type CommentListResponse = {
 };
 
 // Initialize services
-const commentRepository = new CommentRepository();
-const requestRepository = new RequestRepository();
-const userRepository = new UserRepository();
-const notificationService = new NotificationService();
-const auditService = new AuditService();
+const commentService = new CommentService();
 
 /**
  * Add a comment to a request
  */
-export async function addComment(data: unknown): Promise<CommentResponse> {
+export async function addComment(
+  data: AddCommentInput
+): Promise<CommentResponse> {
   try {
     const session = await getSession();
     if (!session.isAuthenticated || !session.user) {
@@ -80,77 +76,11 @@ export async function addComment(data: unknown): Promise<CommentResponse> {
 
     const validated = addCommentSchema.parse(data);
 
-    // Verify request exists
-    const request = await requestRepository.findById(validated.requestId);
-    if (!request) {
-      return {
-        success: false,
-        error: "Request not found",
-      };
-    }
-
-    // Check if user has permission to comment
-    const user = await userRepository.findById(session.user.id);
-    if (!user) {
-      return {
-        success: false,
-        error: "User not found",
-      };
-    }
-
-    // Create comment
-    const comment = Comment.create({
-      content: validated.content,
+    const comment = await commentService.addComment({
       requestId: validated.requestId,
+      content: validated.content,
       authorId: session.user.id,
       parentId: validated.parentId,
-    });
-
-    await commentRepository.save(comment);
-
-    // Send notifications
-    const recipients = new Set<string>();
-
-    // Notify request owner
-    recipients.add(request.getRequesterId().getValue());
-
-    // Notify assignee if exists
-    const assigneeId = request.getAssigneeId()?.getValue();
-    if (assigneeId) {
-      recipients.add(assigneeId);
-    }
-
-    // If this is a reply, notify the parent comment author
-    if (validated.parentId) {
-      const parentComment = await commentRepository.findById(
-        validated.parentId
-      );
-      if (parentComment) {
-        recipients.add(parentComment.getAuthorId().getValue());
-      }
-    }
-
-    // Remove self from recipients
-    recipients.delete(session.user.id);
-
-    // Send notifications
-    for (const recipientId of recipients) {
-      const recipient = await userRepository.findById(recipientId);
-      if (recipient) {
-        await notificationService.notifyNewComment(comment, request, recipient);
-      }
-    }
-
-    // Log the action
-    await auditService.logAction({
-      action: "comment.create",
-      entityType: "comment",
-      entityId: comment.getId().getValue(),
-      userId: session.user.id,
-      metadata: {
-        requestId: validated.requestId,
-        parentId: validated.parentId,
-      },
       context: {
         ipAddress: "server",
         userAgent: "server-action",
@@ -159,7 +89,15 @@ export async function addComment(data: unknown): Promise<CommentResponse> {
 
     return {
       success: true,
-      comment: comment.toJSON(),
+      comment: {
+        id: comment.getId().getValue(),
+        content: comment.getContent().getValue(),
+        requestId: comment.getRequestId().getValue(),
+        authorId: comment.getAuthorId().getValue(),
+        createdAt: comment.getCreatedAt().toISOString(),
+        updatedAt: comment.getUpdatedAt().toISOString(),
+        isEdited: comment.isEdited(),
+      },
     };
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -179,7 +117,9 @@ export async function addComment(data: unknown): Promise<CommentResponse> {
 /**
  * Update a comment
  */
-export async function updateComment(data: unknown): Promise<CommentResponse> {
+export async function updateComment(
+  data: UpdateCommentInput
+): Promise<CommentResponse> {
   try {
     const session = await getSession();
     if (!session.isAuthenticated || !session.user) {
@@ -190,35 +130,10 @@ export async function updateComment(data: unknown): Promise<CommentResponse> {
     }
 
     const validated = updateCommentSchema.parse(data);
-
-    const comment = await commentRepository.findById(validated.commentId);
-    if (!comment) {
-      return {
-        success: false,
-        error: "Comment not found",
-      };
-    }
-
-    // Only the author can update their comment
-    if (comment.getAuthorId().getValue() !== session.user.id) {
-      return {
-        success: false,
-        error: "Unauthorized",
-      };
-    }
-
-    comment.updateContent(validated.content);
-    await commentRepository.save(comment);
-
-    // Log the action
-    await auditService.logAction({
-      action: "comment.update",
-      entityType: "comment",
-      entityId: comment.getId().getValue(),
+    const comment = await commentService.updateComment({
+      commentId: validated.commentId,
+      content: validated.content,
       userId: session.user.id,
-      metadata: {
-        requestId: comment.getRequestId().getValue(),
-      },
       context: {
         ipAddress: "server",
         userAgent: "server-action",
@@ -227,7 +142,15 @@ export async function updateComment(data: unknown): Promise<CommentResponse> {
 
     return {
       success: true,
-      comment: comment.toJSON(),
+      comment: {
+        id: comment.getId().getValue(),
+        content: comment.getContent().getValue(),
+        requestId: comment.getRequestId().getValue(),
+        authorId: comment.getAuthorId().getValue(),
+        createdAt: comment.getCreatedAt().toISOString(),
+        updatedAt: comment.getUpdatedAt().toISOString(),
+        isEdited: comment.isEdited(),
+      },
     };
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -249,7 +172,7 @@ export async function updateComment(data: unknown): Promise<CommentResponse> {
  * Delete a comment
  */
 export async function deleteComment(
-  data: unknown
+  data: DeleteCommentInput
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const session = await getSession();
@@ -262,45 +185,9 @@ export async function deleteComment(
 
     const validated = deleteCommentSchema.parse(data);
 
-    const comment = await commentRepository.findById(validated.commentId);
-    if (!comment) {
-      return {
-        success: false,
-        error: "Comment not found",
-      };
-    }
-
-    // Only the author or admin can delete a comment
-    const user = await userRepository.findById(session.user.id);
-    if (!user) {
-      return {
-        success: false,
-        error: "User not found",
-      };
-    }
-
-    const isAuthor = comment.getAuthorId().getValue() === session.user.id;
-    const isAdmin = user.isAdmin();
-
-    if (!isAuthor && !isAdmin) {
-      return {
-        success: false,
-        error: "Unauthorized",
-      };
-    }
-
-    await commentRepository.delete(validated.commentId);
-
-    // Log the action
-    await auditService.logAction({
-      action: "comment.delete",
-      entityType: "comment",
-      entityId: comment.getId().getValue(),
+    await commentService.deleteComment({
+      commentId: validated.commentId,
       userId: session.user.id,
-      metadata: {
-        requestId: comment.getRequestId().getValue(),
-        deletedByAdmin: !isAuthor && isAdmin,
-      },
       context: {
         ipAddress: "server",
         userAgent: "server-action",
@@ -329,7 +216,9 @@ export async function deleteComment(
 /**
  * Get comments for a request
  */
-export async function getComments(data: unknown): Promise<CommentListResponse> {
+export async function getComments(
+  data: GetCommentsInput
+): Promise<CommentListResponse> {
   try {
     const session = await getSession();
     if (!session.isAuthenticated || !session.user) {
@@ -341,57 +230,27 @@ export async function getComments(data: unknown): Promise<CommentListResponse> {
 
     const validated = getCommentsSchema.parse(data);
 
-    // Verify request exists and user has access
-    const request = await requestRepository.findById(validated.requestId);
-    if (!request) {
-      return {
-        success: false,
-        error: "Request not found",
-      };
-    }
-
-    // Check if user has permission to view this request
-    const user = await userRepository.findById(session.user.id);
-    if (!user) {
-      return {
-        success: false,
-        error: "User not found",
-      };
-    }
-
-    const isRequester = request.getRequesterId().getValue() === session.user.id;
-    const isAssignee = request.getAssigneeId()?.getValue() === session.user.id;
-    const isAdmin = user.isAdmin();
-
-    if (!isRequester && !isAssignee && !isAdmin) {
-      return {
-        success: false,
-        error: "Unauthorized",
-      };
-    }
-
-    // Get comments
-    const allComments = await commentRepository.findByRequestId(
-      validated.requestId
-    );
-
-    // Sort by creation date (newest first)
-    allComments.sort(
-      (a, b) => b.getCreatedAt().getTime() - a.getCreatedAt().getTime()
-    );
-
-    // Apply pagination
-    const total = allComments.length;
-    const start = validated.offset;
-    const end = start + validated.limit;
-    const paginatedComments = allComments.slice(start, end);
+    const result = await commentService.getComments({
+      requestId: validated.requestId,
+      userId: session.user.id,
+      limit: validated.limit,
+      offset: validated.offset,
+    });
 
     return {
       success: true,
-      comments: paginatedComments.map((c) => c.toJSON()),
-      total,
-      limit: validated.limit,
-      offset: validated.offset,
+      comments: result.comments.map((c) => ({
+        id: c.getId().getValue(),
+        content: c.getContent().getValue(),
+        requestId: c.getRequestId().getValue(),
+        authorId: c.getAuthorId().getValue(),
+        createdAt: c.getCreatedAt().toISOString(),
+        updatedAt: c.getUpdatedAt().toISOString(),
+        isEdited: c.isEdited(),
+      })),
+      total: result.total,
+      limit: result.limit,
+      offset: result.offset,
     };
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -423,60 +282,23 @@ export async function getCommentThread(
       };
     }
 
-    const comment = await commentRepository.findById(commentId);
-    if (!comment) {
-      return {
-        success: false,
-        error: "Comment not found",
-      };
-    }
-
-    // Verify request exists and user has access
-    const request = await requestRepository.findById(
-      comment.getRequestId().getValue()
+    const result = await commentService.getCommentThread(
+      commentId,
+      session.user.id
     );
-    if (!request) {
-      return {
-        success: false,
-        error: "Request not found",
-      };
-    }
-
-    // Check permissions
-    const user = await userRepository.findById(session.user.id);
-    if (!user) {
-      return {
-        success: false,
-        error: "User not found",
-      };
-    }
-
-    const isRequester = request.getRequesterId().getValue() === session.user.id;
-    const isAssignee = request.getAssigneeId()?.getValue() === session.user.id;
-    const isAdmin = user.isAdmin();
-
-    if (!isRequester && !isAssignee && !isAdmin) {
-      return {
-        success: false,
-        error: "Unauthorized",
-      };
-    }
-
-    // Get replies
-    const replies = await commentRepository.findReplies(commentId);
-
-    // Sort by creation date (oldest first for thread)
-    replies.sort(
-      (a, b) => a.getCreatedAt().getTime() - b.getCreatedAt().getTime()
-    );
-
-    // Include the parent comment
-    const thread = [comment, ...replies];
 
     return {
       success: true,
-      comments: thread.map((c) => c.toJSON()),
-      total: thread.length,
+      comments: result.comments.map((c) => ({
+        id: c.getId().getValue(),
+        content: c.getContent().getValue(),
+        requestId: c.getRequestId().getValue(),
+        authorId: c.getAuthorId().getValue(),
+        createdAt: c.getCreatedAt().toISOString(),
+        updatedAt: c.getUpdatedAt().toISOString(),
+        isEdited: c.isEdited(),
+      })),
+      total: result.comments.length,
     };
   } catch (error) {
     return {

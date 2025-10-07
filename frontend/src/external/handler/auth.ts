@@ -8,21 +8,25 @@ import { cookies } from "next/headers";
 
 // Validation schemas
 const signInSchema = z.object({
-  email: z.string().email(),
+  email: z.email(),
   password: z.string().min(6),
-  redirectUrl: z.string().url().optional(),
+  redirectUrl: z.url().optional(),
 });
 
 const signUpSchema = z.object({
-  email: z.string().email(),
+  email: z.email(),
   password: z.string().min(6),
   name: z.string().min(1).optional(),
-  redirectUrl: z.string().url().optional(),
+  redirectUrl: z.url().optional(),
 });
 
 const sessionSchema = z.object({
   userId: z.string().optional(),
 });
+
+type SignInInput = z.input<typeof signInSchema>;
+type SignUpInput = z.input<typeof signUpSchema>;
+type SessionInput = z.input<typeof sessionSchema>;
 
 // Response types
 export type SignInResponse = {
@@ -65,7 +69,7 @@ const auditService = new AuditService();
 /**
  * Sign in with email and password
  */
-export async function signIn(data: unknown): Promise<SignInResponse> {
+export async function signIn(data: SignInInput): Promise<SignInResponse> {
   try {
     const validated = signInSchema.parse(data);
 
@@ -132,7 +136,7 @@ export async function signIn(data: unknown): Promise<SignInResponse> {
 /**
  * Sign up with email and password
  */
-export async function signUp(data: unknown): Promise<SignUpResponse> {
+export async function signUp(data: SignUpInput): Promise<SignUpResponse> {
   try {
     const validated = signUpSchema.parse(data);
 
@@ -253,9 +257,11 @@ export async function signOut(): Promise<SignOutResponse> {
 /**
  * Get current session
  */
-export async function getSession(data?: unknown): Promise<SessionResponse> {
+export async function getSession(
+  data?: SessionInput
+): Promise<SessionResponse> {
   try {
-    const validated = sessionSchema.parse(data || {});
+    const validated = sessionSchema.parse(data ?? {});
     const cookieStore = await cookies();
     const token = cookieStore.get("auth-token")?.value;
     const storedUserId = cookieStore.get("user-id")?.value;
@@ -321,7 +327,7 @@ export async function checkPermission(permission: string): Promise<boolean> {
     }
 
     return userManagementService.hasPermission(user, permission);
-  } catch (error) {
+  } catch {
     return false;
   }
 }

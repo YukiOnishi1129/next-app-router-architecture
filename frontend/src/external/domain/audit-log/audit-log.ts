@@ -37,6 +37,16 @@ export enum AuditEventType {
   SYSTEM_ERROR = "SYSTEM_ERROR",
 }
 
+export type AuditAction =
+  | "CREATE"
+  | "UPDATE"
+  | "DELETE"
+  | "VIEW"
+  | "SUBMIT"
+  | "APPROVE"
+  | "REJECT"
+  | "CANCEL";
+
 /**
  * Audit context - contains additional information about the audit event
  */

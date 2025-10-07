@@ -11,6 +11,11 @@ import {
 } from "../domain";
 
 export class UserRepository implements IUserRepository {
+  async findAll(): Promise<User[]> {
+    const result = await db.select().from(users);
+    return result.map((row) => this.mapToDomainEntity(row));
+  }
+
   async findById(id: UserId): Promise<User | null> {
     const result = await db
       .select()

@@ -5,6 +5,7 @@ import {
   RequestPriority,
   RequestType,
   User,
+  UserId,
 } from "@/external/domain";
 import { RequestRepository } from "@/external/repository/RequestRepository";
 import { NotificationService } from "./NotificationService";
@@ -69,6 +70,50 @@ export class RequestWorkflowService {
     await this.notificationService.notifyNewRequest(request);
 
     return request;
+  }
+
+  /**
+   * Retrieve request by ID
+   */
+  async getRequestById(requestId: string): Promise<Request | null> {
+    return this.requestRepository.findById(RequestId.create(requestId));
+  }
+
+  /**
+   * Get requests created by specific user
+   */
+  async getRequestsForRequester(
+    requesterId: string,
+    limit?: number,
+    offset?: number
+  ): Promise<Request[]> {
+    return this.requestRepository.findByRequesterId(
+      UserId.create(requesterId),
+      limit,
+      offset
+    );
+  }
+
+  /**
+   * Get requests assigned to specific user
+   */
+  async getRequestsForAssignee(
+    assigneeId: string,
+    limit?: number,
+    offset?: number
+  ): Promise<Request[]> {
+    return this.requestRepository.findByAssigneeId(
+      UserId.create(assigneeId),
+      limit,
+      offset
+    );
+  }
+
+  /**
+   * Get all requests (admin/reporting use cases)
+   */
+  async getAllRequests(limit?: number, offset?: number): Promise<Request[]> {
+    return this.requestRepository.findAll(limit, offset);
   }
 
   /**
@@ -154,6 +199,46 @@ export class RequestWorkflowService {
 
     // Send notifications (outside transaction)
     await this.notificationService.notifyRequestCancelled(request, reason);
+
+    return request;
+  }
+
+  /**
+   * Assign request to a user (admin only)
+   */
+  async assignRequest(
+    requestId: string,
+    actor: User,
+    assigneeId: string
+  ): Promise<Request> {
+    if (!actor.isAdmin()) {
+      throw new Error("User does not have permission to assign requests");
+    }
+
+    const request = await this.requestRepository.findById(
+      RequestId.create(requestId)
+    );
+    if (!request) {
+      throw new Error(`Request not found: ${requestId}`);
+    }
+
+    request.assignTo(assigneeId);
+
+    await db.transaction(async () => {
+      await this.requestRepository.save(request);
+
+      await this.auditService.logAction({
+        action: "request.assign",
+        entityType: "REQUEST",
+        entityId: requestId,
+        userId: actor.getId().getValue(),
+        metadata: {
+          assigneeId,
+        },
+      });
+    });
+
+    await this.notificationService.notifyAssignment(request);
 
     return request;
   }

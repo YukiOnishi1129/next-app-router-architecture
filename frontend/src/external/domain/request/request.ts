@@ -1,13 +1,13 @@
-import { UserId } from '../user';
-import { DomainEvent } from '../shared/events';
-import { RequestId } from './request-id';
-import { RequestStatus, RequestPriority, RequestType } from './request-status';
+import { UserId } from "../user";
+import { DomainEvent } from "../shared/events";
+import { RequestId } from "./request-id";
+import { RequestStatus, RequestPriority, RequestType } from "./request-status";
 import {
   RequestCreatedEvent,
   RequestSubmittedEvent,
   RequestApprovedEvent,
-  RequestRejectedEvent
-} from './events';
+  RequestRejectedEvent,
+} from "./events";
 
 /**
  * Request entity - represents a user request
@@ -56,7 +56,7 @@ export class Request {
       null,
       null
     );
-    
+
     // Emit domain event
     request.addDomainEvent(
       new RequestCreatedEvent(
@@ -67,7 +67,7 @@ export class Request {
         params.priority
       )
     );
-    
+
     return request;
   }
 
@@ -195,7 +195,11 @@ export class Request {
   }
 
   canCancel(): boolean {
-    return [RequestStatus.DRAFT, RequestStatus.SUBMITTED, RequestStatus.IN_REVIEW].includes(this.status);
+    return [
+      RequestStatus.DRAFT,
+      RequestStatus.SUBMITTED,
+      RequestStatus.IN_REVIEW,
+    ].includes(this.status);
   }
 
   update(params: {
@@ -205,7 +209,7 @@ export class Request {
     priority: RequestPriority;
   }): void {
     if (!this.canEdit()) {
-      throw new Error('Request cannot be edited in current status');
+      throw new Error("Request cannot be edited in current status");
     }
     this.title = params.title;
     this.description = params.description;
@@ -216,12 +220,12 @@ export class Request {
 
   submit(): void {
     if (!this.canSubmit()) {
-      throw new Error('Request cannot be submitted in current status');
+      throw new Error("Request cannot be submitted in current status");
     }
     this.status = RequestStatus.SUBMITTED;
     this.submittedAt = new Date();
     this.updatedAt = new Date();
-    
+
     // Emit domain event
     this.addDomainEvent(
       new RequestSubmittedEvent(
@@ -234,7 +238,7 @@ export class Request {
 
   startReview(reviewerId: string): void {
     if (this.status !== RequestStatus.SUBMITTED) {
-      throw new Error('Request must be submitted before review');
+      throw new Error("Request must be submitted before review");
     }
     this.status = RequestStatus.IN_REVIEW;
     this.reviewerId = UserId.create(reviewerId);
@@ -243,13 +247,13 @@ export class Request {
 
   approve(reviewerId: string): void {
     if (this.status !== RequestStatus.IN_REVIEW) {
-      throw new Error('Request must be in review before approval');
+      throw new Error("Request must be in review before approval");
     }
     this.status = RequestStatus.APPROVED;
     this.reviewerId = UserId.create(reviewerId);
     this.reviewedAt = new Date();
     this.updatedAt = new Date();
-    
+
     // Emit domain event
     this.addDomainEvent(
       new RequestApprovedEvent(
@@ -263,13 +267,13 @@ export class Request {
 
   reject(reviewerId: string, reason?: string): void {
     if (this.status !== RequestStatus.IN_REVIEW) {
-      throw new Error('Request must be in review before rejection');
+      throw new Error("Request must be in review before rejection");
     }
     this.status = RequestStatus.REJECTED;
     this.reviewerId = UserId.create(reviewerId);
     this.reviewedAt = new Date();
     this.updatedAt = new Date();
-    
+
     // Emit domain event
     this.addDomainEvent(
       new RequestRejectedEvent(
@@ -284,7 +288,7 @@ export class Request {
 
   cancel(): void {
     if (!this.canCancel()) {
-      throw new Error('Request cannot be cancelled in current status');
+      throw new Error("Request cannot be cancelled in current status");
     }
     this.status = RequestStatus.CANCELLED;
     this.updatedAt = new Date();

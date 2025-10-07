@@ -10,7 +10,7 @@ export class Email {
 
   private validate(value: string): void {
     if (!value) {
-      throw new Error('Email cannot be empty');
+      throw new Error("Email cannot be empty");
     }
     if (!Email.EMAIL_REGEX.test(value)) {
       throw new Error(`Invalid email format: ${value}`);

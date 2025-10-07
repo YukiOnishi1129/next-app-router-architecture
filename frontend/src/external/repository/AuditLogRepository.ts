@@ -8,9 +8,26 @@ import {
   AuditEventType,
   UserId,
   AuditLogFilter,
+  AuditAction,
 } from "../domain";
 
 export class AuditLogRepository implements IAuditLogRepository {
+  private applyPagination<
+    T extends { limit: (value: number) => T; offset: (value: number) => T },
+  >(query: T, limit?: number, offset?: number): T {
+    let result = query;
+
+    if (limit !== undefined) {
+      result = result.limit(limit);
+    }
+
+    if (offset !== undefined) {
+      result = result.offset(offset);
+    }
+
+    return result;
+  }
+
   async findById(id: AuditLogId): Promise<AuditLog | null> {
     const result = await db
       .select()
@@ -30,48 +47,30 @@ export class AuditLogRepository implements IAuditLogRepository {
     limit?: number,
     offset?: number
   ): Promise<AuditLog[]> {
-    let query = db.select().from(auditLogs);
-    const conditions = [];
+    let query = db.select().from(auditLogs).$dynamic();
+    const whereClause = and(
+      filter.eventType
+        ? eq(auditLogs.action, this.mapEventTypeToAction(filter.eventType))
+        : undefined,
+      filter.entityType
+        ? eq(auditLogs.entityType, filter.entityType)
+        : undefined,
+      filter.entityId ? eq(auditLogs.entityId, filter.entityId) : undefined,
+      filter.actorId
+        ? eq(auditLogs.userId, filter.actorId.getValue())
+        : undefined,
+      filter.startDate ? gte(auditLogs.createdAt, filter.startDate) : undefined,
+      filter.endDate ? lte(auditLogs.createdAt, filter.endDate) : undefined
+    );
 
-    if (filter.eventType) {
-      conditions.push(eq(auditLogs.action, filter.eventType));
-    }
-
-    if (filter.entityType) {
-      conditions.push(eq(auditLogs.entityType, filter.entityType));
-    }
-
-    if (filter.entityId) {
-      conditions.push(eq(auditLogs.entityId, filter.entityId));
-    }
-
-    if (filter.actorId) {
-      conditions.push(eq(auditLogs.userId, filter.actorId.getValue()));
-    }
-
-    if (filter.startDate) {
-      conditions.push(gte(auditLogs.createdAt, filter.startDate));
-    }
-
-    if (filter.endDate) {
-      conditions.push(lte(auditLogs.createdAt, filter.endDate));
-    }
-
-    if (conditions.length > 0) {
-      query = query.where(and(...conditions));
+    if (whereClause) {
+      query = query.where(whereClause);
     }
 
     query = query.orderBy(desc(auditLogs.createdAt));
 
-    if (limit !== undefined) {
-      query = query.limit(limit);
-    }
-
-    if (offset !== undefined) {
-      query = query.offset(offset);
-    }
-
-    const result = await query;
+    const paginatedQuery = this.applyPagination(query, limit, offset);
+    const result = await paginatedQuery;
     return result.map((row) => this.mapToDomainEntity(row));
   }
 
@@ -98,20 +97,14 @@ export class AuditLogRepository implements IAuditLogRepository {
     limit?: number,
     offset?: number
   ): Promise<AuditLog[]> {
-    let query = db
+    const baseQuery = db
       .select()
       .from(auditLogs)
       .where(eq(auditLogs.userId, actorId.getValue()))
-      .orderBy(desc(auditLogs.createdAt));
+      .orderBy(desc(auditLogs.createdAt))
+      .$dynamic();
 
-    if (limit !== undefined) {
-      query = query.limit(limit);
-    }
-
-    if (offset !== undefined) {
-      query = query.offset(offset);
-    }
-
+    const query = this.applyPagination(baseQuery, limit, offset);
     const result = await query;
     return result.map((row) => this.mapToDomainEntity(row));
   }
@@ -146,62 +139,91 @@ export class AuditLogRepository implements IAuditLogRepository {
   }
 
   private mapToDomainEntity(row: typeof auditLogs.$inferSelect): AuditLog {
-    const metadata = (row.metadata || {}) as any;
+    type MetadataPayload = {
+      eventType?: AuditEventType;
+      description?: string;
+      ipAddress?: string | null;
+      userAgent?: string | null;
+      sessionId?: string | null;
+    } & Record<string, unknown>;
+
+    const metadata = (row.metadata ?? {}) as MetadataPayload;
 
     return AuditLog.restore({
       id: row.id,
-      eventType: (metadata.eventType ||
-        this.mapActionToEventType(row.action)) as AuditEventType,
+      eventType: metadata.eventType ?? this.mapActionToEventType(row.action),
       entityType: row.entityType,
       entityId: row.entityId,
       actorId: row.userId === "system" ? null : row.userId,
-      description: metadata.description || "",
+      description: metadata.description ?? "",
       changes: row.changes as Record<
         string,
         { old: unknown; new: unknown }
       > | null,
       context: {
-        ipAddress: metadata.ipAddress || null,
-        userAgent: metadata.userAgent || null,
-        sessionId: metadata.sessionId || null,
+        ipAddress: metadata.ipAddress ?? null,
+        userAgent: metadata.userAgent ?? null,
+        sessionId: metadata.sessionId ?? null,
         metadata: metadata,
       },
       createdAt: row.createdAt,
     });
   }
 
-  private mapEventTypeToAction(eventType: AuditEventType): string {
-    // Map domain event types to database action enum values
-    const mapping: Record<string, string> = {
-      USER_CREATED: "CREATE",
-      USER_UPDATED: "UPDATE",
-      USER_STATUS_CHANGED: "UPDATE",
-      USER_ROLE_ASSIGNED: "UPDATE",
-      USER_ROLE_REMOVED: "UPDATE",
-      REQUEST_CREATED: "CREATE",
-      REQUEST_UPDATED: "UPDATE",
-      REQUEST_SUBMITTED: "SUBMIT",
-      REQUEST_ASSIGNED: "UPDATE",
-      REQUEST_STATUS_CHANGED: "UPDATE",
-      REQUEST_APPROVED: "APPROVE",
-      REQUEST_REJECTED: "REJECT",
-      REQUEST_CANCELLED: "CANCEL",
-      ATTACHMENT_UPLOADED: "CREATE",
-      ATTACHMENT_DELETED: "DELETE",
-      COMMENT_CREATED: "CREATE",
-      COMMENT_EDITED: "UPDATE",
-      COMMENT_DELETED: "DELETE",
-      SYSTEM_LOGIN: "VIEW",
-      SYSTEM_LOGOUT: "VIEW",
-      SYSTEM_ERROR: "VIEW",
-    };
-
-    return mapping[eventType] || "VIEW";
+  private mapEventTypeToAction(eventType: AuditEventType): AuditAction {
+    switch (eventType) {
+      case AuditEventType.USER_CREATED:
+      case AuditEventType.REQUEST_CREATED:
+      case AuditEventType.ATTACHMENT_UPLOADED:
+      case AuditEventType.COMMENT_CREATED:
+        return "CREATE";
+      case AuditEventType.USER_UPDATED:
+      case AuditEventType.USER_STATUS_CHANGED:
+      case AuditEventType.USER_ROLE_ASSIGNED:
+      case AuditEventType.USER_ROLE_REMOVED:
+      case AuditEventType.REQUEST_UPDATED:
+      case AuditEventType.REQUEST_ASSIGNED:
+      case AuditEventType.REQUEST_STATUS_CHANGED:
+      case AuditEventType.COMMENT_EDITED:
+        return "UPDATE";
+      case AuditEventType.ATTACHMENT_DELETED:
+      case AuditEventType.COMMENT_DELETED:
+        return "DELETE";
+      case AuditEventType.REQUEST_SUBMITTED:
+        return "SUBMIT";
+      case AuditEventType.REQUEST_APPROVED:
+        return "APPROVE";
+      case AuditEventType.REQUEST_REJECTED:
+        return "REJECT";
+      case AuditEventType.REQUEST_CANCELLED:
+        return "CANCEL";
+      case AuditEventType.SYSTEM_LOGIN:
+      case AuditEventType.SYSTEM_LOGOUT:
+      case AuditEventType.SYSTEM_ERROR:
+      default:
+        return "VIEW";
+    }
   }
 
-  private mapActionToEventType(action: string): string {
-    // For simple cases, we'll need more context from metadata
-    // This is a fallback mapping
-    return `SYSTEM_${action}` as string;
+  private mapActionToEventType(action: AuditAction): AuditEventType {
+    switch (action) {
+      case "CREATE":
+        return AuditEventType.REQUEST_CREATED;
+      case "UPDATE":
+        return AuditEventType.REQUEST_UPDATED;
+      case "DELETE":
+        return AuditEventType.COMMENT_DELETED;
+      case "SUBMIT":
+        return AuditEventType.REQUEST_SUBMITTED;
+      case "APPROVE":
+        return AuditEventType.REQUEST_APPROVED;
+      case "REJECT":
+        return AuditEventType.REQUEST_REJECTED;
+      case "CANCEL":
+        return AuditEventType.REQUEST_CANCELLED;
+      case "VIEW":
+      default:
+        return AuditEventType.SYSTEM_ERROR;
+    }
   }
 }

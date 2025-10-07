@@ -36,6 +36,14 @@ export interface UpdateUserData {
   roles?: UserRole[];
 }
 
+export interface ListUsersParams {
+  status?: UserStatus;
+  role?: UserRole;
+  search?: string;
+  limit?: number;
+  offset?: number;
+}
+
 export class UserManagementService {
   private userRepository: UserRepository;
 
@@ -77,6 +85,56 @@ export class UserManagementService {
     // Save to database
     await this.userRepository.save(user);
     return user;
+  }
+
+  /**
+   * List users with optional filtering and pagination
+   */
+  async listUsers(params: ListUsersParams = {}): Promise<{
+    users: User[];
+    total: number;
+    limit: number;
+    offset: number;
+  }> {
+    const { status, role, search, limit, offset } = params;
+    const allUsers = await this.userRepository.findAll();
+
+    const filtered = allUsers.filter((user) => {
+      if (status && user.getStatus() !== status) {
+        return false;
+      }
+      if (role && !user.hasRole(role)) {
+        return false;
+      }
+      if (search) {
+        const query = search.toLowerCase();
+        const matchesName = user.getName().toLowerCase().includes(query);
+        const matchesEmail = user
+          .getEmail()
+          .getValue()
+          .toLowerCase()
+          .includes(query);
+        if (!matchesName && !matchesEmail) {
+          return false;
+        }
+      }
+      return true;
+    });
+
+    const total = filtered.length;
+    const start = offset ?? 0;
+    const pageSize = limit ?? total;
+    const paginated =
+      pageSize === total && start === 0
+        ? filtered
+        : filtered.slice(start, start + pageSize);
+
+    return {
+      users: paginated,
+      total,
+      limit: pageSize,
+      offset: start,
+    };
   }
 
   /**
@@ -144,6 +202,31 @@ export class UserManagementService {
     }
 
     await this.userRepository.delete(user.getId());
+  }
+
+  /**
+   * Update user roles
+   */
+  async updateUserRoles(userId: string, roles: UserRole[]): Promise<User> {
+    return this.updateUser(userId, { roles });
+  }
+
+  /**
+   * Update user status
+   */
+  async updateUserStatus(userId: string, status: UserStatus): Promise<User> {
+    return this.updateUser(userId, { status });
+  }
+
+  /**
+   * Update user profile
+   */
+  async updateUserProfile(
+    userId: string,
+    name: string,
+    email: string
+  ): Promise<User> {
+    return this.updateUser(userId, { name, email });
   }
 
   /**

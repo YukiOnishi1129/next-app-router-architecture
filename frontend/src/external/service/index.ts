@@ -8,6 +8,8 @@ export {
   type GoogleAuthResult,
   type UserProfile,
   type CreateUserData,
-  type UpdateUserData
+  type UpdateUserData,
+  type ListUsersParams
 } from './auth';
+export { CommentService } from './CommentService';
 export { NotificationService, EmailChannel, InAppChannel, type NotificationChannel, type NotificationPreferences } from './NotificationService';

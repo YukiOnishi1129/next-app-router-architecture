@@ -6,12 +6,15 @@
   },
   "files.autoSave": "afterDelay",
   "files.autoSaveDelay": 1000,
+  "eslint.enable": true,
   "eslint.validate": [
     "javascript",
     "javascriptreact",
     "typescript",
     "typescriptreact"
   ],
+  "eslint.workingDirectories": [{ "mode": "auto" }],
+  "eslint.format.enable": true,
   "typescript.tsdk": "node_modules/typescript/lib",
   "typescript.enablePromptUseWorkspaceTsdk": true,
   "[javascript]": {

@@ -11,7 +11,7 @@ export class DateRange {
 
   private validate(): void {
     if (this.startDate > this.endDate) {
-      throw new Error('Start date must be before or equal to end date');
+      throw new Error("Start date must be before or equal to end date");
     }
   }
 

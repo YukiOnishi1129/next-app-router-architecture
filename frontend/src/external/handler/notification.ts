@@ -2,7 +2,7 @@
 
 import { z } from "zod";
 import { NotificationService } from "@/external/service/NotificationService";
-import { UserRepository } from "@/external/domain";
+import { UserManagementService } from "@/external/service";
 import { getSession } from "./auth";
 
 // Validation schemas
@@ -35,6 +35,11 @@ const updatePreferencesSchema = z.object({
     .optional(),
 });
 
+type GetNotificationsInput = z.input<typeof getNotificationsSchema>;
+type MarkAsReadInput = z.input<typeof markAsReadSchema>;
+type MarkAllAsReadInput = z.input<typeof markAllAsReadSchema>;
+type UpdatePreferencesInput = z.input<typeof updatePreferencesSchema>;
+
 // Response types
 export type NotificationResponse = {
   success: boolean;
@@ -45,7 +50,7 @@ export type NotificationResponse = {
     type: string;
     title: string;
     message: string;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
     read: boolean;
     createdAt: string;
   };
@@ -80,13 +85,13 @@ export type NotificationPreferencesResponse = {
 
 // Initialize services
 const notificationService = new NotificationService();
-const userRepository = new UserRepository();
+const userService = new UserManagementService();
 
 /**
  * Get notifications for current user
  */
 export async function getNotifications(
-  data?: unknown
+  data?: GetNotificationsInput
 ): Promise<NotificationListResponse> {
   try {
     const session = await getSession();
@@ -97,7 +102,7 @@ export async function getNotifications(
       };
     }
 
-    const validated = getNotificationsSchema.parse(data || {});
+    const validated = getNotificationsSchema.parse(data ?? {});
 
     // Get notifications from service
     const result = await notificationService.getUserNotifications(
@@ -111,15 +116,14 @@ export async function getNotifications(
 
     return {
       success: true,
-      notifications: result.notifications.map((n) => ({
-        id: n.id,
-        userId: n.userId,
-        type: n.type,
-        title: n.title,
-        message: n.message,
-        metadata: n.metadata,
-        read: n.read,
-        createdAt: n.createdAt.toISOString(),
+      notifications: result.notifications.map((notification) => ({
+        id: notification.getId().getValue(),
+        userId: notification.getRecipientId().getValue(),
+        type: notification.getType(),
+        title: notification.getTitle(),
+        message: notification.getMessage(),
+        read: notification.getIsRead(),
+        createdAt: notification.getCreatedAt().toISOString(),
       })),
       total: result.total,
       unreadCount: result.unreadCount,
@@ -146,7 +150,7 @@ export async function getNotifications(
  * Mark notification as read
  */
 export async function markNotificationAsRead(
-  data: unknown
+  data: MarkAsReadInput
 ): Promise<NotificationResponse> {
   try {
     const session = await getSession();
@@ -164,24 +168,16 @@ export async function markNotificationAsRead(
       session.user.id
     );
 
-    if (!notification) {
-      return {
-        success: false,
-        error: "Notification not found",
-      };
-    }
-
     return {
       success: true,
       notification: {
-        id: notification.id,
-        userId: notification.userId,
-        type: notification.type,
-        title: notification.title,
-        message: notification.message,
-        metadata: notification.metadata,
-        read: notification.read,
-        createdAt: notification.createdAt.toISOString(),
+        id: notification.getId().getValue(),
+        userId: notification.getRecipientId().getValue(),
+        type: notification.getType(),
+        title: notification.getTitle(),
+        message: notification.getMessage(),
+        read: notification.getIsRead(),
+        createdAt: notification.getCreatedAt().toISOString(),
       },
     };
   } catch (error) {
@@ -205,7 +201,9 @@ export async function markNotificationAsRead(
 /**
  * Mark all notifications as read
  */
-export async function markAllNotificationsAsRead(data?: unknown): Promise<{
+export async function markAllNotificationsAsRead(
+  data?: MarkAllAsReadInput
+): Promise<{
   success: boolean;
   error?: string;
   count?: number;
@@ -219,7 +217,7 @@ export async function markAllNotificationsAsRead(data?: unknown): Promise<{
       };
     }
 
-    const validated = markAllAsReadSchema.parse(data || {});
+    const validated = markAllAsReadSchema.parse(data ?? {});
 
     const count = await notificationService.markAllAsRead(
       session.user.id,
@@ -261,7 +259,7 @@ export async function getNotificationPreferences(): Promise<NotificationPreferen
       };
     }
 
-    const user = await userRepository.findById(session.user.id);
+    const user = await userService.findUserById(session.user.id);
     if (!user) {
       return {
         success: false,
@@ -278,14 +276,7 @@ export async function getNotificationPreferences(): Promise<NotificationPreferen
       preferences: {
         emailNotifications: preferences.emailEnabled,
         inAppNotifications: preferences.inAppEnabled,
-        notificationTypes: {
-          requestCreated: preferences.types.includes("request.created"),
-          requestUpdated: preferences.types.includes("request.updated"),
-          requestApproved: preferences.types.includes("request.approved"),
-          requestRejected: preferences.types.includes("request.rejected"),
-          commentAdded: preferences.types.includes("comment.added"),
-          assignmentChanged: preferences.types.includes("assignment.changed"),
-        },
+        notificationTypes: buildPreferenceFlags(preferences.types),
       },
     };
   } catch (error) {
@@ -303,7 +294,7 @@ export async function getNotificationPreferences(): Promise<NotificationPreferen
  * Update notification preferences
  */
 export async function updateNotificationPreferences(
-  data: unknown
+  data: UpdatePreferencesInput
 ): Promise<NotificationPreferencesResponse> {
   try {
     const session = await getSession();
@@ -315,6 +306,14 @@ export async function updateNotificationPreferences(
     }
 
     const validated = updatePreferencesSchema.parse(data);
+
+    const user = await userService.findUserById(session.user.id);
+    if (!user) {
+      return {
+        success: false,
+        error: "User not found",
+      };
+    }
 
     // Build notification types array
     const types: string[] = [];
@@ -349,17 +348,7 @@ export async function updateNotificationPreferences(
       preferences: {
         emailNotifications: updatedPreferences.emailEnabled,
         inAppNotifications: updatedPreferences.inAppEnabled,
-        notificationTypes: {
-          requestCreated: updatedPreferences.types.includes("request.created"),
-          requestUpdated: updatedPreferences.types.includes("request.updated"),
-          requestApproved:
-            updatedPreferences.types.includes("request.approved"),
-          requestRejected:
-            updatedPreferences.types.includes("request.rejected"),
-          commentAdded: updatedPreferences.types.includes("comment.added"),
-          assignmentChanged:
-            updatedPreferences.types.includes("assignment.changed"),
-        },
+        notificationTypes: buildPreferenceFlags(updatedPreferences.types),
       },
     };
   } catch (error) {
@@ -395,7 +384,7 @@ export async function sendTestNotification(
       };
     }
 
-    const currentUser = await userRepository.findById(session.user.id);
+    const currentUser = await userService.findUserById(session.user.id);
     if (!currentUser || !currentUser.isAdmin()) {
       return {
         success: false,
@@ -403,7 +392,7 @@ export async function sendTestNotification(
       };
     }
 
-    const targetUser = await userRepository.findById(userId);
+    const targetUser = await userService.findUserById(userId);
     if (!targetUser) {
       return {
         success: false,
@@ -425,4 +414,16 @@ export async function sendTestNotification(
           : "Failed to send test notification",
     };
   }
+}
+
+function buildPreferenceFlags(types: string[]) {
+  const typeSet = new Set(types);
+  return {
+    requestCreated: typeSet.has("request.created"),
+    requestUpdated: typeSet.has("request.updated"),
+    requestApproved: typeSet.has("request.approved"),
+    requestRejected: typeSet.has("request.rejected"),
+    commentAdded: typeSet.has("comment.added"),
+    assignmentChanged: typeSet.has("assignment.changed"),
+  };
 }

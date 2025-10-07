@@ -1,6 +1,7 @@
 import {
   Request,
   RequestPriority,
+  Comment,
   User,
   UserId,
   UserRole,
@@ -14,6 +15,27 @@ import { UserRepository } from "@/external/repository/UserRepository";
 export interface NotificationChannel {
   sendNotification(notification: Notification, recipient: User): Promise<void>;
 }
+
+export interface NotificationPreferences {
+  emailEnabled: boolean;
+  inAppEnabled: boolean;
+  types: string[];
+}
+
+const DEFAULT_NOTIFICATION_TYPES = [
+  "request.created",
+  "request.updated",
+  "request.approved",
+  "request.rejected",
+  "comment.added",
+  "assignment.changed",
+];
+
+const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
+  emailEnabled: true,
+  inAppEnabled: true,
+  types: [...DEFAULT_NOTIFICATION_TYPES],
+};
 
 export class EmailChannel implements NotificationChannel {
   async sendNotification(
@@ -45,6 +67,7 @@ export class NotificationService {
   private channels: Map<string, NotificationChannel>;
   private notificationRepository: NotificationRepository;
   private userRepository: UserRepository;
+  private userPreferences: Map<string, NotificationPreferences>;
 
   constructor() {
     // Initialize repositories
@@ -56,6 +79,8 @@ export class NotificationService {
       ["email", new EmailChannel()],
       ["inApp", new InAppChannel()],
     ]);
+
+    this.userPreferences = new Map();
   }
 
   /**
@@ -203,6 +228,97 @@ export class NotificationService {
   }
 
   /**
+   * Notify assignee about new assignment
+   */
+  async notifyAssignment(request: Request): Promise<void> {
+    const assigneeId = request.getAssigneeId();
+    if (!assigneeId) {
+      return;
+    }
+
+    const assignee = await this.userRepository.findById(assigneeId);
+    if (!assignee) {
+      console.error(`Assignee not found: ${assigneeId.getValue()}`);
+      return;
+    }
+
+    const notification = Notification.create({
+      recipientId: assignee.getId().getValue(),
+      title: `Request Assigned`,
+      message: `You have been assigned to request "${request.getTitle()}"`,
+      type: NotificationType.REQUEST_ASSIGNED,
+      relatedEntityId: request.getId().getValue(),
+      relatedEntityType: "REQUEST",
+    });
+
+    await this.notificationRepository.save(notification);
+    await this.sendNotification(notification, assignee, ["email", "inApp"]);
+  }
+
+  /**
+   * Notify request stakeholders about new comment
+   */
+  async notifyCommentAdded(
+    request: Request,
+    comment: Comment,
+    author: User,
+    additionalRecipientIds: string[] = []
+  ): Promise<void> {
+    const recipients = new Map<string, User>();
+
+    const requester = await this.userRepository.findById(
+      request.getRequesterId()
+    );
+    if (
+      requester &&
+      requester.getId().getValue() !== author.getId().getValue()
+    ) {
+      recipients.set(requester.getId().getValue(), requester);
+    }
+
+    const assigneeId = request.getAssigneeId();
+    if (assigneeId) {
+      const assignee = await this.userRepository.findById(assigneeId);
+      if (
+        assignee &&
+        assignee.getId().getValue() !== author.getId().getValue()
+      ) {
+        recipients.set(assignee.getId().getValue(), assignee);
+      }
+    }
+
+    for (const recipientId of additionalRecipientIds) {
+      if (recipientId === author.getId().getValue()) {
+        continue;
+      }
+      if (!recipients.has(recipientId)) {
+        const user = await this.userRepository.findById(
+          UserId.create(recipientId)
+        );
+        if (user) {
+          recipients.set(recipientId, user);
+        }
+      }
+    }
+
+    for (const recipient of recipients.values()) {
+      const notification = Notification.create({
+        recipientId: recipient.getId().getValue(),
+        title: `New Comment on "${request.getTitle()}"`,
+        message: `${author.getName()} commented: ${comment
+          .getContent()
+          .getValue()}`,
+        type: NotificationType.COMMENT_ADDED,
+        relatedEntityId: request.getId().getValue(),
+        relatedEntityType: "REQUEST",
+      });
+
+      await this.notificationRepository.save(notification);
+      await this.sendNotification(notification, recipient, ["inApp", "email"]);
+    }
+  }
+
+  /**
    * Notify about approaching deadline
    */
   async notifyApproachingDeadline(
@@ -280,26 +396,45 @@ export class NotificationService {
    */
   async getUserNotifications(
     userId: string,
-    unreadOnly: boolean = false,
-    limit?: number
-  ): Promise<Notification[]> {
+    options: {
+      unreadOnly?: boolean;
+      limit?: number;
+      offset?: number;
+    } = {}
+  ): Promise<{
+    notifications: Notification[];
+    total: number;
+    unreadCount: number;
+  }> {
+    const { unreadOnly = false, limit, offset } = options;
     const recipientId = UserId.create(userId);
-    const notifications = await this.notificationRepository.findByRecipientId(
-      recipientId,
-      limit
-    );
+    const allNotifications =
+      await this.notificationRepository.findByRecipientId(recipientId);
 
-    if (unreadOnly) {
-      return notifications.filter((n) => !n.getIsRead());
-    }
+    const filtered = unreadOnly
+      ? allNotifications.filter((n) => !n.getIsRead())
+      : allNotifications;
 
-    return notifications;
+    const start = offset ?? 0;
+    const end = limit !== undefined ? start + limit : undefined;
+    const paginated = filtered.slice(start, end);
+
+    const unreadCount = allNotifications.filter((n) => !n.getIsRead()).length;
+
+    return {
+      notifications: paginated,
+      total: filtered.length,
+      unreadCount,
+    };
   }
 
   /**
    * Mark notification as read
    */
-  async markAsRead(notificationId: string, userId: string): Promise<void> {
+  async markAsRead(
+    notificationId: string,
+    userId: string
+  ): Promise<Notification> {
     const notification = await this.notificationRepository.findById(
       NotificationId.create(notificationId)
     );
@@ -310,18 +445,32 @@ export class NotificationService {
 
     notification.markAsRead();
     await this.notificationRepository.save(notification);
+
+    return notification;
   }
 
   /**
    * Mark all notifications as read
    */
-  async markAllAsRead(userId: string): Promise<void> {
-    const notifications = await this.getUserNotifications(userId, true);
+  async markAllAsRead(userId: string, before?: Date): Promise<number> {
+    const notifications = await this.notificationRepository.findByRecipientId(
+      UserId.create(userId)
+    );
 
+    let updatedCount = 0;
     for (const notification of notifications) {
-      notification.markAsRead();
-      await this.notificationRepository.save(notification);
+      if (before && notification.getCreatedAt().getTime() > before.getTime()) {
+        continue;
+      }
+
+      if (!notification.getIsRead()) {
+        notification.markAsRead();
+        await this.notificationRepository.save(notification);
+        updatedCount += 1;
+      }
     }
+
+    return updatedCount;
   }
 
   /**
@@ -330,21 +479,8 @@ export class NotificationService {
   async getNotificationPreferences(
     _userId: string
   ): Promise<NotificationPreferences> {
-    // In production, this would fetch from a preferences table
-    return {
-      email: {
-        newRequest: true,
-        statusChanged: true,
-        requestUpdated: false,
-        deadlineReminder: true,
-      },
-      inApp: {
-        newRequest: true,
-        statusChanged: true,
-        requestUpdated: true,
-        deadlineReminder: true,
-      },
-    };
+    // Deprecated method retained for backward compatibility
+    return DEFAULT_NOTIFICATION_PREFERENCES;
   }
 
   /**
@@ -353,9 +489,58 @@ export class NotificationService {
   async updateNotificationPreferences(
     userId: string,
     _preferences: NotificationPreferences
-  ): Promise<void> {
-    // In production, this would update preferences in database
-    console.log(`Updating notification preferences for user ${userId}`);
+  ): Promise<NotificationPreferences> {
+    // Deprecated method retained for backward compatibility
+    return this.updateUserPreferences(userId, _preferences);
+  }
+
+  /**
+   * Get user notification preferences with defaults
+   */
+  async getUserPreferences(userId: string): Promise<NotificationPreferences> {
+    const stored = this.userPreferences.get(userId);
+    if (stored) {
+      return { ...stored, types: [...stored.types] };
+    }
+    return {
+      ...DEFAULT_NOTIFICATION_PREFERENCES,
+      types: [...DEFAULT_NOTIFICATION_TYPES],
+    };
+  }
+
+  /**
+   * Update user notification preferences and persist in-memory
+   */
+  async updateUserPreferences(
+    userId: string,
+    preferences: Partial<NotificationPreferences>
+  ): Promise<NotificationPreferences> {
+    const current = await this.getUserPreferences(userId);
+    const updated: NotificationPreferences = {
+      emailEnabled: preferences.emailEnabled ?? current.emailEnabled,
+      inAppEnabled: preferences.inAppEnabled ?? current.inAppEnabled,
+      types: preferences.types ? [...preferences.types] : [...current.types],
+    };
+
+    this.userPreferences.set(userId, updated);
+    return updated;
+  }
+
+  /**
+   * Send a test notification to verify channels
+   */
+  async sendTestNotification(user: User): Promise<void> {
+    const notification = Notification.create({
+      recipientId: user.getId().getValue(),
+      title: "Test Notification",
+      message: "This is a test notification.",
+      type: NotificationType.SYSTEM,
+      relatedEntityType: "SYSTEM",
+      relatedEntityId: "test",
+    });
+
+    await this.notificationRepository.save(notification);
+    await this.sendNotification(notification, user, ["email", "inApp"]);
   }
 
   /**
@@ -431,19 +616,4 @@ export class NotificationService {
       `Notifying stakeholders about approved request ${request.getId().getValue()}`
     );
   }
-}
-
-export interface NotificationPreferences {
-  email: {
-    newRequest: boolean;
-    statusChanged: boolean;
-    requestUpdated: boolean;
-    deadlineReminder: boolean;
-  };
-  inApp: {
-    newRequest: boolean;
-    statusChanged: boolean;
-    requestUpdated: boolean;
-    deadlineReminder: boolean;
-  };
 }

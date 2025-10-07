@@ -1,12 +1,18 @@
 /**
  * Authentication Service
- * 
+ *
  * This service handles authentication logic only.
  * It delegates to the Google Identity Platform API client for all external API calls.
  * It does not interact with the database directly.
  */
 
-import { IdentityPlatformClient, UserInfo, SignUpData, SignInData, EmailAuthResult } from '@/external/client/gcp/identity-platform';
+import {
+  IdentityPlatformClient,
+  UserInfo,
+  SignUpData,
+  SignInData,
+  EmailAuthResult,
+} from "@/external/client/gcp/identity-platform";
 
 export interface AuthToken {
   token: string;
@@ -43,11 +49,12 @@ export class AuthenticationService {
     displayName?: string
   ): Promise<EmailPasswordAuthResult> {
     // Sign up the user
-    const authResult = await this.identityPlatformClient.signUpWithEmailPassword({
-      email,
-      password,
-      displayName,
-    });
+    const authResult =
+      await this.identityPlatformClient.signUpWithEmailPassword({
+        email,
+        password,
+        displayName,
+      });
 
     // Get detailed user info
     const userInfo = await this.identityPlatformClient.getUserInfo(
@@ -69,7 +76,7 @@ export class AuthenticationService {
       userInfo: {
         id: userInfo.localId,
         email: userInfo.email,
-        name: userInfo.displayName || userInfo.email.split('@')[0],
+        name: userInfo.displayName || userInfo.email.split("@")[0],
         emailVerified: userInfo.emailVerified,
       },
       expiresAt,
@@ -84,10 +91,11 @@ export class AuthenticationService {
     password: string
   ): Promise<EmailPasswordAuthResult> {
     // Sign in the user
-    const authResult = await this.identityPlatformClient.signInWithEmailPassword({
-      email,
-      password,
-    });
+    const authResult =
+      await this.identityPlatformClient.signInWithEmailPassword({
+        email,
+        password,
+      });
 
     // Get detailed user info
     const userInfo = await this.identityPlatformClient.getUserInfo(
@@ -106,7 +114,7 @@ export class AuthenticationService {
       userInfo: {
         id: userInfo.localId,
         email: userInfo.email,
-        name: userInfo.displayName || userInfo.email.split('@')[0],
+        name: userInfo.displayName || userInfo.email.split("@")[0],
         emailVerified: userInfo.emailVerified,
       },
       expiresAt,
@@ -125,7 +133,7 @@ export class AuthenticationService {
 
       return await this.identityPlatformClient.getUserInfo(idToken);
     } catch (error) {
-      console.error('Token verification failed:', error);
+      console.error("Token verification failed:", error);
       return null;
     }
   }
@@ -133,18 +141,19 @@ export class AuthenticationService {
   /**
    * Refresh authentication token
    */
-  async refreshToken(refreshToken: string): Promise<{ token: string; refreshToken?: string } | null> {
+  async refreshToken(
+    refreshToken: string
+  ): Promise<{ token: string; refreshToken?: string } | null> {
     try {
-      const newTokens = await this.identityPlatformClient.refreshIdToken(
-        refreshToken
-      );
+      const newTokens =
+        await this.identityPlatformClient.refreshIdToken(refreshToken);
 
       return {
         token: newTokens.idToken,
         refreshToken: newTokens.refreshToken,
       };
     } catch (error) {
-      console.error('Token refresh failed:', error);
+      console.error("Token refresh failed:", error);
       return null;
     }
   }
