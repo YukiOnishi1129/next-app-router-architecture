@@ -16,8 +16,8 @@
     "test:coverage": "vitest run --coverage",
     "db:generate": "tsx scripts/generate-migration.ts",
     "db:migrate": "tsx scripts/migrate.ts",
-    "db:push": "drizzle-kit push:pg",
-    "db:studio": "drizzle-kit studio"
+    "db:push": "drizzle-kit push:pg --config=drizzle.config.cjs",
+    "db:studio": "drizzle-kit studio --config=drizzle.config.cjs"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.90.2",
