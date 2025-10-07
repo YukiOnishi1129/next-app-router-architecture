@@ -1,34 +1,41 @@
-import { Request } from '@/external/domain/models/Request';
-import { User } from '@/external/domain/models/User';
-import { RequestStatus } from '@/external/domain/valueobjects/RequestStatus';
-import { Priority } from '@/external/domain/valueobjects/Priority';
-import { RequestCategory } from '@/external/domain/valueobjects/RequestCategory';
-import { RequestRepository } from '@/external/repository/RequestRepository';
-import { NotificationService } from './NotificationService';
-import { AuditService } from './AuditService';
+import {
+  Request,
+  RequestId,
+  RequestStatus,
+  RequestPriority,
+  RequestType,
+  User,
+} from "@/external/domain";
+import { RequestRepository } from "@/external/repository/RequestRepository";
+import { NotificationService } from "./NotificationService";
+import { AuditService } from "./AuditService";
+import { db } from "@/external/client/db/client";
 
 export interface CreateRequestDto {
   title: string;
   description: string;
-  category: RequestCategory;
-  priority: Priority;
-  metadata?: Record<string, any>;
+  type: RequestType;
+  priority: RequestPriority;
+  assigneeId?: string;
 }
 
 export interface UpdateRequestDto {
   title?: string;
   description?: string;
-  category?: RequestCategory;
-  priority?: Priority;
-  metadata?: Record<string, any>;
+  type?: RequestType;
+  priority?: RequestPriority;
 }
 
 export class RequestWorkflowService {
+  private requestRepository: RequestRepository;
+
   constructor(
-    private requestRepository: RequestRepository,
     private notificationService: NotificationService,
     private auditService: AuditService
-  ) {}
+  ) {
+    // Initialize concrete repository implementations
+    this.requestRepository = new RequestRepository();
+  }
 
   /**
    * Create a new request
@@ -41,27 +48,25 @@ export class RequestWorkflowService {
     this.validateRequestData(data);
 
     // Create new request with initial status
-    const request = new Request(
-      this.generateId(),
-      data.title,
-      data.description,
-      requester,
-      RequestStatus.PENDING,
-      new Date(),
-      new Date(),
-      data.category,
-      data.priority,
-      data.metadata
-    );
+    const request = Request.create({
+      title: data.title,
+      description: data.description,
+      type: data.type,
+      priority: data.priority,
+      requesterId: requester.getId().getValue(),
+      assigneeId: data.assigneeId,
+    });
 
-    // Save request
-    await this.requestRepository.save(request);
+    // Save request in transaction
+    await db.transaction(async () => {
+      await this.requestRepository.save(request);
 
-    // Send notifications
+      // Log audit trail
+      await this.auditService.logRequestCreated(request);
+    });
+
+    // Send notifications (outside transaction)
     await this.notificationService.notifyNewRequest(request);
-
-    // Log audit trail
-    await this.auditService.logRequestCreated(request);
 
     return request;
   }
@@ -74,7 +79,9 @@ export class RequestWorkflowService {
     updater: User,
     data: UpdateRequestDto
   ): Promise<Request> {
-    const request = await this.requestRepository.findById(requestId);
+    const request = await this.requestRepository.findById(
+      RequestId.create(requestId)
+    );
     if (!request) {
       throw new Error(`Request not found: ${requestId}`);
     }
@@ -82,32 +89,38 @@ export class RequestWorkflowService {
     // Validate update permissions
     this.validateUpdatePermissions(request, updater);
 
-    // Create updated request
-    const updatedRequest = new Request(
-      request.id,
-      data.title ?? request.title,
-      data.description ?? request.description,
-      request.requester,
-      request.status,
-      request.createdAt,
-      new Date(),
-      data.category ?? request.category,
-      data.priority ?? request.priority,
-      { ...request.metadata, ...data.metadata }
-    );
+    // Store old priority for comparison
+    const oldPriority = request.getPriority();
 
-    // Save changes
-    await this.requestRepository.save(updatedRequest);
-
-    // Send notifications if priority changed
-    if (data.priority && data.priority !== request.priority) {
-      await this.notificationService.notifyPriorityChange(updatedRequest, request.priority);
+    // Update request fields if they're editable
+    if (
+      data.title !== undefined ||
+      data.description !== undefined ||
+      data.type !== undefined ||
+      data.priority !== undefined
+    ) {
+      request.update({
+        title: data.title ?? request.getTitle(),
+        description: data.description ?? request.getDescription(),
+        type: data.type ?? request.getType(),
+        priority: data.priority ?? request.getPriority(),
+      });
     }
 
-    // Log audit trail
-    await this.auditService.logRequestUpdated(requestId, updater, data);
+    // Save changes in transaction
+    await db.transaction(async () => {
+      await this.requestRepository.save(request);
 
-    return updatedRequest;
+      // Log audit trail
+      await this.auditService.logRequestUpdated(requestId, updater, data);
+    });
+
+    // Send notifications if priority changed (outside transaction)
+    if (data.priority && data.priority !== oldPriority) {
+      await this.notificationService.notifyPriorityChange(request, oldPriority);
+    }
+
+    return request;
   }
 
   /**
@@ -118,7 +131,9 @@ export class RequestWorkflowService {
     canceller: User,
     reason: string
   ): Promise<Request> {
-    const request = await this.requestRepository.findById(requestId);
+    const request = await this.requestRepository.findById(
+      RequestId.create(requestId)
+    );
     if (!request) {
       throw new Error(`Request not found: ${requestId}`);
     }
@@ -126,30 +141,49 @@ export class RequestWorkflowService {
     // Validate cancellation permissions
     this.validateCancellationPermissions(request, canceller);
 
-    // Update status to cancelled
-    const cancelledRequest = new Request(
-      request.id,
-      request.title,
-      request.description,
-      request.requester,
-      RequestStatus.CANCELLED,
-      request.createdAt,
-      new Date(),
-      request.category,
-      request.priority,
-      { ...request.metadata, cancellationReason: reason }
+    // Cancel the request
+    request.cancel();
+
+    // Save changes in transaction
+    await db.transaction(async () => {
+      await this.requestRepository.save(request);
+
+      // Log audit trail
+      await this.auditService.logRequestCancelled(requestId, canceller, reason);
+    });
+
+    // Send notifications (outside transaction)
+    await this.notificationService.notifyRequestCancelled(request, reason);
+
+    return request;
+  }
+
+  /**
+   * Submit a request for review
+   */
+  async submitRequest(requestId: string, submitter: User): Promise<Request> {
+    const request = await this.requestRepository.findById(
+      RequestId.create(requestId)
     );
+    if (!request) {
+      throw new Error(`Request not found: ${requestId}`);
+    }
+
+    // Validate submission permissions
+    if (request.getRequesterId().getValue() !== submitter.getId().getValue()) {
+      throw new Error("Only the requester can submit their own request");
+    }
+
+    // Submit the request
+    request.submit();
 
     // Save changes
-    await this.requestRepository.save(cancelledRequest);
+    await this.requestRepository.save(request);
 
     // Send notifications
-    await this.notificationService.notifyRequestCancelled(cancelledRequest, reason);
+    await this.notificationService.notifyNewRequest(request);
 
-    // Log audit trail
-    await this.auditService.logRequestCancelled(requestId, canceller, reason);
-
-    return cancelledRequest;
+    return request;
   }
 
   /**
@@ -159,18 +193,22 @@ export class RequestWorkflowService {
     currentStatus: RequestStatus;
     canBeUpdated: boolean;
     canBeCancelled: boolean;
+    canBeSubmitted: boolean;
     nextPossibleStatuses: RequestStatus[];
   }> {
-    const request = await this.requestRepository.findById(requestId);
+    const request = await this.requestRepository.findById(
+      RequestId.create(requestId)
+    );
     if (!request) {
       throw new Error(`Request not found: ${requestId}`);
     }
 
     return {
-      currentStatus: request.status,
-      canBeUpdated: this.canBeUpdated(request.status),
-      canBeCancelled: this.canBeCancelled(request.status),
-      nextPossibleStatuses: this.getNextPossibleStatuses(request.status)
+      currentStatus: request.getStatus(),
+      canBeUpdated: request.canEdit(),
+      canBeCancelled: request.canCancel(),
+      canBeSubmitted: request.canSubmit(),
+      nextPossibleStatuses: this.getNextPossibleStatuses(request.getStatus()),
     };
   }
 
@@ -184,8 +222,20 @@ export class RequestWorkflowService {
   /**
    * Get requests by priority
    */
-  async getRequestsByPriority(priority: Priority): Promise<Request[]> {
-    return this.requestRepository.findByPriority(priority);
+  async getRequestsByPriority(priority: RequestPriority): Promise<Request[]> {
+    // This method is not directly supported by the repository
+    // We would need to add it or fetch all and filter
+    const allRequests: Request[] = [];
+
+    // Fetch by different statuses and filter by priority
+    for (const status of Object.values(RequestStatus)) {
+      const requests = await this.requestRepository.findByStatus(
+        status as RequestStatus
+      );
+      allRequests.push(...requests.filter((r) => r.getPriority() === priority));
+    }
+
+    return allRequests;
   }
 
   /**
@@ -193,19 +243,19 @@ export class RequestWorkflowService {
    */
   private validateRequestData(data: CreateRequestDto): void {
     if (!data.title || data.title.trim().length === 0) {
-      throw new Error('Request title is required');
+      throw new Error("Request title is required");
     }
 
     if (!data.description || data.description.trim().length === 0) {
-      throw new Error('Request description is required');
+      throw new Error("Request description is required");
     }
 
     if (data.title.length > 200) {
-      throw new Error('Request title must not exceed 200 characters');
+      throw new Error("Request title must not exceed 200 characters");
     }
 
     if (data.description.length > 5000) {
-      throw new Error('Request description must not exceed 5000 characters');
+      throw new Error("Request description must not exceed 5000 characters");
     }
   }
 
@@ -213,53 +263,58 @@ export class RequestWorkflowService {
    * Validate update permissions
    */
   private validateUpdatePermissions(request: Request, updater: User): void {
-    // Only requester can update their own pending request
-    if (request.requester.id !== updater.id && updater.role !== 'ADMIN') {
-      throw new Error('User does not have permission to update this request');
+    // Only requester can update their own draft request
+    if (
+      request.getRequesterId().getValue() !== updater.getId().getValue() &&
+      !updater.isAdmin()
+    ) {
+      throw new Error("User does not have permission to update this request");
     }
 
-    // Cannot update approved or rejected requests
-    if ([RequestStatus.APPROVED, RequestStatus.REJECTED].includes(request.status)) {
-      throw new Error('Cannot update request in current status');
+    // Cannot update if not in draft status
+    if (!request.canEdit()) {
+      throw new Error("Cannot update request in current status");
     }
   }
 
   /**
    * Validate cancellation permissions
    */
-  private validateCancellationPermissions(request: Request, canceller: User): void {
+  private validateCancellationPermissions(
+    request: Request,
+    canceller: User
+  ): void {
     // Only requester or admin can cancel
-    if (request.requester.id !== canceller.id && canceller.role !== 'ADMIN') {
-      throw new Error('User does not have permission to cancel this request');
+    if (
+      request.getRequesterId().getValue() !== canceller.getId().getValue() &&
+      !canceller.isAdmin()
+    ) {
+      throw new Error("User does not have permission to cancel this request");
     }
 
-    // Cannot cancel completed requests
-    if ([RequestStatus.APPROVED, RequestStatus.REJECTED, RequestStatus.CANCELLED].includes(request.status)) {
-      throw new Error('Cannot cancel request in current status');
+    // Check if request can be cancelled
+    if (!request.canCancel()) {
+      throw new Error("Cannot cancel request in current status");
     }
-  }
-
-  /**
-   * Check if request can be updated
-   */
-  private canBeUpdated(status: RequestStatus): boolean {
-    return status === RequestStatus.PENDING;
-  }
-
-  /**
-   * Check if request can be cancelled
-   */
-  private canBeCancelled(status: RequestStatus): boolean {
-    return status === RequestStatus.PENDING;
   }
 
   /**
    * Get next possible statuses
    */
-  private getNextPossibleStatuses(currentStatus: RequestStatus): RequestStatus[] {
+  private getNextPossibleStatuses(
+    currentStatus: RequestStatus
+  ): RequestStatus[] {
     switch (currentStatus) {
-      case RequestStatus.PENDING:
-        return [RequestStatus.APPROVED, RequestStatus.REJECTED, RequestStatus.CANCELLED];
+      case RequestStatus.DRAFT:
+        return [RequestStatus.SUBMITTED, RequestStatus.CANCELLED];
+      case RequestStatus.SUBMITTED:
+        return [RequestStatus.IN_REVIEW, RequestStatus.CANCELLED];
+      case RequestStatus.IN_REVIEW:
+        return [
+          RequestStatus.APPROVED,
+          RequestStatus.REJECTED,
+          RequestStatus.CANCELLED,
+        ];
       case RequestStatus.APPROVED:
       case RequestStatus.REJECTED:
       case RequestStatus.CANCELLED:
@@ -267,12 +322,5 @@ export class RequestWorkflowService {
       default:
         return [];
     }
-  }
-
-  /**
-   * Generate unique ID
-   */
-  private generateId(): string {
-    return `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 }

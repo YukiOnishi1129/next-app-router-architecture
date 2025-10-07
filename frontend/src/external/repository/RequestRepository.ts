@@ -1,6 +1,6 @@
-import { eq, and, desc } from 'drizzle-orm';
-import { db } from '../client/db/client';
-import { requests } from '../client/db/schema';
+import { eq, and, desc, count } from "drizzle-orm";
+import { db } from "../client/db/client";
+import { requests } from "../client/db/schema";
 import {
   RequestRepository as IRequestRepository,
   Request,
@@ -9,7 +9,18 @@ import {
   RequestStatus,
   RequestType,
   RequestPriority,
-} from '../domain';
+} from "../domain";
+
+// Type mapping between domain and database
+type DbRequestType = "BUDGET" | "LEAVE" | "EQUIPMENT" | "OTHER";
+type DbRequestPriority = "LOW" | "MEDIUM" | "HIGH" | "URGENT";
+type DbRequestStatus =
+  | "DRAFT"
+  | "SUBMITTED"
+  | "IN_REVIEW"
+  | "APPROVED"
+  | "REJECTED"
+  | "CANCELLED";
 
 export class RequestRepository implements IRequestRepository {
   async findById(id: RequestId): Promise<Request | null> {
@@ -37,12 +48,13 @@ export class RequestRepository implements IRequestRepository {
       .where(eq(requests.requesterId, requesterId.getValue()))
       .orderBy(desc(requests.createdAt));
 
+    // Type assertion to handle Drizzle's type limitations
+    const dynamicQuery = query as any;
     if (limit !== undefined) {
-      query = query.limit(limit);
+      query = dynamicQuery.limit(limit);
     }
-
     if (offset !== undefined) {
-      query = query.offset(offset);
+      query = dynamicQuery.offset(offset);
     }
 
     const result = await query;
@@ -60,12 +72,13 @@ export class RequestRepository implements IRequestRepository {
       .where(eq(requests.assigneeId, assigneeId.getValue()))
       .orderBy(desc(requests.createdAt));
 
+    // Type assertion to handle Drizzle's type limitations
+    const dynamicQuery = query as any;
     if (limit !== undefined) {
-      query = query.limit(limit);
+      query = dynamicQuery.limit(limit);
     }
-
     if (offset !== undefined) {
-      query = query.offset(offset);
+      query = dynamicQuery.offset(offset);
     }
 
     const result = await query;
@@ -80,15 +93,16 @@ export class RequestRepository implements IRequestRepository {
     let query = db
       .select()
       .from(requests)
-      .where(eq(requests.status, status))
+      .where(eq(requests.status, status as DbRequestStatus))
       .orderBy(desc(requests.createdAt));
 
+    // Type assertion to handle Drizzle's type limitations
+    const dynamicQuery = query as any;
     if (limit !== undefined) {
-      query = query.limit(limit);
+      query = dynamicQuery.limit(limit);
     }
-
     if (offset !== undefined) {
-      query = query.offset(offset);
+      query = dynamicQuery.offset(offset);
     }
 
     const result = await query;
@@ -97,11 +111,11 @@ export class RequestRepository implements IRequestRepository {
 
   async countByStatus(status: RequestStatus): Promise<number> {
     const result = await db
-      .select({ count: requests.id })
+      .select({ value: count() })
       .from(requests)
       .where(eq(requests.status, status));
 
-    return result.length;
+    return result[0]?.value ?? 0;
   }
 
   async save(entity: Request): Promise<void> {
@@ -109,12 +123,12 @@ export class RequestRepository implements IRequestRepository {
       id: entity.getId().getValue(),
       title: entity.getTitle(),
       description: entity.getDescription(),
-      type: entity.getType(),
-      priority: entity.getPriority(),
-      status: entity.getStatus(),
+      type: this.mapRequestTypeToDb(entity.getType()),
+      priority: entity.getPriority() as DbRequestPriority,
+      status: entity.getStatus() as DbRequestStatus,
       requesterId: entity.getRequesterId().getValue(),
       assigneeId: entity.getAssigneeId()?.getValue() || null,
-      attachmentIds: entity.getAttachmentIds(),
+      attachmentIds: entity.getAttachmentIds() as string[],
       createdAt: entity.getCreatedAt(),
       updatedAt: entity.getUpdatedAt(),
       submittedAt: entity.getSubmittedAt(),
@@ -134,7 +148,7 @@ export class RequestRepository implements IRequestRepository {
           priority: data.priority,
           status: data.status,
           assigneeId: data.assigneeId,
-          attachmentIds: data.attachmentIds,
+          attachmentIds: data.attachmentIds as string[],
           updatedAt: data.updatedAt,
           submittedAt: data.submittedAt,
           reviewedAt: data.reviewedAt,
@@ -155,7 +169,7 @@ export class RequestRepository implements IRequestRepository {
       id: row.id,
       title: row.title,
       description: row.description,
-      type: row.type as RequestType,
+      type: this.mapRequestTypeFromDb(row.type as DbRequestType),
       priority: row.priority as RequestPriority,
       status: row.status as RequestStatus,
       requesterId: row.requesterId,
@@ -167,5 +181,26 @@ export class RequestRepository implements IRequestRepository {
       reviewedAt: row.reviewedAt,
       reviewerId: row.reviewerId,
     });
+  }
+
+  private mapRequestTypeToDb(type: RequestType): DbRequestType {
+    const mapping: Record<RequestType, DbRequestType> = {
+      [RequestType.LEAVE]: "LEAVE",
+      [RequestType.EQUIPMENT]: "EQUIPMENT",
+      [RequestType.EXPENSE]: "BUDGET",
+      [RequestType.ACCESS]: "OTHER",
+      [RequestType.OTHER]: "OTHER",
+    };
+    return mapping[type];
+  }
+
+  private mapRequestTypeFromDb(type: DbRequestType): RequestType {
+    const mapping: Record<DbRequestType, RequestType> = {
+      BUDGET: RequestType.EXPENSE,
+      LEAVE: RequestType.LEAVE,
+      EQUIPMENT: RequestType.EQUIPMENT,
+      OTHER: RequestType.OTHER,
+    };
+    return mapping[type];
   }
 }

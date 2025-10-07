@@ -1,42 +1,60 @@
-import { Request } from '@/external/domain/models/Request';
-import { User } from '@/external/domain/models/User';
-import { Notification } from '@/external/domain/models/Notification';
-import { NotificationType } from '@/external/domain/valueobjects/NotificationType';
-import { Priority } from '@/external/domain/valueobjects/Priority';
-import { NotificationRepository } from '@/external/repository/NotificationRepository';
-import { UserRepository } from '@/external/repository/UserRepository';
+import {
+  Request,
+  RequestPriority,
+  User,
+  UserId,
+  UserRole,
+  Notification,
+  NotificationId,
+  NotificationType,
+} from "@/external/domain";
+import { NotificationRepository } from "@/external/repository/NotificationRepository";
+import { UserRepository } from "@/external/repository/UserRepository";
 
 export interface NotificationChannel {
   sendNotification(notification: Notification, recipient: User): Promise<void>;
 }
 
 export class EmailChannel implements NotificationChannel {
-  async sendNotification(notification: Notification, recipient: User): Promise<void> {
+  async sendNotification(
+    notification: Notification,
+    recipient: User
+  ): Promise<void> {
     // Implementation would send actual email
-    console.log(`Sending email to ${recipient.email}: ${notification.title}`);
+    console.log(
+      `Sending email to ${recipient.getEmail().getValue()}: ${notification.getTitle()}`
+    );
     // In production, integrate with email service (SendGrid, SES, etc.)
   }
 }
 
 export class InAppChannel implements NotificationChannel {
-  async sendNotification(notification: Notification, recipient: User): Promise<void> {
+  async sendNotification(
+    notification: Notification,
+    recipient: User
+  ): Promise<void> {
     // In-app notifications are handled by storing in the database
     // The frontend will poll or use websockets to receive them
-    console.log(`Creating in-app notification for ${recipient.name}: ${notification.title}`);
+    console.log(
+      `Creating in-app notification for ${recipient.getName()}: ${notification.getTitle()}`
+    );
   }
 }
 
 export class NotificationService {
   private channels: Map<string, NotificationChannel>;
+  private notificationRepository: NotificationRepository;
+  private userRepository: UserRepository;
 
-  constructor(
-    private notificationRepository: NotificationRepository,
-    private userRepository: UserRepository
-  ) {
+  constructor() {
+    // Initialize repositories
+    this.notificationRepository = new NotificationRepository();
+    this.userRepository = new UserRepository();
+
     // Initialize notification channels
     this.channels = new Map([
-      ['email', new EmailChannel()],
-      ['inApp', new InAppChannel()]
+      ["email", new EmailChannel()],
+      ["inApp", new InAppChannel()],
     ]);
   }
 
@@ -44,27 +62,24 @@ export class NotificationService {
    * Notify about new request
    */
   async notifyNewRequest(request: Request): Promise<void> {
-    // Get managers and admins to notify
-    const approvers = await this.getApprovers();
+    // Get admins to notify
+    const admins = await this.getAdmins();
 
-    const notification = new Notification(
-      this.generateId(),
-      `New Request: ${request.title}`,
-      `A new ${request.priority} priority request has been submitted by ${request.requester.name}`,
-      NotificationType.NEW_REQUEST,
-      new Date(),
-      false,
-      {
-        requestId: request.id,
-        requesterId: request.requester.id,
-        priority: request.priority,
-        category: request.category
-      }
-    );
+    for (const admin of admins) {
+      const notification = Notification.create({
+        recipientId: admin.getId().getValue(),
+        title: `New Request: ${request.getTitle()}`,
+        message: `A new ${request.getPriority()} priority request has been submitted`,
+        type: NotificationType.REQUEST_CREATED,
+        relatedEntityId: request.getId().getValue(),
+        relatedEntityType: "REQUEST",
+      });
 
-    // Send to all approvers
-    for (const approver of approvers) {
-      await this.sendNotification(notification, approver, ['email', 'inApp']);
+      // Save notification
+      await this.notificationRepository.save(notification);
+
+      // Send through channels
+      await this.sendNotification(notification, admin, ["email", "inApp"]);
     }
   }
 
@@ -75,25 +90,34 @@ export class NotificationService {
     request: Request,
     changedBy: User
   ): Promise<void> {
-    const notification = new Notification(
-      this.generateId(),
-      `Request ${request.status}`,
-      `Your request "${request.title}" has been ${request.status.toLowerCase()} by ${changedBy.name}`,
-      NotificationType.STATUS_CHANGED,
-      new Date(),
-      false,
-      {
-        requestId: request.id,
-        newStatus: request.status,
-        changedById: changedBy.id
-      }
+    // Get requester
+    const requester = await this.userRepository.findById(
+      request.getRequesterId()
     );
+    if (!requester) {
+      console.error(
+        `Requester not found: ${request.getRequesterId().getValue()}`
+      );
+      return;
+    }
 
-    // Notify requester
-    await this.sendNotification(notification, request.requester, ['email', 'inApp']);
+    const notification = Notification.create({
+      recipientId: requester.getId().getValue(),
+      title: `Request ${request.getStatus()}`,
+      message: `Your request "${request.getTitle()}" has been ${request.getStatus().toLowerCase()} by ${changedBy.getName()}`,
+      type: NotificationType.REQUEST_APPROVED,
+      relatedEntityId: request.getId().getValue(),
+      relatedEntityType: "REQUEST",
+    });
+
+    // Save notification
+    await this.notificationRepository.save(notification);
+
+    // Send through channels
+    await this.sendNotification(notification, requester, ["email", "inApp"]);
 
     // Notify other stakeholders if needed
-    if (request.status === 'APPROVED') {
+    if (request.isApproved()) {
       await this.notifyStakeholders(request, notification);
     }
   }
@@ -103,30 +127,52 @@ export class NotificationService {
    */
   async notifyPriorityChange(
     request: Request,
-    oldPriority: Priority
+    oldPriority: RequestPriority
   ): Promise<void> {
-    const notification = new Notification(
-      this.generateId(),
-      `Request Priority Changed`,
-      `Request "${request.title}" priority changed from ${oldPriority} to ${request.priority}`,
-      NotificationType.REQUEST_UPDATED,
-      new Date(),
-      false,
-      {
-        requestId: request.id,
-        oldPriority,
-        newPriority: request.priority
-      }
+    // Get requester
+    const requester = await this.userRepository.findById(
+      request.getRequesterId()
     );
+    if (!requester) {
+      console.error(
+        `Requester not found: ${request.getRequesterId().getValue()}`
+      );
+      return;
+    }
 
-    // Notify requester
-    await this.sendNotification(notification, request.requester, ['inApp']);
+    const notification = Notification.create({
+      recipientId: requester.getId().getValue(),
+      title: `Request Priority Changed`,
+      message: `Request "${request.getTitle()}" priority changed from ${oldPriority} to ${request.getPriority()}`,
+      type: NotificationType.REQUEST_SUBMITTED,
+      relatedEntityId: request.getId().getValue(),
+      relatedEntityType: "REQUEST",
+    });
 
-    // If changed to HIGH priority, notify approvers
-    if (request.priority === Priority.HIGH && oldPriority !== Priority.HIGH) {
-      const approvers = await this.getApprovers();
-      for (const approver of approvers) {
-        await this.sendNotification(notification, approver, ['email', 'inApp']);
+    // Save notification
+    await this.notificationRepository.save(notification);
+
+    // Send through channels (only in-app for priority changes)
+    await this.sendNotification(notification, requester, ["inApp"]);
+
+    // If changed to URGENT priority, notify admins
+    if (request.getPriority() === "URGENT" && oldPriority !== "URGENT") {
+      const admins = await this.getAdmins();
+      for (const admin of admins) {
+        const adminNotification = Notification.create({
+          recipientId: admin.getId().getValue(),
+          title: `Urgent Request: ${request.getTitle()}`,
+          message: `Request priority has been elevated to URGENT`,
+          type: NotificationType.REQUEST_SUBMITTED,
+          relatedEntityId: request.getId().getValue(),
+          relatedEntityType: "REQUEST",
+        });
+
+        await this.notificationRepository.save(adminNotification);
+        await this.sendNotification(adminNotification, admin, [
+          "email",
+          "inApp",
+        ]);
       }
     }
   }
@@ -138,23 +184,21 @@ export class NotificationService {
     request: Request,
     reason: string
   ): Promise<void> {
-    const notification = new Notification(
-      this.generateId(),
-      `Request Cancelled`,
-      `Request "${request.title}" has been cancelled. Reason: ${reason}`,
-      NotificationType.REQUEST_CANCELLED,
-      new Date(),
-      false,
-      {
-        requestId: request.id,
-        cancellationReason: reason
-      }
-    );
-
-    // Notify all involved parties
+    // Get all stakeholders
     const recipients = await this.getRequestStakeholders(request);
+
     for (const recipient of recipients) {
-      await this.sendNotification(notification, recipient, ['email', 'inApp']);
+      const notification = Notification.create({
+        recipientId: recipient.getId().getValue(),
+        title: `Request Cancelled`,
+        message: `Request "${request.getTitle()}" has been cancelled. Reason: ${reason}`,
+        type: NotificationType.SYSTEM,
+        relatedEntityId: request.getId().getValue(),
+        relatedEntityType: "REQUEST",
+      });
+
+      await this.notificationRepository.save(notification);
+      await this.sendNotification(notification, recipient, ["email", "inApp"]);
     }
   }
 
@@ -165,26 +209,44 @@ export class NotificationService {
     request: Request,
     daysRemaining: number
   ): Promise<void> {
-    const notification = new Notification(
-      this.generateId(),
-      `Request Deadline Approaching`,
-      `Request "${request.title}" has ${daysRemaining} days remaining`,
-      NotificationType.DEADLINE_REMINDER,
-      new Date(),
-      false,
-      {
-        requestId: request.id,
-        daysRemaining
-      }
+    // Get requester
+    const requester = await this.userRepository.findById(
+      request.getRequesterId()
     );
+    if (!requester) {
+      console.error(
+        `Requester not found: ${request.getRequesterId().getValue()}`
+      );
+      return;
+    }
 
-    // Notify requester and approvers
-    await this.sendNotification(notification, request.requester, ['email', 'inApp']);
-    
-    if (request.status === 'PENDING') {
-      const approvers = await this.getApprovers();
-      for (const approver of approvers) {
-        await this.sendNotification(notification, approver, ['email']);
+    const notification = Notification.create({
+      recipientId: requester.getId().getValue(),
+      title: `Request Deadline Approaching`,
+      message: `Request "${request.getTitle()}" has ${daysRemaining} days remaining`,
+      type: NotificationType.SYSTEM,
+      relatedEntityId: request.getId().getValue(),
+      relatedEntityType: "REQUEST",
+    });
+
+    await this.notificationRepository.save(notification);
+    await this.sendNotification(notification, requester, ["email", "inApp"]);
+
+    // Also notify admins if request is still pending review
+    if (request.isSubmitted() || request.isInReview()) {
+      const admins = await this.getAdmins();
+      for (const admin of admins) {
+        const adminNotification = Notification.create({
+          recipientId: admin.getId().getValue(),
+          title: `Review Deadline Approaching`,
+          message: `Request "${request.getTitle()}" needs review - ${daysRemaining} days remaining`,
+          type: NotificationType.SYSTEM,
+          relatedEntityId: request.getId().getValue(),
+          relatedEntityType: "REQUEST",
+        });
+
+        await this.notificationRepository.save(adminNotification);
+        await this.sendNotification(adminNotification, admin, ["email"]);
       }
     }
   }
@@ -197,12 +259,6 @@ export class NotificationService {
     recipient: User,
     channelNames: string[]
   ): Promise<void> {
-    // Save notification to database
-    await this.notificationRepository.save({
-      ...notification,
-      recipientId: recipient.id
-    });
-
     // Send through each channel
     for (const channelName of channelNames) {
       const channel = this.channels.get(channelName);
@@ -210,7 +266,10 @@ export class NotificationService {
         try {
           await channel.sendNotification(notification, recipient);
         } catch (error) {
-          console.error(`Failed to send notification through ${channelName}:`, error);
+          console.error(
+            `Failed to send notification through ${channelName}:`,
+            error
+          );
         }
       }
     }
@@ -224,64 +283,67 @@ export class NotificationService {
     unreadOnly: boolean = false,
     limit?: number
   ): Promise<Notification[]> {
-    return this.notificationRepository.findByRecipient(userId, unreadOnly, limit);
+    const recipientId = UserId.create(userId);
+    const notifications = await this.notificationRepository.findByRecipientId(
+      recipientId,
+      limit
+    );
+
+    if (unreadOnly) {
+      return notifications.filter((n) => !n.getIsRead());
+    }
+
+    return notifications;
   }
 
   /**
    * Mark notification as read
    */
   async markAsRead(notificationId: string, userId: string): Promise<void> {
-    const notification = await this.notificationRepository.findById(notificationId);
-    
-    if (!notification || notification.recipientId !== userId) {
-      throw new Error('Notification not found');
-    }
-
-    const updatedNotification = new Notification(
-      notification.id,
-      notification.title,
-      notification.message,
-      notification.type,
-      notification.createdAt,
-      true, // Mark as read
-      notification.metadata
+    const notification = await this.notificationRepository.findById(
+      NotificationId.create(notificationId)
     );
 
-    await this.notificationRepository.save({
-      ...updatedNotification,
-      recipientId: userId
-    });
+    if (!notification || notification.getRecipientId().getValue() !== userId) {
+      throw new Error("Notification not found or unauthorized");
+    }
+
+    notification.markAsRead();
+    await this.notificationRepository.save(notification);
   }
 
   /**
    * Mark all notifications as read
    */
   async markAllAsRead(userId: string): Promise<void> {
-    const notifications = await this.notificationRepository.findByRecipient(userId, true);
-    
+    const notifications = await this.getUserNotifications(userId, true);
+
     for (const notification of notifications) {
-      await this.markAsRead(notification.id, userId);
+      notification.markAsRead();
+      await this.notificationRepository.save(notification);
     }
   }
 
   /**
    * Get notification preferences
    */
-  async getNotificationPreferences(userId: string): Promise<NotificationPreferences> {
+  async getNotificationPreferences(
+    _userId: string
+  ): Promise<NotificationPreferences> {
     // In production, this would fetch from a preferences table
     return {
       email: {
         newRequest: true,
         statusChanged: true,
         requestUpdated: false,
-        deadlineReminder: true
+        deadlineReminder: true,
       },
       inApp: {
         newRequest: true,
         statusChanged: true,
         requestUpdated: true,
-        deadlineReminder: true
-      }
+        deadlineReminder: true,
+      },
     };
   }
 
@@ -290,34 +352,71 @@ export class NotificationService {
    */
   async updateNotificationPreferences(
     userId: string,
-    preferences: NotificationPreferences
+    _preferences: NotificationPreferences
   ): Promise<void> {
     // In production, this would update preferences in database
     console.log(`Updating notification preferences for user ${userId}`);
   }
 
   /**
-   * Get approvers (managers and admins)
+   * Get admins
    */
-  private async getApprovers(): Promise<User[]> {
-    const managers = await this.userRepository.findByRole('MANAGER');
-    const admins = await this.userRepository.findByRole('ADMIN');
-    return [...managers, ...admins];
+  private async getAdmins(): Promise<User[]> {
+    // In a production environment, this would query the database with a role filter
+    // For now, we'll fetch users individually or implement a custom query
+    // TODO: Implement a proper query to fetch admin users from database
+    const adminIds: string[] = []; // This should be fetched from configuration or database
+    const admins: User[] = [];
+
+    for (const adminId of adminIds) {
+      const admin = await this.userRepository.findById(UserId.create(adminId));
+      if (admin && admin.isAdmin()) {
+        admins.push(admin);
+      }
+    }
+
+    return admins;
   }
 
   /**
    * Get request stakeholders
    */
   private async getRequestStakeholders(request: Request): Promise<User[]> {
-    const stakeholders: User[] = [request.requester];
-    
-    // Add approvers if request is still pending
-    if (request.status === 'PENDING') {
-      const approvers = await this.getApprovers();
-      stakeholders.push(...approvers);
+    const stakeholders: User[] = [];
+
+    // Add requester
+    const requester = await this.userRepository.findById(
+      request.getRequesterId()
+    );
+    if (requester) {
+      stakeholders.push(requester);
     }
 
-    return stakeholders;
+    // Add assignee if exists
+    const assigneeId = request.getAssigneeId();
+    if (assigneeId) {
+      const assignee = await this.userRepository.findById(assigneeId);
+      if (assignee) {
+        stakeholders.push(assignee);
+      }
+    }
+
+    // Add admins if request is still pending
+    if (request.isSubmitted() || request.isInReview()) {
+      const admins = await this.getAdmins();
+      stakeholders.push(...admins);
+    }
+
+    // Remove duplicates
+    const uniqueIds = new Set(stakeholders.map((s) => s.getId().getValue()));
+    return stakeholders.filter((s: User) => {
+      const id = s.getId().getValue();
+      if (uniqueIds.has(id)) {
+        uniqueIds.delete(id);
+        return true;
+      }
+      return false;
+    });
   }
 
   /**
@@ -325,17 +424,12 @@ export class NotificationService {
    */
   private async notifyStakeholders(
     request: Request,
-    notification: Notification
+    _notification: Notification
   ): Promise<void> {
     // In production, this might notify other systems or departments
-    console.log(`Notifying stakeholders about approved request ${request.id}`);
-  }
-
-  /**
-   * Generate unique ID
-   */
-  private generateId(): string {
-    return `notif_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    console.log(
+      `Notifying stakeholders about approved request ${request.getId().getValue()}`
+    );
   }
 }
 

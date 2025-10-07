@@ -1,4 +1,4 @@
-import { Id } from '../shared/value-objects';
+import { Id } from "../shared/value-objects";
 
 /**
  * NotificationId value object

@@ -1,12 +1,13 @@
-import { Repository } from '../shared/repository';
-import { Notification, NotificationType } from './notification';
-import { NotificationId } from './notification-id';
-import { UserId } from '../user';
+import { Repository } from "../shared/repository";
+import { Notification, NotificationType } from "./notification";
+import { NotificationId } from "./notification-id";
+import { UserId } from "../user";
 
 /**
  * Notification repository interface
  */
-export interface NotificationRepository extends Repository<Notification, NotificationId> {
+export interface NotificationRepository
+  extends Repository<Notification, NotificationId> {
   findByRecipientId(
     recipientId: UserId,
     limit?: number,

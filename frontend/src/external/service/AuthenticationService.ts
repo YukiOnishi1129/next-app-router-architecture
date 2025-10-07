@@ -1,9 +1,6 @@
-import { User } from '@/external/domain/models/User';
-import { UserRole } from '@/external/domain/valueobjects/UserRole';
-import { UserRepository } from '@/external/repository/UserRepository';
-import { AuditService, AuditContext } from './AuditService';
-import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { initializeApp, FirebaseApp } from 'firebase/app';
+import { User, UserId, UserRole } from "@/external/domain";
+import { UserRepository } from "@/external/repository/UserRepository";
+import { AuditService, AuditContext } from "./AuditService";
 
 export interface AuthenticationResult {
   user: User;
@@ -11,139 +8,52 @@ export interface AuthenticationResult {
   expiresAt: Date;
 }
 
-export interface GoogleUserInfo {
-  uid: string;
-  email: string;
-  displayName: string;
-  photoURL: string | null;
-}
-
+/**
+ * Legacy Authentication Service
+ * This class is deprecated and should not be used.
+ * Use AuthenticationService from /auth/AuthenticationService.ts instead.
+ * @deprecated
+ */
 export class AuthenticationService {
-  private firebaseApp: FirebaseApp;
-  private auth: any;
-  private googleProvider: GoogleAuthProvider;
+  private userRepository: UserRepository;
 
   constructor(
-    private userRepository: UserRepository,
     private auditService: AuditService,
-    firebaseConfig: Record<string, string>
+    _firebaseConfig: Record<string, string>
   ) {
-    // Initialize Firebase
-    this.firebaseApp = initializeApp(firebaseConfig);
-    this.auth = getAuth(this.firebaseApp);
-    this.googleProvider = new GoogleAuthProvider();
-    
-    // Configure Google provider
-    this.googleProvider.setCustomParameters({
-      prompt: 'select_account'
-    });
+    // Initialize repositories
+    this.userRepository = new UserRepository();
+
+    console.warn(
+      "This AuthenticationService is deprecated. Use auth/AuthenticationService.ts instead."
+    );
   }
 
   /**
-   * Authenticate user with Google
+   * @deprecated Use email/password authentication instead
    */
-  async authenticateWithGoogle(context?: AuditContext): Promise<AuthenticationResult> {
-    try {
-      // Sign in with Google popup
-      const result = await signInWithPopup(this.auth, this.googleProvider);
-      const credential = GoogleAuthProvider.credentialFromResult(result);
-      
-      if (!credential) {
-        throw new Error('Failed to obtain Google credentials');
-      }
-
-      const firebaseUser = result.user;
-      const googleUserInfo = this.extractGoogleUserInfo(firebaseUser);
-      
-      // Get or create user in our system
-      let user = await this.userRepository.findByEmail(googleUserInfo.email);
-      
-      if (!user) {
-        // Create new user
-        user = await this.createUserFromGoogle(googleUserInfo);
-      } else {
-        // Update user info from Google
-        user = await this.updateUserFromGoogle(user, googleUserInfo);
-      }
-
-      // Get ID token
-      const token = await firebaseUser.getIdToken();
-      const tokenResult = await firebaseUser.getIdTokenResult();
-      const expiresAt = new Date(tokenResult.expirationTime);
-
-      // Log authentication
-      await this.auditService.logUserLogin(user, context);
-
-      return {
-        user,
-        token,
-        expiresAt
-      };
-    } catch (error) {
-      throw new Error(`Google authentication failed: ${error.message}`);
-    }
+  async authenticateWithGoogle(
+    _context?: AuditContext
+  ): Promise<AuthenticationResult> {
+    throw new Error(
+      "Google authentication is no longer supported. Use email/password authentication."
+    );
   }
 
   /**
-   * Verify and decode token
+   * @deprecated Token verification should be done through auth/AuthenticationService.ts
    */
-  async verifyToken(token: string): Promise<User | null> {
-    try {
-      // Verify token with Firebase Admin SDK (in production)
-      // For now, we'll use the client SDK approach
-      const auth = getAuth(this.firebaseApp);
-      const currentUser = auth.currentUser;
-      
-      if (!currentUser) {
-        return null;
-      }
-
-      const idToken = await currentUser.getIdToken();
-      
-      if (idToken !== token) {
-        return null;
-      }
-
-      // Get user from our database
-      const user = await this.userRepository.findByEmail(currentUser.email!);
-      return user;
-    } catch (error) {
-      console.error('Token verification failed:', error);
-      return null;
-    }
+  async verifyToken(_token: string): Promise<User | null> {
+    throw new Error("Use auth/AuthenticationService.ts for token verification");
   }
 
   /**
-   * Refresh authentication token
+   * @deprecated Token refresh should be done through auth/AuthenticationService.ts
    */
-  async refreshToken(currentToken: string): Promise<AuthenticationResult | null> {
-    try {
-      const user = await this.verifyToken(currentToken);
-      if (!user) {
-        return null;
-      }
-
-      const auth = getAuth(this.firebaseApp);
-      const currentUser = auth.currentUser;
-      
-      if (!currentUser) {
-        return null;
-      }
-
-      // Force token refresh
-      const newToken = await currentUser.getIdToken(true);
-      const tokenResult = await currentUser.getIdTokenResult();
-      const expiresAt = new Date(tokenResult.expirationTime);
-
-      return {
-        user,
-        token: newToken,
-        expiresAt
-      };
-    } catch (error) {
-      console.error('Token refresh failed:', error);
-      return null;
-    }
+  async refreshToken(
+    _currentToken: string
+  ): Promise<AuthenticationResult | null> {
+    throw new Error("Use auth/AuthenticationService.ts for token refresh");
   }
 
   /**
@@ -151,17 +61,14 @@ export class AuthenticationService {
    */
   async signOut(userId: string, context?: AuditContext): Promise<void> {
     try {
-      const user = await this.userRepository.findById(userId);
+      const user = await this.userRepository.findById(UserId.create(userId));
       if (!user) {
-        throw new Error('User not found');
+        throw new Error("User not found");
       }
-
-      // Sign out from Firebase
-      await signOut(this.auth);
 
       // Log sign out
       await this.auditService.logUserLogout(user, context);
-    } catch (error) {
+    } catch (error: any) {
       throw new Error(`Sign out failed: ${error.message}`);
     }
   }
@@ -170,28 +77,16 @@ export class AuthenticationService {
    * Get current authenticated user
    */
   async getCurrentUser(): Promise<User | null> {
-    const auth = getAuth(this.firebaseApp);
-    const currentUser = auth.currentUser;
-    
-    if (!currentUser) {
-      return null;
-    }
-
-    return this.userRepository.findByEmail(currentUser.email!);
+    throw new Error("Use auth/AuthenticationService.ts to get current user");
   }
 
   /**
-   * Listen to auth state changes
+   * @deprecated Auth state changes should be handled differently
    */
-  onAuthStateChanged(callback: (user: User | null) => void): () => void {
-    return onAuthStateChanged(this.auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        const user = await this.userRepository.findByEmail(firebaseUser.email!);
-        callback(user);
-      } else {
-        callback(null);
-      }
-    });
+  onAuthStateChanged(_callback: (user: User | null) => void): () => void {
+    throw new Error(
+      "Auth state changes are not supported in this implementation"
+    );
   }
 
   /**
@@ -200,93 +95,34 @@ export class AuthenticationService {
   hasPermission(user: User, permission: string): boolean {
     // Define role-based permissions
     const permissions: Record<UserRole, string[]> = {
-      [UserRole.ADMIN]: ['*'], // Admin has all permissions
-      [UserRole.MANAGER]: [
-        'request.view',
-        'request.create',
-        'request.update',
-        'request.approve',
-        'user.view',
-        'report.view',
-        'report.export'
+      [UserRole.ADMIN]: ["*"], // Admin has all permissions
+      [UserRole.MEMBER]: [
+        "request.view",
+        "request.create",
+        "request.update.own",
+        "request.view.own",
+        "user.view.self",
       ],
-      [UserRole.EMPLOYEE]: [
-        'request.view.own',
-        'request.create',
-        'request.update.own',
-        'user.view.self'
-      ]
+      [UserRole.GUEST]: ["request.view", "user.view.self"],
     };
 
-    const userPermissions = permissions[user.role] || [];
-    
-    // Check for wildcard permission
-    if (userPermissions.includes('*')) {
-      return true;
+    const userRoles = user.getRoles();
+
+    // Check permissions for each role
+    for (const role of userRoles) {
+      const rolePermissions = permissions[role] || [];
+
+      // Check for wildcard permission
+      if (rolePermissions.includes("*")) {
+        return true;
+      }
+
+      // Check specific permission
+      if (rolePermissions.includes(permission)) {
+        return true;
+      }
     }
 
-    // Check specific permission
-    return userPermissions.includes(permission);
-  }
-
-  /**
-   * Extract Google user info
-   */
-  private extractGoogleUserInfo(firebaseUser: FirebaseUser): GoogleUserInfo {
-    return {
-      uid: firebaseUser.uid,
-      email: firebaseUser.email!,
-      displayName: firebaseUser.displayName || firebaseUser.email!.split('@')[0],
-      photoURL: firebaseUser.photoURL
-    };
-  }
-
-  /**
-   * Create user from Google info
-   */
-  private async createUserFromGoogle(googleInfo: GoogleUserInfo): Promise<User> {
-    const user = new User(
-      this.generateUserId(),
-      googleInfo.email,
-      googleInfo.displayName,
-      UserRole.EMPLOYEE, // Default role
-      new Date(),
-      new Date()
-    );
-
-    await this.userRepository.save(user);
-    return user;
-  }
-
-  /**
-   * Update user from Google info
-   */
-  private async updateUserFromGoogle(
-    user: User,
-    googleInfo: GoogleUserInfo
-  ): Promise<User> {
-    // Update user info if changed
-    if (user.name !== googleInfo.displayName) {
-      const updatedUser = new User(
-        user.id,
-        user.email,
-        googleInfo.displayName,
-        user.role,
-        user.createdAt,
-        new Date()
-      );
-
-      await this.userRepository.save(updatedUser);
-      return updatedUser;
-    }
-
-    return user;
-  }
-
-  /**
-   * Generate user ID
-   */
-  private generateUserId(): string {
-    return `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return false;
   }
 }

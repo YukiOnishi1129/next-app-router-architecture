@@ -1,13 +1,13 @@
-import { eq, and, desc, count } from 'drizzle-orm';
-import { db } from '../client/db/client';
-import { notifications } from '../client/db/schema';
+import { eq, and, desc, count } from "drizzle-orm";
+import { db } from "../client/db/client";
+import { notifications } from "../client/db/schema";
 import {
   NotificationRepository as INotificationRepository,
   Notification,
   NotificationId,
   NotificationType,
   UserId,
-} from '../domain';
+} from "../domain";
 
 export class NotificationRepository implements INotificationRepository {
   async findById(id: NotificationId): Promise<Notification | null> {
@@ -145,7 +145,9 @@ export class NotificationRepository implements INotificationRepository {
     await db.delete(notifications).where(eq(notifications.id, id.getValue()));
   }
 
-  private mapToDomainEntity(row: typeof notifications.$inferSelect): Notification {
+  private mapToDomainEntity(
+    row: typeof notifications.$inferSelect
+  ): Notification {
     return Notification.restore({
       id: row.id,
       type: row.type as NotificationType,

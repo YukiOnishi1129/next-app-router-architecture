@@ -1,12 +1,12 @@
-import { eq, and, desc, count } from 'drizzle-orm';
-import { db } from '../client/db/client';
-import { comments } from '../client/db/schema';
+import { eq, and, desc, count } from "drizzle-orm";
+import { db } from "../client/db/client";
+import { comments } from "../client/db/schema";
 import {
   CommentRepository as ICommentRepository,
   Comment,
   CommentId,
   RequestId,
-} from '../domain';
+} from "../domain";
 
 export class CommentRepository implements ICommentRepository {
   async findById(id: CommentId): Promise<Comment | null> {

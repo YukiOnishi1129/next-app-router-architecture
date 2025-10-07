@@ -1,40 +1,40 @@
-import { UserId } from '../user';
-import { AuditLogId } from './audit-log-id';
+import { UserId } from "../user";
+import { AuditLogId } from "./audit-log-id";
 
 /**
  * Audit event types
  */
 export enum AuditEventType {
   // User events
-  USER_CREATED = 'USER_CREATED',
-  USER_UPDATED = 'USER_UPDATED',
-  USER_STATUS_CHANGED = 'USER_STATUS_CHANGED',
-  USER_ROLE_ASSIGNED = 'USER_ROLE_ASSIGNED',
-  USER_ROLE_REMOVED = 'USER_ROLE_REMOVED',
+  USER_CREATED = "USER_CREATED",
+  USER_UPDATED = "USER_UPDATED",
+  USER_STATUS_CHANGED = "USER_STATUS_CHANGED",
+  USER_ROLE_ASSIGNED = "USER_ROLE_ASSIGNED",
+  USER_ROLE_REMOVED = "USER_ROLE_REMOVED",
 
   // Request events
-  REQUEST_CREATED = 'REQUEST_CREATED',
-  REQUEST_UPDATED = 'REQUEST_UPDATED',
-  REQUEST_SUBMITTED = 'REQUEST_SUBMITTED',
-  REQUEST_ASSIGNED = 'REQUEST_ASSIGNED',
-  REQUEST_STATUS_CHANGED = 'REQUEST_STATUS_CHANGED',
-  REQUEST_APPROVED = 'REQUEST_APPROVED',
-  REQUEST_REJECTED = 'REQUEST_REJECTED',
-  REQUEST_CANCELLED = 'REQUEST_CANCELLED',
+  REQUEST_CREATED = "REQUEST_CREATED",
+  REQUEST_UPDATED = "REQUEST_UPDATED",
+  REQUEST_SUBMITTED = "REQUEST_SUBMITTED",
+  REQUEST_ASSIGNED = "REQUEST_ASSIGNED",
+  REQUEST_STATUS_CHANGED = "REQUEST_STATUS_CHANGED",
+  REQUEST_APPROVED = "REQUEST_APPROVED",
+  REQUEST_REJECTED = "REQUEST_REJECTED",
+  REQUEST_CANCELLED = "REQUEST_CANCELLED",
 
   // Attachment events
-  ATTACHMENT_UPLOADED = 'ATTACHMENT_UPLOADED',
-  ATTACHMENT_DELETED = 'ATTACHMENT_DELETED',
+  ATTACHMENT_UPLOADED = "ATTACHMENT_UPLOADED",
+  ATTACHMENT_DELETED = "ATTACHMENT_DELETED",
 
   // Comment events
-  COMMENT_CREATED = 'COMMENT_CREATED',
-  COMMENT_EDITED = 'COMMENT_EDITED',
-  COMMENT_DELETED = 'COMMENT_DELETED',
+  COMMENT_CREATED = "COMMENT_CREATED",
+  COMMENT_EDITED = "COMMENT_EDITED",
+  COMMENT_DELETED = "COMMENT_DELETED",
 
   // System events
-  SYSTEM_LOGIN = 'SYSTEM_LOGIN',
-  SYSTEM_LOGOUT = 'SYSTEM_LOGOUT',
-  SYSTEM_ERROR = 'SYSTEM_ERROR',
+  SYSTEM_LOGIN = "SYSTEM_LOGIN",
+  SYSTEM_LOGOUT = "SYSTEM_LOGOUT",
+  SYSTEM_ERROR = "SYSTEM_ERROR",
 }
 
 /**
@@ -76,7 +76,10 @@ export class AuditLog {
     private readonly entityId: string,
     private readonly actorId: UserId | null,
     private readonly description: string,
-    private readonly changes: Record<string, { old: unknown; new: unknown }> | null,
+    private readonly changes: Record<
+      string,
+      { old: unknown; new: unknown }
+    > | null,
     private readonly context: AuditContext,
     private readonly createdAt: Date
   ) {}
@@ -188,11 +191,11 @@ export class AuditLog {
   }
 
   isUserEvent(): boolean {
-    return this.eventType.toString().startsWith('USER_');
+    return this.eventType.toString().startsWith("USER_");
   }
 
   isRequestEvent(): boolean {
-    return this.eventType.toString().startsWith('REQUEST_');
+    return this.eventType.toString().startsWith("REQUEST_");
   }
 
   hasChanges(): boolean {

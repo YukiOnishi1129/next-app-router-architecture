@@ -1,6 +1,6 @@
-import { UserId } from '../user';
-import { RequestId } from '../request';
-import { AttachmentId } from './attachment-id';
+import { UserId } from "../user";
+import { RequestId } from "../request";
+import { AttachmentId } from "./attachment-id";
 
 /**
  * FileSize value object
@@ -14,10 +14,12 @@ export class FileSize {
 
   private validate(bytes: number): void {
     if (bytes < 0) {
-      throw new Error('File size cannot be negative');
+      throw new Error("File size cannot be negative");
     }
     if (bytes > FileSize.MAX_SIZE_BYTES) {
-      throw new Error(`File size exceeds maximum allowed size of ${FileSize.MAX_SIZE_BYTES} bytes`);
+      throw new Error(
+        `File size exceeds maximum allowed size of ${FileSize.MAX_SIZE_BYTES} bytes`
+      );
     }
   }
 
@@ -160,28 +162,28 @@ export class Attachment {
   }
 
   isImage(): boolean {
-    return this.mimeType.startsWith('image/');
+    return this.mimeType.startsWith("image/");
   }
 
   isPdf(): boolean {
-    return this.mimeType === 'application/pdf';
+    return this.mimeType === "application/pdf";
   }
 
   isDocument(): boolean {
     const documentTypes = [
-      'application/pdf',
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'application/vnd.ms-excel',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'text/plain',
+      "application/pdf",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "application/vnd.ms-excel",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "text/plain",
     ];
     return documentTypes.includes(this.mimeType);
   }
 
   delete(deletedById: string): void {
     if (this.deleted) {
-      throw new Error('Attachment is already deleted');
+      throw new Error("Attachment is already deleted");
     }
     this.deleted = true;
     this.deletedAt = new Date();

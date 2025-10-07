@@ -1,6 +1,6 @@
-import { eq, and, gte, lte, desc } from 'drizzle-orm';
-import { db } from '../client/db/client';
-import { auditLogs } from '../client/db/schema';
+import { eq, and, gte, lte, desc } from "drizzle-orm";
+import { db } from "../client/db/client";
+import { auditLogs } from "../client/db/schema";
 import {
   AuditLogRepository as IAuditLogRepository,
   AuditLog,
@@ -8,7 +8,7 @@ import {
   AuditEventType,
   UserId,
   AuditLogFilter,
-} from '../domain';
+} from "../domain";
 
 export class AuditLogRepository implements IAuditLogRepository {
   async findById(id: AuditLogId): Promise<AuditLog | null> {
@@ -75,7 +75,10 @@ export class AuditLogRepository implements IAuditLogRepository {
     return result.map((row) => this.mapToDomainEntity(row));
   }
 
-  async findByEntityId(entityType: string, entityId: string): Promise<AuditLog[]> {
+  async findByEntityId(
+    entityType: string,
+    entityId: string
+  ): Promise<AuditLog[]> {
     const result = await db
       .select()
       .from(auditLogs)
@@ -129,7 +132,7 @@ export class AuditLogRepository implements IAuditLogRepository {
         sessionId: context.getSessionId(),
         ...context.getMetadata(),
       },
-      userId: entity.getActorId()?.getValue() || 'system',
+      userId: entity.getActorId()?.getValue() || "system",
       createdAt: entity.getCreatedAt(),
     };
 
@@ -139,20 +142,24 @@ export class AuditLogRepository implements IAuditLogRepository {
   async delete(id: AuditLogId): Promise<void> {
     // Audit logs should not be deleted in most cases
     // This method is here to satisfy the interface
-    throw new Error('Audit logs cannot be deleted');
+    throw new Error("Audit logs cannot be deleted");
   }
 
   private mapToDomainEntity(row: typeof auditLogs.$inferSelect): AuditLog {
     const metadata = (row.metadata || {}) as any;
-    
+
     return AuditLog.restore({
       id: row.id,
-      eventType: (metadata.eventType || this.mapActionToEventType(row.action)) as AuditEventType,
+      eventType: (metadata.eventType ||
+        this.mapActionToEventType(row.action)) as AuditEventType,
       entityType: row.entityType,
       entityId: row.entityId,
-      actorId: row.userId === 'system' ? null : row.userId,
-      description: metadata.description || '',
-      changes: row.changes as Record<string, { old: unknown; new: unknown }> | null,
+      actorId: row.userId === "system" ? null : row.userId,
+      description: metadata.description || "",
+      changes: row.changes as Record<
+        string,
+        { old: unknown; new: unknown }
+      > | null,
       context: {
         ipAddress: metadata.ipAddress || null,
         userAgent: metadata.userAgent || null,
@@ -166,30 +173,30 @@ export class AuditLogRepository implements IAuditLogRepository {
   private mapEventTypeToAction(eventType: AuditEventType): string {
     // Map domain event types to database action enum values
     const mapping: Record<string, string> = {
-      USER_CREATED: 'CREATE',
-      USER_UPDATED: 'UPDATE',
-      USER_STATUS_CHANGED: 'UPDATE',
-      USER_ROLE_ASSIGNED: 'UPDATE',
-      USER_ROLE_REMOVED: 'UPDATE',
-      REQUEST_CREATED: 'CREATE',
-      REQUEST_UPDATED: 'UPDATE',
-      REQUEST_SUBMITTED: 'SUBMIT',
-      REQUEST_ASSIGNED: 'UPDATE',
-      REQUEST_STATUS_CHANGED: 'UPDATE',
-      REQUEST_APPROVED: 'APPROVE',
-      REQUEST_REJECTED: 'REJECT',
-      REQUEST_CANCELLED: 'CANCEL',
-      ATTACHMENT_UPLOADED: 'CREATE',
-      ATTACHMENT_DELETED: 'DELETE',
-      COMMENT_CREATED: 'CREATE',
-      COMMENT_EDITED: 'UPDATE',
-      COMMENT_DELETED: 'DELETE',
-      SYSTEM_LOGIN: 'VIEW',
-      SYSTEM_LOGOUT: 'VIEW',
-      SYSTEM_ERROR: 'VIEW',
+      USER_CREATED: "CREATE",
+      USER_UPDATED: "UPDATE",
+      USER_STATUS_CHANGED: "UPDATE",
+      USER_ROLE_ASSIGNED: "UPDATE",
+      USER_ROLE_REMOVED: "UPDATE",
+      REQUEST_CREATED: "CREATE",
+      REQUEST_UPDATED: "UPDATE",
+      REQUEST_SUBMITTED: "SUBMIT",
+      REQUEST_ASSIGNED: "UPDATE",
+      REQUEST_STATUS_CHANGED: "UPDATE",
+      REQUEST_APPROVED: "APPROVE",
+      REQUEST_REJECTED: "REJECT",
+      REQUEST_CANCELLED: "CANCEL",
+      ATTACHMENT_UPLOADED: "CREATE",
+      ATTACHMENT_DELETED: "DELETE",
+      COMMENT_CREATED: "CREATE",
+      COMMENT_EDITED: "UPDATE",
+      COMMENT_DELETED: "DELETE",
+      SYSTEM_LOGIN: "VIEW",
+      SYSTEM_LOGOUT: "VIEW",
+      SYSTEM_ERROR: "VIEW",
     };
 
-    return mapping[eventType] || 'VIEW';
+    return mapping[eventType] || "VIEW";
   }
 
   private mapActionToEventType(action: string): string {

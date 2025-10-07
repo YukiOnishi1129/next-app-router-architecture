@@ -9,34 +9,40 @@ The repository layer implements the repository interfaces defined in the domain 
 ## Repositories
 
 ### UserRepository
+
 - Implements `UserRepository` interface from domain
 - Handles user persistence and retrieval
 - Supports finding users by email and IDs
 
 ### RequestRepository
+
 - Implements `RequestRepository` interface from domain
 - Manages request lifecycle persistence
 - Supports complex queries by status, requester, and assignee
 - Handles domain events clearing after save
 
 ### AttachmentRepository
+
 - Implements `AttachmentRepository` interface from domain
 - Manages file attachment metadata
 - Supports soft deletion
 - Provides bulk operations by request ID
 
 ### CommentRepository
+
 - Implements `CommentRepository` interface from domain
 - Handles comment persistence with soft delete
 - Supports pagination for comments
 
 ### AuditLogRepository
+
 - Implements `AuditLogRepository` interface from domain
 - Creates immutable audit records
 - Supports complex filtering and querying
 - Maps between domain events and database actions
 
 ### NotificationRepository
+
 - Implements `NotificationRepository` interface from domain
 - Manages user notifications
 - Supports bulk read operations
@@ -53,13 +59,13 @@ The repository layer implements the repository interfaces defined in the domain 
 ## Usage Example
 
 ```typescript
-import { UserRepository } from '@/external/repository';
-import { Email } from '@/external/domain';
+import { UserRepository } from "@/external/repository";
+import { Email } from "@/external/domain";
 
 const userRepository = new UserRepository();
 
 // Find user by email
-const user = await userRepository.findByEmail(new Email('user@example.com'));
+const user = await userRepository.findByEmail(new Email("user@example.com"));
 
 // Save user
 await userRepository.save(user);

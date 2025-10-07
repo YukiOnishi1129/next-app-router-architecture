@@ -1,18 +1,18 @@
-import { UserId } from '../user';
-import { NotificationId } from './notification-id';
+import { UserId } from "../user";
+import { NotificationId } from "./notification-id";
 
 /**
  * Notification type enum
  */
 export enum NotificationType {
-  REQUEST_CREATED = 'REQUEST_CREATED',
-  REQUEST_SUBMITTED = 'REQUEST_SUBMITTED',
-  REQUEST_APPROVED = 'REQUEST_APPROVED',
-  REQUEST_REJECTED = 'REQUEST_REJECTED',
-  REQUEST_ASSIGNED = 'REQUEST_ASSIGNED',
-  COMMENT_ADDED = 'COMMENT_ADDED',
-  MENTION = 'MENTION',
-  SYSTEM = 'SYSTEM',
+  REQUEST_CREATED = "REQUEST_CREATED",
+  REQUEST_SUBMITTED = "REQUEST_SUBMITTED",
+  REQUEST_APPROVED = "REQUEST_APPROVED",
+  REQUEST_REJECTED = "REQUEST_REJECTED",
+  REQUEST_ASSIGNED = "REQUEST_ASSIGNED",
+  COMMENT_ADDED = "COMMENT_ADDED",
+  MENTION = "MENTION",
+  SYSTEM = "SYSTEM",
 }
 
 /**

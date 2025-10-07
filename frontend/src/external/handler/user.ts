@@ -1,10 +1,10 @@
-'use server';
+"use server";
 
-import { z } from 'zod';
-import { UserRepository } from '@/external/domain/user';
-import { AuditService } from '@/external/service/AuditService';
-import { getSession } from './auth';
-import { UserRole, UserStatus } from '@/external/domain/user/user';
+import { z } from "zod";
+import { UserRepository } from "@/external/domain/user";
+import { AuditService } from "@/external/service/AuditService";
+import { getSession } from "./auth";
+import { UserRole, UserStatus } from "@/external/domain/user/user";
 
 // Validation schemas
 const getUsersSchema = z.object({
@@ -49,7 +49,7 @@ export type UserResponse = {
 export type UserListResponse = {
   success: boolean;
   error?: string;
-  users?: Array<UserResponse['user']>;
+  users?: Array<UserResponse["user"]>;
   total?: number;
   limit?: number;
   offset?: number;
@@ -68,7 +68,7 @@ export async function getUsers(data?: unknown): Promise<UserListResponse> {
     if (!session.isAuthenticated || !session.user) {
       return {
         success: false,
-        error: 'Unauthorized',
+        error: "Unauthorized",
       };
     }
 
@@ -77,41 +77,42 @@ export async function getUsers(data?: unknown): Promise<UserListResponse> {
     if (!currentUser || !currentUser.isAdmin()) {
       return {
         success: false,
-        error: 'Insufficient permissions',
+        error: "Insufficient permissions",
       };
     }
 
     const validated = getUsersSchema.parse(data || {});
-    
+
     // Get all users first (in production, this would be paginated)
     let users = await userRepository.findAll();
-    
+
     // Apply filters
     if (validated.status) {
-      users = users.filter(u => u.getStatus() === validated.status);
+      users = users.filter((u) => u.getStatus() === validated.status);
     }
-    
+
     if (validated.role) {
-      users = users.filter(u => u.hasRole(validated.role as UserRole));
+      users = users.filter((u) => u.hasRole(validated.role as UserRole));
     }
-    
+
     if (validated.search) {
       const searchLower = validated.search.toLowerCase();
-      users = users.filter(u => 
-        u.getName().toLowerCase().includes(searchLower) ||
-        u.getEmail().getValue().toLowerCase().includes(searchLower)
+      users = users.filter(
+        (u) =>
+          u.getName().toLowerCase().includes(searchLower) ||
+          u.getEmail().getValue().toLowerCase().includes(searchLower)
       );
     }
-    
+
     // Apply pagination
     const total = users.length;
     const start = validated.offset;
     const end = start + validated.limit;
     const paginatedUsers = users.slice(start, end);
-    
+
     return {
       success: true,
-      users: paginatedUsers.map(u => u.toJSON()),
+      users: paginatedUsers.map((u) => u.toJSON()),
       total,
       limit: validated.limit,
       offset: validated.offset,
@@ -120,13 +121,13 @@ export async function getUsers(data?: unknown): Promise<UserListResponse> {
     if (error instanceof z.ZodError) {
       return {
         success: false,
-        error: 'Invalid input data',
+        error: "Invalid input data",
       };
     }
-    
+
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to get users',
+      error: error instanceof Error ? error.message : "Failed to get users",
     };
   }
 }
@@ -140,46 +141,46 @@ export async function updateUserRole(data: unknown): Promise<UserResponse> {
     if (!session.isAuthenticated || !session.user) {
       return {
         success: false,
-        error: 'Unauthorized',
+        error: "Unauthorized",
       };
     }
 
     const validated = updateUserRoleSchema.parse(data);
-    
+
     // Check permission
     const currentUser = await userRepository.findById(session.user.id);
     if (!currentUser || !currentUser.isAdmin()) {
       return {
         success: false,
-        error: 'Insufficient permissions',
+        error: "Insufficient permissions",
       };
     }
-    
+
     // Prevent self role change
     if (validated.userId === session.user.id) {
       return {
         success: false,
-        error: 'Cannot change your own role',
+        error: "Cannot change your own role",
       };
     }
-    
+
     const targetUser = await userRepository.findById(validated.userId);
     if (!targetUser) {
       return {
         success: false,
-        error: 'User not found',
+        error: "User not found",
       };
     }
-    
+
     // Update role
     const currentRoles = targetUser.getRoles();
-    
+
     // Remove all existing roles and add the new one
-    currentRoles.forEach(role => targetUser.removeRole(role));
+    currentRoles.forEach((role) => targetUser.removeRole(role));
     targetUser.assignRole(validated.role);
-    
+
     await userRepository.save(targetUser);
-    
+
     // Log the action
     await auditService.logUserRoleChange(
       targetUser,
@@ -187,11 +188,11 @@ export async function updateUserRole(data: unknown): Promise<UserResponse> {
       currentRoles,
       [validated.role],
       {
-        ipAddress: 'server',
-        userAgent: 'server-action',
+        ipAddress: "server",
+        userAgent: "server-action",
       }
     );
-    
+
     return {
       success: true,
       user: targetUser.toJSON(),
@@ -200,13 +201,14 @@ export async function updateUserRole(data: unknown): Promise<UserResponse> {
     if (error instanceof z.ZodError) {
       return {
         success: false,
-        error: 'Invalid input data',
+        error: "Invalid input data",
       };
     }
-    
+
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to update user role',
+      error:
+        error instanceof Error ? error.message : "Failed to update user role",
     };
   }
 }
@@ -220,46 +222,46 @@ export async function updateUserStatus(data: unknown): Promise<UserResponse> {
     if (!session.isAuthenticated || !session.user) {
       return {
         success: false,
-        error: 'Unauthorized',
+        error: "Unauthorized",
       };
     }
 
     const validated = updateUserStatusSchema.parse(data);
-    
+
     // Check permission
     const currentUser = await userRepository.findById(session.user.id);
     if (!currentUser || !currentUser.isAdmin()) {
       return {
         success: false,
-        error: 'Insufficient permissions',
+        error: "Insufficient permissions",
       };
     }
-    
+
     // Prevent self status change
     if (validated.userId === session.user.id) {
       return {
         success: false,
-        error: 'Cannot change your own status',
+        error: "Cannot change your own status",
       };
     }
-    
+
     const targetUser = await userRepository.findById(validated.userId);
     if (!targetUser) {
       return {
         success: false,
-        error: 'User not found',
+        error: "User not found",
       };
     }
-    
+
     const previousStatus = targetUser.getStatus();
     targetUser.changeStatus(validated.status);
-    
+
     await userRepository.save(targetUser);
-    
+
     // Log the action
     await auditService.logAction({
-      action: 'user.status.change',
-      entityType: 'user',
+      action: "user.status.change",
+      entityType: "user",
       entityId: validated.userId,
       userId: session.user.id,
       metadata: {
@@ -267,11 +269,11 @@ export async function updateUserStatus(data: unknown): Promise<UserResponse> {
         newStatus: validated.status,
       },
       context: {
-        ipAddress: 'server',
-        userAgent: 'server-action',
+        ipAddress: "server",
+        userAgent: "server-action",
       },
     });
-    
+
     return {
       success: true,
       user: targetUser.toJSON(),
@@ -280,13 +282,14 @@ export async function updateUserStatus(data: unknown): Promise<UserResponse> {
     if (error instanceof z.ZodError) {
       return {
         success: false,
-        error: 'Invalid input data',
+        error: "Invalid input data",
       };
     }
-    
+
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to update user status',
+      error:
+        error instanceof Error ? error.message : "Failed to update user status",
     };
   }
 }
@@ -300,59 +303,59 @@ export async function updateUserProfile(data: unknown): Promise<UserResponse> {
     if (!session.isAuthenticated || !session.user) {
       return {
         success: false,
-        error: 'Unauthorized',
+        error: "Unauthorized",
       };
     }
 
     const validated = updateUserProfileSchema.parse(data);
-    
+
     // Users can only update their own profile, admins can update any profile
     const currentUser = await userRepository.findById(session.user.id);
     if (!currentUser) {
       return {
         success: false,
-        error: 'Current user not found',
+        error: "Current user not found",
       };
     }
-    
+
     const isAdmin = currentUser.isAdmin();
     const isSelfUpdate = validated.userId === session.user.id;
-    
+
     if (!isSelfUpdate && !isAdmin) {
       return {
         success: false,
-        error: 'Insufficient permissions',
+        error: "Insufficient permissions",
       };
     }
-    
+
     const targetUser = await userRepository.findById(validated.userId);
     if (!targetUser) {
       return {
         success: false,
-        error: 'User not found',
+        error: "User not found",
       };
     }
-    
+
     targetUser.updateProfile(validated.name, validated.email);
-    
+
     await userRepository.save(targetUser);
-    
+
     // Log the action
     await auditService.logAction({
-      action: 'user.profile.update',
-      entityType: 'user',
+      action: "user.profile.update",
+      entityType: "user",
       entityId: validated.userId,
       userId: session.user.id,
       metadata: {
-        updatedFields: ['name', 'email'],
+        updatedFields: ["name", "email"],
         isSelfUpdate,
       },
       context: {
-        ipAddress: 'server',
-        userAgent: 'server-action',
+        ipAddress: "server",
+        userAgent: "server-action",
       },
     });
-    
+
     return {
       success: true,
       user: targetUser.toJSON(),
@@ -361,13 +364,16 @@ export async function updateUserProfile(data: unknown): Promise<UserResponse> {
     if (error instanceof z.ZodError) {
       return {
         success: false,
-        error: 'Invalid input data',
+        error: "Invalid input data",
       };
     }
-    
+
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to update user profile',
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to update user profile",
     };
   }
 }
@@ -381,37 +387,37 @@ export async function getUserById(userId: string): Promise<UserResponse> {
     if (!session.isAuthenticated || !session.user) {
       return {
         success: false,
-        error: 'Unauthorized',
+        error: "Unauthorized",
       };
     }
-    
+
     // Users can view their own profile, admins can view any profile
     const currentUser = await userRepository.findById(session.user.id);
     if (!currentUser) {
       return {
         success: false,
-        error: 'Current user not found',
+        error: "Current user not found",
       };
     }
-    
+
     const isAdmin = currentUser.isAdmin();
     const isSelfView = userId === session.user.id;
-    
+
     if (!isSelfView && !isAdmin) {
       return {
         success: false,
-        error: 'Insufficient permissions',
+        error: "Insufficient permissions",
       };
     }
-    
+
     const user = await userRepository.findById(userId);
     if (!user) {
       return {
         success: false,
-        error: 'User not found',
+        error: "User not found",
       };
     }
-    
+
     return {
       success: true,
       user: user.toJSON(),
@@ -419,7 +425,7 @@ export async function getUserById(userId: string): Promise<UserResponse> {
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to get user',
+      error: error instanceof Error ? error.message : "Failed to get user",
     };
   }
 }
@@ -433,15 +439,15 @@ export async function getMyProfile(): Promise<UserResponse> {
     if (!session.isAuthenticated || !session.user) {
       return {
         success: false,
-        error: 'Unauthorized',
+        error: "Unauthorized",
       };
     }
-    
+
     return getUserById(session.user.id);
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to get profile',
+      error: error instanceof Error ? error.message : "Failed to get profile",
     };
   }
 }

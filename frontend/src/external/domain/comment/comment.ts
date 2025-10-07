@@ -1,6 +1,6 @@
-import { UserId } from '../user';
-import { RequestId } from '../request';
-import { CommentId } from './comment-id';
+import { UserId } from "../user";
+import { RequestId } from "../request";
+import { CommentId } from "./comment-id";
 
 /**
  * CommentContent value object
@@ -15,10 +15,14 @@ export class CommentContent {
 
   private validate(value: string): void {
     if (!value || value.trim().length < CommentContent.MIN_LENGTH) {
-      throw new Error(`Comment must be at least ${CommentContent.MIN_LENGTH} character`);
+      throw new Error(
+        `Comment must be at least ${CommentContent.MIN_LENGTH} character`
+      );
     }
     if (value.length > CommentContent.MAX_LENGTH) {
-      throw new Error(`Comment cannot exceed ${CommentContent.MAX_LENGTH} characters`);
+      throw new Error(
+        `Comment cannot exceed ${CommentContent.MAX_LENGTH} characters`
+      );
     }
   }
 
@@ -140,10 +144,10 @@ export class Comment {
 
   edit(newContent: string, editorId: string): void {
     if (this.deleted) {
-      throw new Error('Cannot edit deleted comment');
+      throw new Error("Cannot edit deleted comment");
     }
     if (this.authorId.getValue() !== editorId) {
-      throw new Error('Only the author can edit their comment');
+      throw new Error("Only the author can edit their comment");
     }
     this.content = new CommentContent(newContent);
     this.edited = true;
@@ -152,10 +156,10 @@ export class Comment {
 
   delete(deleterId: string, isDeleterAdmin: boolean): void {
     if (this.deleted) {
-      throw new Error('Comment is already deleted');
+      throw new Error("Comment is already deleted");
     }
     if (this.authorId.getValue() !== deleterId && !isDeleterAdmin) {
-      throw new Error('Only the author or an admin can delete a comment');
+      throw new Error("Only the author or an admin can delete a comment");
     }
     this.deleted = true;
     this.deletedAt = new Date();

@@ -1,6 +1,6 @@
-import { eq, inArray } from 'drizzle-orm';
-import { db } from '../client/db/client';
-import { users } from '../client/db/schema';
+import { eq, inArray } from "drizzle-orm";
+import { db } from "../client/db/client";
+import { users } from "../client/db/schema";
 import {
   UserRepository as IUserRepository,
   User,
@@ -8,7 +8,7 @@ import {
   Email,
   UserStatus,
   UserRole,
-} from '../domain';
+} from "../domain";
 
 export class UserRepository implements IUserRepository {
   async findById(id: UserId): Promise<User | null> {
@@ -45,7 +45,10 @@ export class UserRepository implements IUserRepository {
     }
 
     const idValues = ids.map((id) => id.getValue());
-    const result = await db.select().from(users).where(inArray(users.id, idValues));
+    const result = await db
+      .select()
+      .from(users)
+      .where(inArray(users.id, idValues));
 
     return result.map((row) => this.mapToDomainEntity(row));
   }

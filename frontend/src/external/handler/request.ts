@@ -1,13 +1,17 @@
-'use server';
+"use server";
 
-import { z } from 'zod';
-import { RequestWorkflowService } from '@/external/service/RequestWorkflowService';
-import { RequestApprovalService } from '@/external/service/RequestApprovalService';
-import { RequestRepository, UserRepository } from '@/external/domain';
-import { NotificationService } from '@/external/service/NotificationService';
-import { AuditService } from '@/external/service/AuditService';
-import { getSession } from './auth';
-import { RequestType, RequestPriority, RequestStatus } from '@/external/domain/request/request-status';
+import { z } from "zod";
+import { RequestWorkflowService } from "@/external/service/RequestWorkflowService";
+import { RequestApprovalService } from "@/external/service/RequestApprovalService";
+import { RequestRepository, UserRepository } from "@/external/domain";
+import { NotificationService } from "@/external/service/NotificationService";
+import { AuditService } from "@/external/service/AuditService";
+import { getSession } from "./auth";
+import {
+  RequestType,
+  RequestPriority,
+  RequestStatus,
+} from "@/external/domain/request/request-status";
 
 // Validation schemas
 const createRequestSchema = z.object({
@@ -78,7 +82,7 @@ export type RequestResponse = {
 export type RequestListResponse = {
   success: boolean;
   error?: string;
-  requests?: Array<RequestResponse['request']>;
+  requests?: Array<RequestResponse["request"]>;
   total?: number;
 };
 
@@ -108,27 +112,29 @@ export async function createRequest(data: unknown): Promise<RequestResponse> {
     if (!session.isAuthenticated || !session.user) {
       return {
         success: false,
-        error: 'Unauthorized',
+        error: "Unauthorized",
       };
     }
-    
+
     const validated = createRequestSchema.parse(data);
     const user = await userRepository.findById(session.user.id);
     if (!user) {
       return {
         success: false,
-        error: 'User not found',
+        error: "User not found",
       };
     }
-    
+
     const request = await workflowService.createRequest(user, {
       title: validated.title,
       description: validated.description,
       category: validated.type as any, // Type mismatch between service and domain
       priority: validated.priority as any,
-      metadata: validated.assigneeId ? { assigneeId: validated.assigneeId } : undefined,
+      metadata: validated.assigneeId
+        ? { assigneeId: validated.assigneeId }
+        : undefined,
     });
-    
+
     return {
       success: true,
       request: request.toJSON() as any,
@@ -137,13 +143,14 @@ export async function createRequest(data: unknown): Promise<RequestResponse> {
     if (error instanceof z.ZodError) {
       return {
         success: false,
-        error: 'Invalid input data',
+        error: "Invalid input data",
       };
     }
-    
+
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to create request',
+      error:
+        error instanceof Error ? error.message : "Failed to create request",
     };
   }
 }
@@ -157,19 +164,19 @@ export async function updateRequest(data: unknown): Promise<RequestResponse> {
     if (!session.isAuthenticated || !session.user) {
       return {
         success: false,
-        error: 'Unauthorized',
+        error: "Unauthorized",
       };
     }
-    
+
     const validated = updateRequestSchema.parse(data);
     const user = await userRepository.findById(session.user.id);
     if (!user) {
       return {
         success: false,
-        error: 'User not found',
+        error: "User not found",
       };
     }
-    
+
     const request = await workflowService.updateRequest(
       validated.requestId,
       user,
@@ -180,7 +187,7 @@ export async function updateRequest(data: unknown): Promise<RequestResponse> {
         priority: validated.priority as any,
       }
     );
-    
+
     return {
       success: true,
       request: request.toJSON() as any,
@@ -189,13 +196,14 @@ export async function updateRequest(data: unknown): Promise<RequestResponse> {
     if (error instanceof z.ZodError) {
       return {
         success: false,
-        error: 'Invalid input data',
+        error: "Invalid input data",
       };
     }
-    
+
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to update request',
+      error:
+        error instanceof Error ? error.message : "Failed to update request",
     };
   }
 }
@@ -209,33 +217,33 @@ export async function submitRequest(data: unknown): Promise<RequestResponse> {
     if (!session.isAuthenticated || !session.user) {
       return {
         success: false,
-        error: 'Unauthorized',
+        error: "Unauthorized",
       };
     }
-    
+
     const validated = submitRequestSchema.parse(data);
     const request = await requestRepository.findById(validated.requestId);
     if (!request) {
       return {
         success: false,
-        error: 'Request not found',
+        error: "Request not found",
       };
     }
-    
+
     // Verify ownership
     if (request.getRequesterId().getValue() !== session.user.id) {
       return {
         success: false,
-        error: 'Unauthorized',
+        error: "Unauthorized",
       };
     }
-    
+
     request.submit();
     await requestRepository.save(request);
-    
+
     // Send notifications
     await notificationService.notifyRequestSubmitted(request);
-    
+
     return {
       success: true,
       request: request.toJSON() as any,
@@ -244,13 +252,14 @@ export async function submitRequest(data: unknown): Promise<RequestResponse> {
     if (error instanceof z.ZodError) {
       return {
         success: false,
-        error: 'Invalid input data',
+        error: "Invalid input data",
       };
     }
-    
+
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to submit request',
+      error:
+        error instanceof Error ? error.message : "Failed to submit request",
     };
   }
 }
@@ -264,24 +273,24 @@ export async function reviewRequest(data: unknown): Promise<RequestResponse> {
     if (!session.isAuthenticated || !session.user) {
       return {
         success: false,
-        error: 'Unauthorized',
+        error: "Unauthorized",
       };
     }
-    
+
     const validated = reviewRequestSchema.parse(data);
     const reviewer = await userRepository.findById(session.user.id);
     if (!reviewer) {
       return {
         success: false,
-        error: 'User not found',
+        error: "User not found",
       };
     }
-    
+
     const request = await approvalService.startReview(
       validated.requestId,
       reviewer
     );
-    
+
     return {
       success: true,
       request: request.toJSON() as any,
@@ -290,13 +299,13 @@ export async function reviewRequest(data: unknown): Promise<RequestResponse> {
     if (error instanceof z.ZodError) {
       return {
         success: false,
-        error: 'Invalid input data',
+        error: "Invalid input data",
       };
     }
-    
+
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to start review',
+      error: error instanceof Error ? error.message : "Failed to start review",
     };
   }
 }
@@ -310,25 +319,25 @@ export async function approveRequest(data: unknown): Promise<RequestResponse> {
     if (!session.isAuthenticated || !session.user) {
       return {
         success: false,
-        error: 'Unauthorized',
+        error: "Unauthorized",
       };
     }
-    
+
     const validated = approveRequestSchema.parse(data);
     const approver = await userRepository.findById(session.user.id);
     if (!approver) {
       return {
         success: false,
-        error: 'User not found',
+        error: "User not found",
       };
     }
-    
+
     const request = await approvalService.approveRequest(
       validated.requestId,
       approver,
       validated.comments
     );
-    
+
     return {
       success: true,
       request: request.toJSON() as any,
@@ -337,13 +346,14 @@ export async function approveRequest(data: unknown): Promise<RequestResponse> {
     if (error instanceof z.ZodError) {
       return {
         success: false,
-        error: 'Invalid input data',
+        error: "Invalid input data",
       };
     }
-    
+
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to approve request',
+      error:
+        error instanceof Error ? error.message : "Failed to approve request",
     };
   }
 }
@@ -357,25 +367,25 @@ export async function rejectRequest(data: unknown): Promise<RequestResponse> {
     if (!session.isAuthenticated || !session.user) {
       return {
         success: false,
-        error: 'Unauthorized',
+        error: "Unauthorized",
       };
     }
-    
+
     const validated = rejectRequestSchema.parse(data);
     const reviewer = await userRepository.findById(session.user.id);
     if (!reviewer) {
       return {
         success: false,
-        error: 'User not found',
+        error: "User not found",
       };
     }
-    
+
     const request = await approvalService.rejectRequest(
       validated.requestId,
       reviewer,
       validated.reason
     );
-    
+
     return {
       success: true,
       request: request.toJSON() as any,
@@ -384,13 +394,14 @@ export async function rejectRequest(data: unknown): Promise<RequestResponse> {
     if (error instanceof z.ZodError) {
       return {
         success: false,
-        error: 'Invalid input data',
+        error: "Invalid input data",
       };
     }
-    
+
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to reject request',
+      error:
+        error instanceof Error ? error.message : "Failed to reject request",
     };
   }
 }
@@ -404,25 +415,25 @@ export async function cancelRequest(data: unknown): Promise<RequestResponse> {
     if (!session.isAuthenticated || !session.user) {
       return {
         success: false,
-        error: 'Unauthorized',
+        error: "Unauthorized",
       };
     }
-    
+
     const validated = cancelRequestSchema.parse(data);
     const user = await userRepository.findById(session.user.id);
     if (!user) {
       return {
         success: false,
-        error: 'User not found',
+        error: "User not found",
       };
     }
-    
+
     const request = await workflowService.cancelRequest(
       validated.requestId,
       user,
-      validated.reason || 'Cancelled by user'
+      validated.reason || "Cancelled by user"
     );
-    
+
     return {
       success: true,
       request: request.toJSON() as any,
@@ -431,13 +442,14 @@ export async function cancelRequest(data: unknown): Promise<RequestResponse> {
     if (error instanceof z.ZodError) {
       return {
         success: false,
-        error: 'Invalid input data',
+        error: "Invalid input data",
       };
     }
-    
+
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to cancel request',
+      error:
+        error instanceof Error ? error.message : "Failed to cancel request",
     };
   }
 }
@@ -451,37 +463,37 @@ export async function assignRequest(data: unknown): Promise<RequestResponse> {
     if (!session.isAuthenticated || !session.user) {
       return {
         success: false,
-        error: 'Unauthorized',
+        error: "Unauthorized",
       };
     }
-    
+
     const validated = assignRequestSchema.parse(data);
     const request = await requestRepository.findById(validated.requestId);
     if (!request) {
       return {
         success: false,
-        error: 'Request not found',
+        error: "Request not found",
       };
     }
-    
+
     // Check permissions
     const user = await userRepository.findById(session.user.id);
     if (!user || !user.isAdmin()) {
       return {
         success: false,
-        error: 'Unauthorized',
+        error: "Unauthorized",
       };
     }
-    
+
     request.assignTo(validated.assigneeId);
     await requestRepository.save(request);
-    
+
     // Send notification to assignee
     const assignee = await userRepository.findById(validated.assigneeId);
     if (assignee) {
       await notificationService.notifyAssignment(request, assignee);
     }
-    
+
     return {
       success: true,
       request: request.toJSON() as any,
@@ -490,13 +502,14 @@ export async function assignRequest(data: unknown): Promise<RequestResponse> {
     if (error instanceof z.ZodError) {
       return {
         success: false,
-        error: 'Invalid input data',
+        error: "Invalid input data",
       };
     }
-    
+
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to assign request',
+      error:
+        error instanceof Error ? error.message : "Failed to assign request",
     };
   }
 }
@@ -510,21 +523,21 @@ export async function getMyRequests(): Promise<RequestListResponse> {
     if (!session.isAuthenticated || !session.user) {
       return {
         success: false,
-        error: 'Unauthorized',
+        error: "Unauthorized",
       };
     }
-    
+
     const requests = await requestRepository.findByRequesterId(session.user.id);
-    
+
     return {
       success: true,
-      requests: requests.map(r => r.toJSON() as any),
+      requests: requests.map((r) => r.toJSON() as any),
       total: requests.length,
     };
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to get requests',
+      error: error instanceof Error ? error.message : "Failed to get requests",
     };
   }
 }
@@ -538,21 +551,21 @@ export async function getAssignedRequests(): Promise<RequestListResponse> {
     if (!session.isAuthenticated || !session.user) {
       return {
         success: false,
-        error: 'Unauthorized',
+        error: "Unauthorized",
       };
     }
-    
+
     const requests = await requestRepository.findByAssigneeId(session.user.id);
-    
+
     return {
       success: true,
-      requests: requests.map(r => r.toJSON() as any),
+      requests: requests.map((r) => r.toJSON() as any),
       total: requests.length,
     };
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to get requests',
+      error: error instanceof Error ? error.message : "Failed to get requests",
     };
   }
 }
@@ -566,30 +579,30 @@ export async function getAllRequests(): Promise<RequestListResponse> {
     if (!session.isAuthenticated || !session.user) {
       return {
         success: false,
-        error: 'Unauthorized',
+        error: "Unauthorized",
       };
     }
-    
+
     // Check admin permission
     const user = await userRepository.findById(session.user.id);
     if (!user || !user.isAdmin()) {
       return {
         success: false,
-        error: 'Unauthorized',
+        error: "Unauthorized",
       };
     }
-    
+
     const requests = await requestRepository.findAll();
-    
+
     return {
       success: true,
-      requests: requests.map(r => r.toJSON() as any),
+      requests: requests.map((r) => r.toJSON() as any),
       total: requests.length,
     };
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to get requests',
+      error: error instanceof Error ? error.message : "Failed to get requests",
     };
   }
 }
