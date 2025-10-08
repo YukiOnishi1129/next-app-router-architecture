@@ -6,10 +6,24 @@ export default async function RequestsPage(props: PageProps<"/requests">) {
   return (
     <RequestsPageTemplate
       filters={{
-        status: status as (typeof requestsStatus)[number] | undefined,
+        status: normalizeStatus(status),
       }}
     />
   );
 }
 
-const requestsStatus = ["draft", "submitted", "approved", "rejected"] as const;
+const REQUEST_STATUSES = [
+  "draft",
+  "submitted",
+  "approved",
+  "rejected",
+] as const;
+
+type RequestStatusFilter = (typeof REQUEST_STATUSES)[number];
+
+const normalizeStatus = (
+  rawStatus: string | undefined
+): RequestStatusFilter | undefined =>
+  REQUEST_STATUSES.find(
+    (candidate): candidate is RequestStatusFilter => candidate === rawStatus
+  );
