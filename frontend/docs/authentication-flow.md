@@ -1,410 +1,252 @@
-# Google Cloud Identity Platform 認証フロー
+# Authentication Guide
 
-## 概要
+This document describes how authentication works in the **Request & Approval System** sample application. The goal is to combine Next.js App Router ergonomics with secure, role-aware access control for the request lifecycle.
 
-このドキュメントでは、Google Cloud Identity Platform APIを直接使用した認証フローを説明します。Firebase Admin SDKは使用せず、Google Cloud APIを直接呼び出します。
+---
 
-## 認証フローの全体像
+## Context
+
+- **Identity Provider**: Google Cloud Identity Platform (email/password)
+- **Session Layer**: NextAuth.js (Credentials provider)
+- **Persistence**: Users stored via Drizzle ORM in PostgreSQL
+- **Domain Roles**
+  - `Requester` (creates and tracks own requests)
+  - `Approver` (reviews and approves assigned requests)
+  - `Admin` (global visibility + role management)
+
+Roles are materialised in code through `UserRole` (`ADMIN`, `MEMBER`, `GUEST`). `MEMBER` maps to “Requester”, while `ADMIN` covers both “Approver” and administrative capabilities. The permission matrix in `UserManagementService#getPermissionsForRoles` is the single source of truth and should be extended as the approval workflow evolves.
+
+---
+
+## High-Level Architecture
+
+```
+Client (Next.js App Router)
+        │
+        │  (1) POST credentials via Server Action
+        ▼
+Server Action (createSessionAction)
+        │
+        │  (2) Delegate to AuthenticationService
+        ▼
+Google Identity Platform (REST)
+        │
+        │  (3) Return ID Token + Refresh Token + profile
+        ▼
+Domain Services (UserManagementService + AuditService)
+        │
+        │  (4) Persist / hydrate user + audit log
+        ▼
+Cookie Store + NextAuth Session
+        │
+        │  (5) Issue httpOnly cookies & update session
+        ▼
+Protected Routes / Feature Hooks
+```
+
+### Token & Cookie Strategy
+
+| Item | Details | Storage |
+|------|---------|---------|
+| **ID Token** | 1-hour expiry JWT issued by Identity Platform | `auth-token` (httpOnly, SameSite=Lax, Secure in prod) |
+| **User Id** | Internal UUID used by domain layer | `user-id` (httpOnly cookie) |
+| **Refresh Token** | Returned by Identity Platform, used for silent renewals | Passed through server actions only (never exposed to client). Persistence & rotation TODO |
+
+> **Note**: Refresh token persistence is intentionally deferred. The plan is to keep it server-only (encrypted DB or sealed cookies) once the request workload requires long-lived sessions.
+
+---
+
+## End-to-End Flow
 
 ```mermaid
 sequenceDiagram
     participant User
-    participant Frontend
-    participant NextJS API
-    participant Identity Platform
-    participant Database
+    participant Client as App Router (Client)
+    participant Server as createSessionAction (RSC)
+    participant IdP as Identity Platform
+    participant Domain as Domain Services
 
-    User->>Frontend: ログインボタンクリック
-    Frontend->>Identity Platform: OAuth2認証リクエスト
-    Identity Platform->>User: Googleログイン画面
-    User->>Identity Platform: 認証情報入力
-    Identity Platform->>Frontend: 認証コード返却
-    Frontend->>NextJS API: 認証コード送信
-    NextJS API->>Identity Platform: IDトークン・リフレッシュトークン取得
-    Identity Platform->>NextJS API: トークン返却
-    NextJS API->>Identity Platform: IDトークン検証
-    NextJS API->>Database: ユーザー情報保存/更新
-    NextJS API->>Frontend: セッション・リフレッシュトークンCookie設定
-    Frontend->>User: ダッシュボードへリダイレクト
+    User->>Client: Submit email/password
+    Client->>Server: invoke createSessionAction
+    Server->>IdP: signInWithEmailPassword
+    IdP-->>Server: ID/Refresh tokens + profile
+    Server->>Domain: upsert user + audit log
+    Domain-->>Server: User entity (roles, status)
+    Server->>Client: Set cookies + redirect URL
+    Client->>User: Redirect to dashboard
 ```
 
-## トークンの種類と役割
+Logout is the inverse flow: `deleteSessionAction` revokes the auth token (best-effort), clears cookies, and records an audit event.
 
-### IDトークン
-- **用途**: ユーザーの身元確認
-- **有効期限**: 1時間
-- **内容**: ユーザー情報（email、name、picture等）を含むJWT
+---
 
-### リフレッシュトークン
-- **用途**: 新しいIDトークンの取得
-- **有効期限**: 無期限（ただしユーザーが無効化可能）
-- **保存場所**: httpOnlyのCookieで安全に保管
+## Implementation Details
 
-### セッショントークン（アプリ独自）
-- **用途**: アプリ内でのセッション管理
-- **有効期限**: 1時間（IDトークンと同期）
-- **内容**: 最小限のユーザー情報を含むJWT
+### Server Actions (`src/external/handler/auth`)
 
-## クライアント側の実装
+| Action | Purpose |
+|--------|---------|
+| `createSessionAction` | Sign in, hydrate user, issue cookies |
+| `createUserAction` | Sign up, hydrate user, issue cookies |
+| `deleteSessionAction` | Revoke token + clear cookies |
+| `getSessionServer` | Validate `auth-token`, return user profile |
+| `checkPermissionServer` | Helper for RBAC checks |
 
-### Google Sign-In ボタン
+These actions wrap the server-only counterparts in `command.server.ts` / `query.server.ts` so that client components can call them without leaking secrets.
+
+### NextAuth Configuration (`features/auth/lib/option.ts`)
+
+NextAuth is configured with a Credentials provider. The current stub simply echoes credentials; replace the `authorize` callback with a call to `createSessionServer` to align runtime behaviour with the domain layer:
 
 ```typescript
-// features/auth/components/GoogleSignInButton.tsx
+const credentialsProvider = CredentialsProvider({
+  name: 'Email & Password',
+  credentials: {
+    email: { label: 'Email', type: 'text' },
+    password: { label: 'Password', type: 'password' },
+  },
+  async authorize(credentials) {
+    if (!credentials) return null
+    const result = await createSessionServer({
+      email: credentials.email,
+      password: credentials.password,
+    })
+    return result.success
+      ? { id: result.user.id, email: credentials.email }
+      : null
+  },
+})
+```
+
+The exported `authOptions` are reused on the server (`getServerSession`) and client (`useSession`) to maintain a single source of truth.
+
+### Server Utilities (`features/auth/servers`)
+
+- `getSessionServer` (provided) wraps `getServerSession`.
+- A `requireAuthServer` helper should be added to perform redirects on protected routes (see TODOs).
+- RBAC helpers live in `UserManagementService` (`hasPermission`, `getUserPermissions`).
+
+### Client Utilities (`features/auth/hooks`)
+
+Currently implemented:
+
+| Hook | Description |
+|------|-------------|
+| `useAuthSession` | Thin wrapper around `useSession` providing `isAuthenticated` / `isLoading` flags |
+
+Planned hooks (see TODO):
+
+- `useSignIn` / `useSignOut` built on top of the server actions
+- `useHasPermission` to guard UI affordances (buttons, menu items)
+
+### Example: Login Form (Client Component)
+
+```tsx
 'use client'
 
-import { useState } from 'react'
+import { useTransition, useState } from 'react'
+import { createSessionAction } from '@/external/handler/auth'
 import { Button } from '@/shared/components/ui/button'
+import { Input } from '@/shared/components/ui/input'
 import { useRouter } from 'next/navigation'
 
-export function GoogleSignInButton() {
-  const [loading, setLoading] = useState(false)
+export function LoginForm() {
   const router = useRouter()
+  const [error, setError] = useState<string | null>(null)
+  const [isPending, startTransition] = useTransition()
 
-  const handleSignIn = () => {
-    setLoading(true)
-    
-    // Google OAuth2 URL構築
-    const params = new URLSearchParams({
-      client_id: process.env.NEXT_PUBLIC_GCP_CLIENT_ID!,
-      redirect_uri: `${window.location.origin}/api/auth/callback/google`,
-      response_type: 'code',
-      scope: 'openid email profile',
-      access_type: 'offline', // リフレッシュトークンを取得
-      prompt: 'consent', // リフレッシュトークンを確実に取得
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    const formData = new FormData(event.currentTarget)
+
+    startTransition(async () => {
+      const result = await createSessionAction({
+        email: formData.get('email') as string,
+        password: formData.get('password') as string,
+        redirectUrl: '/requests',
+      })
+
+      if (result.success && result.redirectUrl) {
+        router.replace(result.redirectUrl)
+      } else {
+        setError(result.error ?? 'Authentication failed')
+      }
     })
-
-    window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params}`
   }
 
   return (
-    <Button
-      onClick={handleSignIn}
-      disabled={loading}
-      variant="outline"
-      className="w-full"
-    >
-      {loading ? (
-        'サインイン中...'
-      ) : (
-        <>
-          <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
-            {/* Google Icon SVG */}
-          </svg>
-          Googleでサインイン
-        </>
-      )}
-    </Button>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <Input name="email" type="email" placeholder="you@example.com" required />
+      <Input name="password" type="password" placeholder="••••••••" required />
+      {error && <p className="text-sm text-destructive">{error}</p>}
+      <Button type="submit" disabled={isPending} className="w-full">
+        {isPending ? 'Signing in…' : 'Sign in'}
+      </Button>
+    </form>
   )
 }
 ```
 
-## サーバー側の実装
+### Example: Server-Side Route Guard
 
-External handler では Command/Query を分離し、Server-only 関数と Server Action を組み合わせて利用します。命名は [AIP-190](https://google.aip.dev/190) に準拠し、操作 + リソース（例: `createSessionServer`, `getSessionServer`, `deleteSessionServer`）とします。
-
-### Command: セッション作成・削除
-
-```typescript
-// external/handler/auth/command.server.ts
-export async function createSessionServer(data: CreateSessionInput) {
-  const validated = createSessionSchema.parse(data)
-
-  const authResult = await authService.signInWithEmailPassword(
-    validated.email,
-    validated.password
-  )
-
-  const user = await userManagementService.getOrCreateUser({
-    email: authResult.userInfo.email,
-    name: authResult.userInfo.name,
-    externalId: authResult.userInfo.id,
-  })
-
-  await auditService.logUserLogin(user, SERVER_CONTEXT)
-
-  const cookieStore = await cookies()
-  cookieStore.set('auth-token', authResult.idToken, { httpOnly: true, path: '/' })
-  cookieStore.set('user-id', user.getId().getValue(), { httpOnly: true, path: '/' })
-
-  return {
-    success: true,
-    redirectUrl: validated.redirectUrl ?? '/dashboard',
-  }
-}
-
-export async function deleteSessionServer(userId?: string) {
-  const cookieStore = await cookies()
-  const storedUserId = userId ?? cookieStore.get('user-id')?.value
-  const token = cookieStore.get('auth-token')?.value
-
-  if (!storedUserId || !token) {
-    return { success: false, error: 'No active session' }
-  }
-
-  const user = await userManagementService.findUserById(storedUserId)
-  if (user) {
-    try {
-      await authService.revokeAuthentication(token)
-    } catch (error) {
-      console.error('Failed to revoke token:', error)
-    }
-
-    await auditService.logUserLogout(user, SERVER_CONTEXT)
-  }
-
-  cookieStore.delete('auth-token')
-  cookieStore.delete('user-id')
-
-  return { success: true }
-}
-
-// external/handler/auth/command.action.ts
-'use server'
-export async function createSessionAction(data: CreateSessionInput) {
-  return createSessionServer(data)
-}
-
-export async function deleteSessionAction(userId?: string) {
-  return deleteSessionServer(userId)
-}
-```
-
-### Query: セッション取得・権限確認
-
-```typescript
-// external/handler/auth/query.server.ts
-export async function getSessionServer(data?: GetSessionInput) {
-  const validated = getSessionSchema.parse(data ?? {})
-  const cookieStore = await cookies()
-  const token = cookieStore.get('auth-token')?.value
-  const storedUserId = cookieStore.get('user-id')?.value
-
-  if (!token || !storedUserId) {
-    return { isAuthenticated: false }
-  }
-
-  const tokenInfo = await authService.verifyToken(token)
-  if (!tokenInfo) {
-    cookieStore.delete('auth-token')
-    cookieStore.delete('user-id')
-    return { isAuthenticated: false }
-  }
-
-  const user = await userManagementService.findUserById(storedUserId)
-  if (!user || (validated.userId && validated.userId !== user.getId().getValue())) {
-    return { isAuthenticated: false }
-  }
-
-  return {
-    user: userManagementService.toUserProfile(user),
-    isAuthenticated: true,
-  }
-}
-
-export async function checkPermissionServer(permission: string) {
-  const session = await getSessionServer()
-  if (!session.isAuthenticated || !session.user) {
-    return false
-  }
-
-  const user = await userManagementService.findUserById(session.user.id)
-  if (!user) {
-    return false
-  }
-
-  return userManagementService.hasPermission(user, permission)
-}
-
-// external/handler/auth/query.action.ts
-'use server'
-export async function getSessionAction(data?: GetSessionInput) {
-  return getSessionServer(data)
-}
-
-export async function checkPermissionAction(permission: string) {
-  return checkPermissionServer(permission)
-}
-```
-
-### クライアント側の自動トークンリフレッシュ
-
-```typescript
-// shared/hooks/useAuth.tsx
-'use client'
-
-import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-
-export function useAuth() {
-  const router = useRouter()
-
-  useEffect(() => {
-    // 定期的にトークンをリフレッシュ
-    const interval = setInterval(async () => {
-      try {
-        const response = await fetch('/api/auth/refresh', {
-          method: 'POST',
-        })
-        
-        if (!response.ok) {
-          router.push('/login')
-        }
-      } catch (error) {
-        console.error('Token refresh failed:', error)
-      }
-    }, 50 * 60 * 1000) // 50分ごと（IDトークンの有効期限1時間より前）
-
-    return () => clearInterval(interval)
-  }, [router])
-}
-
-// app/providers.tsx でグローバルに使用
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  useAuth()
-  return <>{children}</>
-}
-```
-
-## データベース連携
-
-```typescript
-// external/db/users.ts
-import 'server-only'
-import { db } from './client'
-import { users } from './schema'
-import { eq } from 'drizzle-orm'
-
-export async function upsertUser(identityUser: IdentityPlatformUser) {
-  const userData = {
-    email: identityUser.email!,
-    name: identityUser.name || identityUser.email!.split('@')[0],
-    emailVerified: identityUser.emailVerified,
-    picture: identityUser.picture,
-    identityPlatformId: identityUser.uid,
-    lastLoginAt: new Date(),
-  }
-
-  await db
-    .insert(users)
-    .values(userData)
-    .onConflictDoUpdate({
-      target: users.email,
-      set: {
-        ...userData,
-        updatedAt: new Date(),
-      },
-    })
-}
-```
-
-## セッション管理
-
-### セッション検証ヘルパー
-
-```typescript
-// external/lib/auth/session.ts
-import 'server-only'
-import { cookies } from 'next/headers'
-import jwt from 'jsonwebtoken'
-import { sessionTokenSchema } from '@/external/types/identity-platform'
-
-export async function getSession() {
-  const sessionCookie = cookies().get('session')
-  
-  if (!sessionCookie) {
-    return null
-  }
-
-  try {
-    const decoded = jwt.verify(
-      sessionCookie.value, 
-      process.env.JWT_SECRET!
-    )
-    
-    // Zodでバリデーション
-    const session = sessionTokenSchema.parse(decoded)
-    
-    // 有効期限チェック
-    if (session.exp < Math.floor(Date.now() / 1000)) {
-      return null
-    }
-    
-    return session
-  } catch (error) {
-    return null
-  }
-}
-
-export async function requireAuth() {
-  const session = await getSession()
-  
-  if (!session) {
-    throw new Error('Unauthorized')
-  }
-  
-  return session
-}
-```
-
-### Server Componentでの使用
-
-```typescript
-// app/dashboard/page.tsx
-import { requireAuth } from '@/external/lib/auth/session'
+```tsx
+// app/(authenticated)/requests/page.tsx
 import { redirect } from 'next/navigation'
+import { getSessionServer } from '@/features/auth/servers/session.server'
 
-export default async function DashboardPage() {
-  try {
-    const session = await requireAuth()
-    
-    return (
-      <div>
-        <h1>Welcome, {session.name || session.email}</h1>
-        {/* ダッシュボードコンテンツ */}
-      </div>
-    )
-  } catch {
-    redirect('/login')
-  }
+export default async function RequestsPage() {
+  const session = await getSessionServer()
+  if (!session) redirect('/login')
+
+  return <RequestsPageTemplate userId={session.user.id} />
 }
 ```
 
-## サインアウト
+Once `requireAuthServer` is implemented, prefer that helper to keep guards consistent.
 
-```typescript
-// app/api/auth/signout/route.ts
-import { NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
-import { getSession } from '@/external/lib/auth/session'
-import { revokeRefreshTokens } from '@/external/lib/auth/identity-platform-api'
+---
 
-export async function POST() {
-  try {
-    // 現在のセッション取得
-    const session = await getSession()
-    
-    if (session) {
-      // Identity Platform側でリフレッシュトークンを無効化
-      await revokeRefreshTokens(session.userId)
-    }
-  } catch (error) {
-    console.error('Failed to revoke tokens:', error)
-  }
-  
-  // Cookie削除
-  cookies().delete('session')
-  cookies().delete('refresh-token')
-  
-  return NextResponse.json({ success: true })
-}
+## RBAC Integration
+
+`UserManagementService#getPermissionsForRoles` exposes a permission array per role. Suggested mapping for the request workflow:
+
+| Permission | Used By | Purpose |
+|------------|---------|---------|
+| `request.create` | Requester | Create new requests |
+| `request.view` | All | View accessible requests |
+| `request.view.own` | Requester | Limit list/detail to own records |
+| `request.update.own` | Requester | Edit drafts before submission |
+| `request.approve` | Approver/Admin | Approve or reject requests |
+| `request.audit.read` | Admin | View audit trail |
+| `user.manage` | Admin | Manage roles and statuses |
+
+Update `permissionMap` accordingly when introducing the dedicated Approver role.
+
+On the client, use permission checks to toggle actions:
+
+```tsx
+const canApprove = permissions.includes('request.approve')
+return canApprove ? <ApproveButton /> : null
 ```
 
-## セキュリティのベストプラクティス
+---
 
-1. **リフレッシュトークンの安全な保管**: httpOnly Cookieで保存し、JavaScriptからアクセス不可に
-2. **短いIDトークン有効期限**: 1時間に設定し、定期的にリフレッシュ
-3. **CSRF対策**: State パラメータを使用してOAuth2フローを保護
-4. **PKCE**: 認証コード横取り攻撃を防ぐため、今後実装予定
-5. **トークンローテーション**: リフレッシュ時に新しいリフレッシュトークンも発行
-6. **適切なスコープ**: 必要最小限の権限のみを要求（openid email profile）
+## Security Checklist
+
+- `auth-token` and `user-id` cookies are `httpOnly`, `SameSite=Lax`, and `Secure` outside development.
+- All server-only logic is wrapped with `import 'server-only'`.
+- Identity Platform credentials come from environment variables (`GCP_IDENTITY_PLATFORM_API_KEY`, `GCP_PROJECT_ID`).
+- Never expose refresh tokens to the browser. Until persistence is implemented, require reauthentication when the ID token expires.
+- Audit every sign-in and sign-out (`AuditService`) to maintain the compliance trail.
+
+---
+
+## Roadmap / TODO
+
+- [ ] Persist refresh tokens securely (encrypted column or sealed cookie) and expose `refreshSessionAction`.
+- [ ] Implement `requireAuthServer` and `redirectIfAuthenticatedServer` helpers in `features/auth/servers`.
+- [ ] Replace the mock `authorize` callback in `authOptions` with the real session creation logic.
+- [ ] Introduce `useSignIn`, `useSignOut`, and `useHasPermission` hooks to standardise client usage.
+- [ ] Expand `UserRole` enum to include explicit `APPROVER` and update `permissionMap`.
+- [ ] Add middleware-based short-circuit for `/requests` and other protected routes.
+- [ ] Re-enable the layout guard in `AuthenticatedLayoutWrapper` once implemented.
