@@ -19,11 +19,13 @@ frontend/
 │   │   ├── actions/          # Server Actions
 │   │   └── services/         # 外部API連携
 │   │
-│   ├── features/             # 機能別モジュール
-│   │   ├── auth/            # 認証機能
-│   │   ├── users/           # ユーザー管理
-│   │   ├── products/        # 商品管理
-│   │   └── orders/          # 注文管理
+│   ├── features/             # 機能別モジュール（ドメイン単位）
+│   │   ├── auth/            # 認証（サインイン、セッション）
+│   │   ├── requests/        # 申請作成・一覧・詳細
+│   │   ├── approvals/       # 承認ワークフロー
+│   │   ├── comments/        # 申請コメント
+│   │   ├── notifications/   # トースト・未読管理
+│   │   └── account/         # プロフィール設定
 │   │
 │   └── shared/              # 共通モジュール
 │       ├── components/      # 共通コンポーネント
@@ -55,16 +57,41 @@ Next.js App Routerのルートディレクトリ。ルーティングとレイ�
 
 ### `/src/features`
 
-機能単位でコードを整理。各機能は独立したモジュールとして管理。
+申請・承認ドメインのユースケースごとにUIとロジックを近接配置します。各featureは以下の統一構成を採用し、Server ComponentsとClient Componentsを明確に分離します。
 
 ```
-features/users/
-├── components/        # ユーザー機能専用コンポーネント
-├── hooks/            # ユーザー機能専用フック
-├── schemas/          # Zodスキーマ定義
-├── queries/          # TanStack Query定義
-└── types/            # 型定義
+features/requests/
+├── components/
+│   ├── server/                   # データプリフェッチやテンプレート（PageTemplate等）
+│   └── client/
+│       └── RequestForm/
+│           ├── RequestForm.tsx                 # Re-export（Container）
+│           ├── RequestFormContainer.tsx        # 状態オーケストレーション
+│           ├── RequestFormPresenter.tsx        # プレゼンテーション
+│           ├── useRequestForm.ts               # ビジネスロジックフック
+│           ├── RequestForm.test.tsx            # コンテナ統合テスト
+│           ├── useRequestForm.test.ts          # フック単体テスト
+│           ├── RequestForm.stories.tsx         # ドキュメント用途
+│           └── RequestFormPresenter.stories.tsx# UIバリエーション
+├── hooks/                      # feature内で共有するカスタムフック
+├── schemas/                    # Zodスキーマ（createRequestSchema 等）
+├── constants/                  # 選択肢やラベル等の定数
+├── actions/                    # Server Actions ('use server')
+├── servers/                    # Server Components/Functions ('server-only')
+├── types/                      # feature専用型（Request, RequestSummary 等）
+└── lib/                        # feature限定のユーティリティ
 ```
+
+#### Feature分割ポリシー
+
+- **auth/**: サインイン、セッション検証、権限チェック
+- **requests/**: 申請のCRUD、フィルタリング、一覧テンプレート
+- **approvals/**: 承認／却下操作、監査ログ表示
+- **comments/**: 申請詳細でのコメントスレッド
+- **notifications/**: UIトースト、通知バッジ、既読制御
+- **account/**: プロフィール編集、通知設定、パスワード更新
+
+Feature間の連携は`shared/`か`external/`を経由し、直接依存を避けます。
 
 ### `/src/shared`
 
@@ -81,11 +108,11 @@ features/users/
 
 ```typescript
 // 推奨: パスエイリアスを使用
-import { Button } from "@/shared/components/ui/button";
-import { useUser } from "@/features/users/hooks/useUser";
+import { Button } from '@/shared/components/ui/button'
+import { useRequestList } from '@/features/requests/hooks/useRequestList'
 
 // 非推奨: 相対パス
-import { Button } from "../../../shared/components/ui/button";
+import { Button } from '../../../shared/components/ui/button'
 ```
 
 ### 2. 機能の独立性
@@ -95,20 +122,28 @@ import { Button } from "../../../shared/components/ui/button";
 ### 3. External層の使用
 
 ```typescript
-// external/db/users.ts
-import "server-only";
-import { db } from "./client";
+// external/handler/request/query.server.ts
+import 'server-only'
+import { db } from '@/external/client/db/client'
+import { requests } from '@/external/client/db/schema/requests'
 
-export async function getUsers() {
-  return await db.select().from(users);
+export async function listRequestsServer(params: ListRequestsParams) {
+  return db.query.requests.findMany({
+    where: ({ status, type }, { eq }) => [
+      params.status ? eq(status, params.status) : undefined,
+      params.type ? eq(type, params.type) : undefined,
+    ],
+    limit: params.limit ?? 20,
+    offset: params.offset ?? 0,
+  })
 }
 
-// external/actions/users.ts
-("use server");
-import { getUsers } from "../db/users";
+// external/handler/request/query.action.ts
+'use server'
+import { listRequestsServer } from './query.server'
 
-export async function fetchUsersAction() {
-  return await getUsers();
+export async function listRequestsAction(params: ListRequestsParams) {
+  return listRequestsServer(params)
 }
 ```
 
