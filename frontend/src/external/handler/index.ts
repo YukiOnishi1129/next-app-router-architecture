@@ -1,26 +1,11 @@
 // Auth handlers
 export {
-  signIn,
-  signOut,
   getSession,
   checkPermission,
-  signInAction,
-  signUpAction,
-  signOutAction,
   getSessionAction,
   checkPermissionAction,
-  signInServer,
-  signUpServer,
-  signOutServer,
   getSessionServer,
   checkPermissionServer,
-  type SignInInput,
-  type SignUpInput,
-  type SessionInput,
-  type SignInResponse,
-  type SignUpResponse,
-  type SignOutResponse,
-  type SessionResponse,
 } from "./auth";
 
 // Request handlers
@@ -125,5 +110,4 @@ export {
   sendTestNotificationServer,
   type NotificationResponse,
   type NotificationListResponse,
-  type NotificationPreferencesResponse,
 } from "./notification";

@@ -17,7 +17,6 @@ export {
   AuthenticationService,
   UserManagementService,
   type AuthToken,
-  type GoogleAuthResult,
   type UserProfile,
   type CreateUserData,
   type UpdateUserData,

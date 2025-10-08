@@ -9,9 +9,6 @@
 import {
   IdentityPlatformClient,
   UserInfo,
-  SignUpData,
-  SignInData,
-  EmailAuthResult,
 } from "@/external/client/gcp/identity-platform";
 
 export interface AuthToken {
