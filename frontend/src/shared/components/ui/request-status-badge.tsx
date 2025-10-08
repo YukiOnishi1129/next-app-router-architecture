@@ -1,10 +1,11 @@
+import type { ComponentProps } from "react";
 import { Badge } from "@/shared/components/ui/badge";
 
 type RequestStatus = "draft" | "submitted" | "approved" | "rejected";
 
 const STATUS_VARIANTS: Record<
   RequestStatus,
-  React.ComponentProps<typeof Badge>["variant"]
+  ComponentProps<typeof Badge>["variant"]
 > = {
   draft: "outline",
   submitted: "default",

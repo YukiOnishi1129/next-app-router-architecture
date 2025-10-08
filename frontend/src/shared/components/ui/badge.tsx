@@ -23,7 +23,7 @@ const Badge = React.forwardRef<HTMLSpanElement, BadgeProps>(
       className={cn(badgeVariants[variant], className)}
       {...props}
     />
-  ),
+  )
 );
 Badge.displayName = "Badge";
 

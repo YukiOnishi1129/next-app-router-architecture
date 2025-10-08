@@ -1,14 +1,14 @@
-'use client'
+"use client";
 
 import Link from "next/link";
 
 export function Header() {
   return (
-    <header className="flex h-14 items-center justify-between border-b border-border px-6">
-      <div className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+    <header className="border-border flex h-14 items-center justify-between border-b px-6">
+      <div className="text-muted-foreground text-sm font-semibold tracking-wide uppercase">
         Request &amp; Approval System
       </div>
-      <nav className="flex items-center gap-4 text-sm text-muted-foreground">
+      <nav className="text-muted-foreground flex items-center gap-4 text-sm">
         <Link href="/requests" className="hover:text-foreground">
           Requests
         </Link>

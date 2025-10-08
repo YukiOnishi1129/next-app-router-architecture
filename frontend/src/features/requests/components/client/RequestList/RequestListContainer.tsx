@@ -1,4 +1,4 @@
-'use client'
+"use client";
 
 import type { RequestFilterInput } from "@/features/requests/types";
 import { RequestListPresenter } from "./RequestListPresenter";

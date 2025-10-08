@@ -6,8 +6,10 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "lint": "eslint",
-    "lint:fix": "eslint --fix",
+    "lint": "eslint . --cache",
+    "lint:src": "eslint src --cache",
+    "lint:fix": "eslint . --fix --cache",
+    "lint:fix:src": "eslint src --fix --cache",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest",
@@ -18,7 +20,8 @@
     "db:migrate": "tsx scripts/migrate.ts",
     "db:push": "drizzle-kit push:pg --config=drizzle.config.cjs",
     "db:seed": "tsx scripts/seed.ts",
-    "db:studio": "drizzle-kit studio --config=drizzle.config.cjs"
+    "db:studio": "drizzle-kit studio --config=drizzle.config.cjs",
+    "typegen": "next typegen"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

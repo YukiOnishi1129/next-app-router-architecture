@@ -13,7 +13,7 @@ export function RequestListPresenter({
 }: RequestListPresenterProps) {
   if (isLoading) {
     return (
-      <div className="space-y-2 text-sm text-muted-foreground">
+      <div className="text-muted-foreground space-y-2 text-sm">
         Loading requests...
       </div>
     );
@@ -21,7 +21,7 @@ export function RequestListPresenter({
 
   if (!requests.length) {
     return (
-      <div className="rounded-md border border-dashed border-muted-foreground/40 p-6 text-center text-sm text-muted-foreground">
+      <div className="border-muted-foreground/40 text-muted-foreground rounded-md border border-dashed p-6 text-center text-sm">
         No requests found. Try creating a new one.
       </div>
     );
@@ -35,7 +35,7 @@ export function RequestListPresenter({
             <h3 className="text-sm font-medium">{request.title}</h3>
             <RequestStatusBadge status={request.status} />
           </div>
-          <dl className="grid grid-cols-2 gap-1 text-xs text-muted-foreground">
+          <dl className="text-muted-foreground grid grid-cols-2 gap-1 text-xs">
             <dt>Submitted</dt>
             <dd className="text-right">
               {new Date(request.submittedAt).toLocaleDateString()}

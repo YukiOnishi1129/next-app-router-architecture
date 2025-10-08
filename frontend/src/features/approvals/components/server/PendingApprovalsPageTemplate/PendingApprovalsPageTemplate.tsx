@@ -22,7 +22,7 @@ export async function PendingApprovalsPageTemplate() {
     <section className="space-y-6 px-6 py-8">
       <header className="space-y-2">
         <h1 className="text-2xl font-semibold">Pending approvals</h1>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-muted-foreground text-sm">
           Review and take action on requests awaiting your decision.
         </p>
       </header>
@@ -31,12 +31,12 @@ export async function PendingApprovalsPageTemplate() {
         {MOCK_APPROVALS.map((item) => (
           <article
             key={item.id}
-            className="rounded-md border border-border bg-background px-4 py-3 shadow-sm"
+            className="border-border bg-background rounded-md border px-4 py-3 shadow-sm"
           >
             <div className="flex items-center justify-between gap-3">
               <div>
                 <h2 className="text-sm font-medium">{item.title}</h2>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-muted-foreground text-xs">
                   Requested by {item.requester} on{" "}
                   {new Date(item.submittedAt).toLocaleDateString()}
                 </p>

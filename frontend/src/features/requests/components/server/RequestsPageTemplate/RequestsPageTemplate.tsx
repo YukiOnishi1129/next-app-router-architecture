@@ -14,7 +14,7 @@ export async function RequestsPageTemplate({
     <section className="space-y-6 px-6 py-8">
       <header className="space-y-2">
         <h1 className="text-2xl font-semibold">Requests</h1>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-muted-foreground text-sm">
           Track and manage your pending and completed approval requests.
         </p>
       </header>

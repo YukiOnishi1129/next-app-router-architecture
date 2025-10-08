@@ -1,1 +1,1 @@
-export * from './DashboardPageTemplate';
+export * from "./DashboardPageTemplate";

@@ -14,7 +14,7 @@ export async function DashboardPageTemplate() {
     <section className="space-y-6 px-6 py-8">
       <header className="space-y-2">
         <h1 className="text-2xl font-semibold">Overview</h1>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-muted-foreground text-sm">
           Quick snapshot of your request pipeline and upcoming tasks.
         </p>
       </header>
@@ -22,7 +22,7 @@ export async function DashboardPageTemplate() {
       <div className="grid gap-4 md:grid-cols-3">
         {stats.map((item) => (
           <Card key={item.label} className="space-y-3 p-4">
-            <p className="text-xs uppercase text-muted-foreground">
+            <p className="text-muted-foreground text-xs uppercase">
               {item.label}
             </p>
             <div className="flex items-center justify-between">
