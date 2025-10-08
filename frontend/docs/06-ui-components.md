@@ -20,19 +20,19 @@ pnpm dlx shadcn-ui@latest add dialog
 
 ```
 shared/components/
-├── ui/                    # Shadcn UIコンポーネント
+├── ui/                             # Shadcn UIベースの低レベルコンポーネント
 │   ├── button.tsx
-│   ├── dialog.tsx
 │   ├── form.tsx
-│   └── ...
-├── layout/               # レイアウトコンポーネント
-│   ├── Header.tsx
-│   ├── Footer.tsx
-│   └── Sidebar.tsx
-└── common/              # カスタム共通コンポーネント
-    ├── DataTable.tsx
-    ├── ErrorBoundary.tsx
-    └── LoadingSpinner.tsx
+│   └── badge.tsx
+├── layout/
+│   ├── server/                     # 認証ラッパーなどのServer Components
+│   │   └── AuthenticatedLayoutWrapper/
+│   └── client/                     # ヘッダーやサイドバーのClient Components
+│       ├── Header/
+│       └── Sidebar/
+└── feedback/                       # トースト・スケルトンなど横断的UI
+    ├── ToastProvider.tsx
+    └── RequestListSkeleton.tsx
 ```
 
 ## コンポーネント設計原則
@@ -40,102 +40,140 @@ shared/components/
 ### 1. コンポジション優先
 
 ```typescript
-// shared/components/common/Card.tsx
+// shared/components/ui/request-status-badge.tsx
+import { Badge, type BadgeProps } from '@/shared/components/ui/badge'
 import { cn } from '@/shared/lib/utils'
 
-interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
-  variant?: 'default' | 'outlined' | 'elevated'
+type RequestStatus = 'draft' | 'submitted' | 'approved' | 'rejected'
+
+const STATUS_VARIANT: Record<RequestStatus, BadgeProps['variant']> = {
+  draft: 'outline',
+  submitted: 'default',
+  approved: 'success',
+  rejected: 'destructive',
 }
 
-export function Card({ 
-  className, 
-  variant = 'default', 
-  ...props 
-}: CardProps) {
+const STATUS_LABEL: Record<RequestStatus, string> = {
+  draft: 'Draft',
+  submitted: 'Submitted',
+  approved: 'Approved',
+  rejected: 'Rejected',
+}
+
+type RequestStatusBadgeProps = {
+  status: RequestStatus
+  className?: string
+}
+
+export function RequestStatusBadge({ status, className }: RequestStatusBadgeProps) {
   return (
-    <div
-      className={cn(
-        'rounded-lg bg-card text-card-foreground',
-        {
-          'border border-border': variant === 'outlined',
-          'shadow-lg': variant === 'elevated',
-        },
-        className
-      )}
-      {...props}
-    />
+    <Badge variant={STATUS_VARIANT[status]} className={cn('capitalize', className)}>
+      {STATUS_LABEL[status]}
+    </Badge>
   )
-}
-
-export function CardHeader({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return (
-    <div
-      className={cn('flex flex-col space-y-1.5 p-6', className)}
-      {...props}
-    />
-  )
-}
-
-export function CardTitle({ className, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
-  return (
-    <h3
-      className={cn('text-2xl font-semibold leading-none tracking-tight', className)}
-      {...props}
-    />
-  )
-}
-
-export function CardContent({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn('p-6 pt-0', className)} {...props} />
 }
 ```
 
 ### 2. 型安全なプロップス
 
 ```typescript
-// features/users/components/UserAvatar.tsx
-import { Avatar, AvatarFallback, AvatarImage } from '@/shared/components/ui/avatar'
-import { User } from '../types'
+// features/requests/components/client/RequestSummaryCard/RequestSummaryCardPresenter.tsx
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card'
+import { RequestStatusBadge } from '@/shared/components/ui/request-status-badge'
+import type { RequestSummary } from '@/features/requests/types'
 
-interface UserAvatarProps {
-  user: Pick<User, 'name' | 'image'>
-  size?: 'sm' | 'md' | 'lg'
-  showFallback?: boolean
+type RequestSummaryCardPresenterProps = {
+  request: RequestSummary
+  onClick: (requestId: string) => void
 }
 
-const sizeClasses = {
-  sm: 'h-8 w-8',
-  md: 'h-10 w-10',
-  lg: 'h-12 w-12',
-} as const
-
-export function UserAvatar({ 
-  user, 
-  size = 'md',
-  showFallback = true 
-}: UserAvatarProps) {
-  const initials = user.name
-    .split(' ')
-    .map(n => n[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2)
-
+export function RequestSummaryCardPresenter({
+  request,
+  onClick,
+}: RequestSummaryCardPresenterProps) {
   return (
-    <Avatar className={sizeClasses[size]}>
-      {user.image && <AvatarImage src={user.image} alt={user.name} />}
-      {showFallback && <AvatarFallback>{initials}</AvatarFallback>}
-    </Avatar>
+    <Card role="button" onClick={() => onClick(request.id)} className="transition hover:shadow-md">
+      <CardHeader className="flex flex-row items-start justify-between space-y-0">
+        <CardTitle className="text-base font-semibold">{request.title}</CardTitle>
+        <RequestStatusBadge status={request.status} />
+      </CardHeader>
+      <CardContent className="space-y-2 text-sm text-muted-foreground">
+        <p>Type: {request.typeLabel}</p>
+        <p>Amount: {request.amountFormatted ?? '—'}</p>
+        <p>Last updated: {request.updatedAtRelative}</p>
+      </CardContent>
+    </Card>
   )
+}
+```
+
+### 追加: Container / Presenter パターン
+
+Client ComponentsはContainer/Presenter/Hookの三層構成を採用します。
+
+```typescript
+// features/approvals/components/client/ApprovalDecisionForm/ApprovalDecisionFormContainer.tsx
+'use client'
+import { useApprovalDecisionForm } from './useApprovalDecisionForm'
+import { ApprovalDecisionFormPresenter } from './ApprovalDecisionFormPresenter'
+
+export function ApprovalDecisionFormContainer({ requestId }: { requestId: string }) {
+  const { form, handleApprove, handleReject, isSubmitting } = useApprovalDecisionForm({ requestId })
+  return (
+    <ApprovalDecisionFormPresenter
+      form={form}
+      onApprove={handleApprove}
+      onReject={handleReject}
+      isSubmitting={isSubmitting}
+    />
+  )
+}
+```
+
+```typescript
+// features/approvals/components/client/ApprovalDecisionForm/useApprovalDecisionForm.ts
+import { useCallback } from 'react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { approvalDecisionSchema } from '@/features/approvals/schemas/approvalDecision'
+import { approveRequestAction, rejectRequestAction } from '@/features/approvals/actions'
+import type { ApprovalDecisionInput } from '@/features/approvals/types'
+
+export const useApprovalDecisionForm = ({ requestId }: { requestId: string }) => {
+  const form = useForm<ApprovalDecisionInput>({
+    resolver: zodResolver(approvalDecisionSchema),
+    defaultValues: { comment: '' },
+  })
+
+  const handleApprove = useCallback(
+    async (input: ApprovalDecisionInput) => {
+      await approveRequestAction({ ...input, requestId })
+    },
+    [requestId],
+  )
+
+  const handleReject = useCallback(
+    async (input: ApprovalDecisionInput) => {
+      await rejectRequestAction({ ...input, requestId })
+    },
+    [requestId],
+  )
+
+  return {
+    form,
+    handleApprove: form.handleSubmit(handleApprove),
+    handleReject: form.handleSubmit(handleReject),
+    isSubmitting: form.formState.isSubmitting,
+  }
 }
 ```
 
 ### 3. アクセシブルなコンポーネント
 
 ```typescript
-// shared/components/common/IconButton.tsx
+// shared/components/ui/icon-button.tsx
 import { forwardRef } from 'react'
-import { Button, ButtonProps } from '../ui/button'
+import { Button, type ButtonProps } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/utils'
 
 interface IconButtonProps extends ButtonProps {
@@ -144,21 +182,19 @@ interface IconButtonProps extends ButtonProps {
 }
 
 export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
-  ({ icon, label, className, ...props }, ref) => {
-    return (
-      <Button
-        ref={ref}
-        variant="ghost"
-        size="icon"
-        aria-label={label}
-        className={cn('relative', className)}
-        {...props}
-      >
-        {icon}
-        <span className="sr-only">{label}</span>
-      </Button>
-    )
-  }
+  ({ icon, label, className, ...props }, ref) => (
+    <Button
+      ref={ref}
+      variant="ghost"
+      size="icon"
+      aria-label={label}
+      className={cn('relative', className)}
+      {...props}
+    >
+      {icon}
+      <span className="sr-only">{label}</span>
+    </Button>
+  ),
 )
 
 IconButton.displayName = 'IconButton'
@@ -169,7 +205,7 @@ IconButton.displayName = 'IconButton'
 ### データテーブル
 
 ```typescript
-// shared/components/common/DataTable.tsx
+// shared/components/table/DataTable.tsx
 import {
   ColumnDef,
   flexRender,
@@ -179,8 +215,15 @@ import {
   getSortedRowModel,
   SortingState,
 } from '@tanstack/react-table'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table'
-import { Button } from '../ui/button'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/shared/components/ui/table'
+import { Button } from '@/shared/components/ui/button'
 import { useState } from 'react'
 
 interface DataTableProps<TData, TValue> {

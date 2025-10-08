@@ -1,50 +1,50 @@
-import { UserId } from "../user";
-import { RequestId } from "../request";
-import { AttachmentId } from "./attachment-id";
+import { RequestId } from '../request'
+import { UserId } from '../user'
+import { AttachmentId } from './attachment-id'
 
 /**
  * FileSize value object
  */
 export class FileSize {
-  private static readonly MAX_SIZE_BYTES = 10 * 1024 * 1024; // 10MB
+  private static readonly MAX_SIZE_BYTES = 10 * 1024 * 1024 // 10MB
 
   constructor(private readonly bytes: number) {
-    this.validate(bytes);
+    this.validate(bytes)
   }
 
   private validate(bytes: number): void {
     if (bytes < 0) {
-      throw new Error("File size cannot be negative");
+      throw new Error('File size cannot be negative')
     }
     if (bytes > FileSize.MAX_SIZE_BYTES) {
       throw new Error(
         `File size exceeds maximum allowed size of ${FileSize.MAX_SIZE_BYTES} bytes`
-      );
+      )
     }
   }
 
   getBytes(): number {
-    return this.bytes;
+    return this.bytes
   }
 
   getKilobytes(): number {
-    return this.bytes / 1024;
+    return this.bytes / 1024
   }
 
   getMegabytes(): number {
-    return this.bytes / (1024 * 1024);
+    return this.bytes / (1024 * 1024)
   }
 
   toHumanReadable(): string {
-    const mb = this.getMegabytes();
+    const mb = this.getMegabytes()
     if (mb >= 1) {
-      return `${mb.toFixed(2)} MB`;
+      return `${mb.toFixed(2)} MB`
     }
-    const kb = this.getKilobytes();
+    const kb = this.getKilobytes()
     if (kb >= 1) {
-      return `${kb.toFixed(2)} KB`;
+      return `${kb.toFixed(2)} KB`
     }
-    return `${this.bytes} bytes`;
+    return `${this.bytes} bytes`
   }
 }
 
@@ -67,12 +67,12 @@ export class Attachment {
   ) {}
 
   static create(params: {
-    requestId: string;
-    fileName: string;
-    mimeType: string;
-    sizeInBytes: number;
-    storageKey: string;
-    uploadedById: string;
+    requestId: string
+    fileName: string
+    mimeType: string
+    sizeInBytes: number
+    storageKey: string
+    uploadedById: string
   }): Attachment {
     return new Attachment(
       AttachmentId.generate(),
@@ -86,21 +86,21 @@ export class Attachment {
       false,
       null,
       null
-    );
+    )
   }
 
   static restore(params: {
-    id: string;
-    requestId: string;
-    fileName: string;
-    mimeType: string;
-    sizeInBytes: number;
-    storageKey: string;
-    uploadedById: string;
-    uploadedAt: Date;
-    deleted: boolean;
-    deletedAt: Date | null;
-    deletedById: string | null;
+    id: string
+    requestId: string
+    fileName: string
+    mimeType: string
+    sizeInBytes: number
+    storageKey: string
+    uploadedById: string
+    uploadedAt: Date
+    deleted: boolean
+    deletedAt: Date | null
+    deletedById: string | null
   }): Attachment {
     return new Attachment(
       AttachmentId.create(params.id),
@@ -114,80 +114,80 @@ export class Attachment {
       params.deleted,
       params.deletedAt,
       params.deletedById ? UserId.create(params.deletedById) : null
-    );
+    )
   }
 
   getId(): AttachmentId {
-    return this.id;
+    return this.id
   }
 
   getRequestId(): RequestId {
-    return this.requestId;
+    return this.requestId
   }
 
   getFileName(): string {
-    return this.fileName;
+    return this.fileName
   }
 
   getMimeType(): string {
-    return this.mimeType;
+    return this.mimeType
   }
 
   getSize(): FileSize {
-    return this.size;
+    return this.size
   }
 
   getStorageKey(): string {
-    return this.storageKey;
+    return this.storageKey
   }
 
   getUploadedById(): UserId {
-    return this.uploadedById;
+    return this.uploadedById
   }
 
   getUploadedAt(): Date {
-    return new Date(this.uploadedAt);
+    return new Date(this.uploadedAt)
   }
 
   isDeleted(): boolean {
-    return this.deleted;
+    return this.deleted
   }
 
   getDeletedAt(): Date | null {
-    return this.deletedAt ? new Date(this.deletedAt) : null;
+    return this.deletedAt ? new Date(this.deletedAt) : null
   }
 
   getDeletedById(): UserId | null {
-    return this.deletedById;
+    return this.deletedById
   }
 
   isImage(): boolean {
-    return this.mimeType.startsWith("image/");
+    return this.mimeType.startsWith('image/')
   }
 
   isPdf(): boolean {
-    return this.mimeType === "application/pdf";
+    return this.mimeType === 'application/pdf'
   }
 
   isDocument(): boolean {
     const documentTypes = [
-      "application/pdf",
-      "application/msword",
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      "application/vnd.ms-excel",
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      "text/plain",
-    ];
-    return documentTypes.includes(this.mimeType);
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'text/plain',
+    ]
+    return documentTypes.includes(this.mimeType)
   }
 
   delete(deletedById: string): void {
     if (this.deleted) {
-      throw new Error("Attachment is already deleted");
+      throw new Error('Attachment is already deleted')
     }
-    this.deleted = true;
-    this.deletedAt = new Date();
-    this.deletedById = UserId.create(deletedById);
+    this.deleted = true
+    this.deletedAt = new Date()
+    this.deletedById = UserId.create(deletedById)
   }
 
   toJSON() {
@@ -206,6 +206,6 @@ export class Attachment {
       deleted: this.deleted,
       deletedAt: this.deletedAt?.toISOString() || null,
       deletedById: this.deletedById?.getValue() || null,
-    };
+    }
   }
 }

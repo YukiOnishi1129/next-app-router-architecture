@@ -1,4 +1,4 @@
-"use server";
+'use server'
 
 export {
   createRequestAction,
@@ -9,13 +9,13 @@ export {
   rejectRequestAction,
   cancelRequestAction,
   assignRequestAction,
-} from "./command.action";
+} from './command.action'
 
 export {
   listMyRequestsAction,
   listAssignedRequestsAction,
   listAllRequestsAction,
-} from "./query.action";
+} from './query.action'
 
 export {
   createRequestServer,
@@ -26,13 +26,13 @@ export {
   rejectRequestServer,
   cancelRequestServer,
   assignRequestServer,
-} from "./command.server";
+} from './command.server'
 
 export {
   listMyRequestsServer,
   listAssignedRequestsServer,
   listAllRequestsServer,
-} from "./query.server";
+} from './query.server'
 
 // Backwards-compatible aliases
 export {
@@ -44,16 +44,13 @@ export {
   rejectRequestAction as rejectRequest,
   cancelRequestAction as cancelRequest,
   assignRequestAction as assignRequest,
-} from "./command.action";
+} from './command.action'
 
 export {
   listMyRequestsAction as getMyRequests,
   listAssignedRequestsAction as getAssignedRequests,
   listAllRequestsAction as getAllRequests,
-} from "./query.action";
+} from './query.action'
 
-import type { RequestCommandResponse } from "./command.action";
-export type { RequestCommandResponse } from "./command.action";
-export type { RequestListInput, RequestListResponse } from "./query.action";
-
-export type RequestResponse = RequestCommandResponse;
+export type { RequestCommandResponse } from './command.server'
+export type { RequestListInput, RequestListResponse } from './query.server'

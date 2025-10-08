@@ -1,48 +1,51 @@
-"use server";
+'use server'
+
+import type { CreateCommentResponse } from './command.server'
+import type { ListCommentsResponse } from '@/external/dto/comment'
 
 export {
   createCommentAction,
   updateCommentAction,
   deleteCommentAction,
-} from "./command.action";
+} from './command.action'
 
-export { listCommentsAction, getCommentThreadAction } from "./query.action";
+export { listCommentsAction, getCommentThreadAction } from './query.action'
 
 export {
   createCommentServer,
   updateCommentServer,
   deleteCommentServer,
-} from "./command.server";
+} from './command.server'
 
-export { listCommentsServer, getCommentThreadServer } from "./query.server";
+export { listCommentsServer, getCommentThreadServer } from './query.server'
 
 // Backwards-compatible aliases (legacy names)
 export {
   createCommentAction as addComment,
   updateCommentAction as updateComment,
   deleteCommentAction as deleteComment,
-} from "./command.action";
+} from './command.action'
 
 export {
   listCommentsAction as getComments,
   getCommentThreadAction as getCommentThread,
-} from "./query.action";
+} from './query.action'
 
 export {
   createCommentAction as addCommentAction,
   updateCommentAction as updateCommentActionLegacy,
   deleteCommentAction as deleteCommentActionLegacy,
-} from "./command.action";
+} from './command.action'
 
-export { listCommentsAction as getCommentsAction } from "./query.action";
+export { listCommentsAction as getCommentsAction } from './query.action'
 
 export {
   createCommentServer as addCommentServer,
   updateCommentServer as updateCommentServerLegacy,
   deleteCommentServer as deleteCommentServerLegacy,
-} from "./command.server";
+} from './command.server'
 
-export { listCommentsServer as getCommentsServer } from "./query.server";
+export { listCommentsServer as getCommentsServer } from './query.server'
 
 export type {
   CreateCommentInput,
@@ -50,15 +53,12 @@ export type {
   UpdateCommentResponse,
   DeleteCommentInput,
   DeleteCommentResponse,
-} from "./command.server";
+} from './command.server'
 
 export type {
   ListCommentsInput,
   GetCommentThreadResponse,
-} from "./query.server";
+} from './query.server'
 
-import type { CreateCommentResponse } from "./command.action";
-import type { ListCommentsResponse } from "./query.action";
-
-export type CommentResponse = CreateCommentResponse;
-export type CommentListResponse = ListCommentsResponse;
+export type CommentResponse = CreateCommentResponse
+export type CommentListResponse = ListCommentsResponse

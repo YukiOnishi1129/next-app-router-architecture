@@ -1,22 +1,22 @@
-import { Email } from "../shared/value-objects";
-import { UserId } from "./user-id";
+import { UserId } from './user-id'
+import { Email } from '../shared/value-objects'
 
 /**
  * User status enum
  */
 export enum UserStatus {
-  ACTIVE = "ACTIVE",
-  INACTIVE = "INACTIVE",
-  SUSPENDED = "SUSPENDED",
+  ACTIVE = 'ACTIVE',
+  INACTIVE = 'INACTIVE',
+  SUSPENDED = 'SUSPENDED',
 }
 
 /**
  * User role enum
  */
 export enum UserRole {
-  ADMIN = "ADMIN",
-  MEMBER = "MEMBER",
-  GUEST = "GUEST",
+  ADMIN = 'ADMIN',
+  MEMBER = 'MEMBER',
+  GUEST = 'GUEST',
 }
 
 /**
@@ -34,11 +34,11 @@ export class User {
   ) {}
 
   static create(params: {
-    name: string;
-    email: string;
-    roles?: UserRole[];
+    name: string
+    email: string
+    roles?: UserRole[]
   }): User {
-    const now = new Date();
+    const now = new Date()
     return new User(
       UserId.generate(),
       params.name,
@@ -47,17 +47,17 @@ export class User {
       params.roles || [UserRole.MEMBER],
       now,
       now
-    );
+    )
   }
 
   static restore(params: {
-    id: string;
-    name: string;
-    email: string;
-    status: UserStatus;
-    roles: UserRole[];
-    createdAt: Date;
-    updatedAt: Date;
+    id: string
+    name: string
+    email: string
+    status: UserStatus
+    roles: UserRole[]
+    createdAt: Date
+    updatedAt: Date
   }): User {
     return new User(
       UserId.create(params.id),
@@ -67,72 +67,72 @@ export class User {
       params.roles,
       params.createdAt,
       params.updatedAt
-    );
+    )
   }
 
   getId(): UserId {
-    return this.id;
+    return this.id
   }
 
   getName(): string {
-    return this.name;
+    return this.name
   }
 
   getEmail(): Email {
-    return this.email;
+    return this.email
   }
 
   getStatus(): UserStatus {
-    return this.status;
+    return this.status
   }
 
   getRoles(): UserRole[] {
-    return [...this.roles];
+    return [...this.roles]
   }
 
   getCreatedAt(): Date {
-    return new Date(this.createdAt);
+    return new Date(this.createdAt)
   }
 
   getUpdatedAt(): Date {
-    return new Date(this.updatedAt);
+    return new Date(this.updatedAt)
   }
 
   isActive(): boolean {
-    return this.status === UserStatus.ACTIVE;
+    return this.status === UserStatus.ACTIVE
   }
 
   hasRole(role: UserRole): boolean {
-    return this.roles.includes(role);
+    return this.roles.includes(role)
   }
 
   isAdmin(): boolean {
-    return this.hasRole(UserRole.ADMIN);
+    return this.hasRole(UserRole.ADMIN)
   }
 
   updateProfile(name: string, email: string): void {
-    this.name = name;
-    this.email = new Email(email);
-    this.updatedAt = new Date();
+    this.name = name
+    this.email = new Email(email)
+    this.updatedAt = new Date()
   }
 
   changeStatus(status: UserStatus): void {
-    this.status = status;
-    this.updatedAt = new Date();
+    this.status = status
+    this.updatedAt = new Date()
   }
 
   assignRole(role: UserRole): void {
     if (!this.hasRole(role)) {
-      this.roles.push(role);
-      this.updatedAt = new Date();
+      this.roles.push(role)
+      this.updatedAt = new Date()
     }
   }
 
   removeRole(role: UserRole): void {
-    const index = this.roles.indexOf(role);
+    const index = this.roles.indexOf(role)
     if (index > -1) {
-      this.roles.splice(index, 1);
-      this.updatedAt = new Date();
+      this.roles.splice(index, 1)
+      this.updatedAt = new Date()
     }
   }
 
@@ -145,6 +145,6 @@ export class User {
       roles: this.roles,
       createdAt: this.createdAt.toISOString(),
       updatedAt: this.updatedAt.toISOString(),
-    };
+    }
   }
 }

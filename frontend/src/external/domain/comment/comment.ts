@@ -1,41 +1,41 @@
-import { UserId } from "../user";
-import { RequestId } from "../request";
-import { CommentId } from "./comment-id";
+import { RequestId } from '../request'
+import { UserId } from '../user'
+import { CommentId } from './comment-id'
 
 /**
  * CommentContent value object
  */
 export class CommentContent {
-  private static readonly MIN_LENGTH = 1;
-  private static readonly MAX_LENGTH = 2000;
+  private static readonly MIN_LENGTH = 1
+  private static readonly MAX_LENGTH = 2000
 
   constructor(private readonly value: string) {
-    this.validate(value);
+    this.validate(value)
   }
 
   private validate(value: string): void {
     if (!value || value.trim().length < CommentContent.MIN_LENGTH) {
       throw new Error(
         `Comment must be at least ${CommentContent.MIN_LENGTH} character`
-      );
+      )
     }
     if (value.length > CommentContent.MAX_LENGTH) {
       throw new Error(
         `Comment cannot exceed ${CommentContent.MAX_LENGTH} characters`
-      );
+      )
     }
   }
 
   getValue(): string {
-    return this.value;
+    return this.value
   }
 
   getLength(): number {
-    return this.value.length;
+    return this.value.length
   }
 
   equals(other: CommentContent): boolean {
-    return this.value === other.value;
+    return this.value === other.value
   }
 }
 
@@ -56,11 +56,11 @@ export class Comment {
   ) {}
 
   static create(params: {
-    requestId: string;
-    content: string;
-    authorId: string;
+    requestId: string
+    content: string
+    authorId: string
   }): Comment {
-    const now = new Date();
+    const now = new Date()
     return new Comment(
       CommentId.generate(),
       RequestId.create(params.requestId),
@@ -71,19 +71,19 @@ export class Comment {
       false,
       false,
       null
-    );
+    )
   }
 
   static restore(params: {
-    id: string;
-    requestId: string;
-    content: string;
-    authorId: string;
-    createdAt: Date;
-    updatedAt: Date;
-    edited: boolean;
-    deleted: boolean;
-    deletedAt: Date | null;
+    id: string
+    requestId: string
+    content: string
+    authorId: string
+    createdAt: Date
+    updatedAt: Date
+    edited: boolean
+    deleted: boolean
+    deletedAt: Date | null
   }): Comment {
     return new Comment(
       CommentId.create(params.id),
@@ -95,75 +95,75 @@ export class Comment {
       params.edited,
       params.deleted,
       params.deletedAt
-    );
+    )
   }
 
   getId(): CommentId {
-    return this.id;
+    return this.id
   }
 
   getRequestId(): RequestId {
-    return this.requestId;
+    return this.requestId
   }
 
   getContent(): CommentContent {
-    return this.content;
+    return this.content
   }
 
   getAuthorId(): UserId {
-    return this.authorId;
+    return this.authorId
   }
 
   getCreatedAt(): Date {
-    return new Date(this.createdAt);
+    return new Date(this.createdAt)
   }
 
   getUpdatedAt(): Date {
-    return new Date(this.updatedAt);
+    return new Date(this.updatedAt)
   }
 
   isEdited(): boolean {
-    return this.edited;
+    return this.edited
   }
 
   isDeleted(): boolean {
-    return this.deleted;
+    return this.deleted
   }
 
   getDeletedAt(): Date | null {
-    return this.deletedAt ? new Date(this.deletedAt) : null;
+    return this.deletedAt ? new Date(this.deletedAt) : null
   }
 
   canEdit(userId: string): boolean {
-    return !this.deleted && this.authorId.getValue() === userId;
+    return !this.deleted && this.authorId.getValue() === userId
   }
 
   canDelete(userId: string, isAdmin: boolean): boolean {
-    return !this.deleted && (this.authorId.getValue() === userId || isAdmin);
+    return !this.deleted && (this.authorId.getValue() === userId || isAdmin)
   }
 
   edit(newContent: string, editorId: string): void {
     if (this.deleted) {
-      throw new Error("Cannot edit deleted comment");
+      throw new Error('Cannot edit deleted comment')
     }
     if (this.authorId.getValue() !== editorId) {
-      throw new Error("Only the author can edit their comment");
+      throw new Error('Only the author can edit their comment')
     }
-    this.content = new CommentContent(newContent);
-    this.edited = true;
-    this.updatedAt = new Date();
+    this.content = new CommentContent(newContent)
+    this.edited = true
+    this.updatedAt = new Date()
   }
 
   delete(deleterId: string, isDeleterAdmin: boolean): void {
     if (this.deleted) {
-      throw new Error("Comment is already deleted");
+      throw new Error('Comment is already deleted')
     }
     if (this.authorId.getValue() !== deleterId && !isDeleterAdmin) {
-      throw new Error("Only the author or an admin can delete a comment");
+      throw new Error('Only the author or an admin can delete a comment')
     }
-    this.deleted = true;
-    this.deletedAt = new Date();
-    this.updatedAt = new Date();
+    this.deleted = true
+    this.deletedAt = new Date()
+    this.updatedAt = new Date()
   }
 
   toJSON() {
@@ -177,6 +177,6 @@ export class Comment {
       edited: this.edited,
       deleted: this.deleted,
       deletedAt: this.deletedAt?.toISOString() || null,
-    };
+    }
   }
 }

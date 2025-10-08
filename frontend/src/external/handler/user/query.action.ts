@@ -1,30 +1,33 @@
-"use server";
+'use server'
 
 import {
   getCurrentUserServer,
   getUserServer,
   listUsersServer,
-  type GetUserResponse,
-  type ListUsersInput,
-  type ListUsersResponse,
-} from "./query.server";
+} from './query.server'
+
+import type {
+  GetUserResponse,
+  ListUsersInput,
+  ListUsersResponse,
+} from './query.server'
 
 export async function listUsersAction(
   data?: ListUsersInput
 ): Promise<ListUsersResponse> {
-  return listUsersServer(data);
+  return listUsersServer(data)
 }
 
 export async function getUserAction(userId: string): Promise<GetUserResponse> {
-  return getUserServer(userId);
+  return getUserServer(userId)
 }
 
 export async function getCurrentUserAction(): Promise<GetUserResponse> {
-  return getCurrentUserServer();
+  return getCurrentUserServer()
 }
 
 export type {
   ListUsersInput,
   ListUsersResponse,
   GetUserResponse,
-} from "./query.server";
+} from './query.server'

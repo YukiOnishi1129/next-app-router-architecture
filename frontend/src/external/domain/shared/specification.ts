@@ -2,18 +2,18 @@
  * Specification pattern for domain business rules
  */
 export abstract class Specification<T> {
-  abstract isSatisfiedBy(candidate: T): boolean;
+  abstract isSatisfiedBy(candidate: T): boolean
 
   and(other: Specification<T>): Specification<T> {
-    return new AndSpecification(this, other);
+    return new AndSpecification(this, other)
   }
 
   or(other: Specification<T>): Specification<T> {
-    return new OrSpecification(this, other);
+    return new OrSpecification(this, other)
   }
 
   not(): Specification<T> {
-    return new NotSpecification(this);
+    return new NotSpecification(this)
   }
 }
 
@@ -25,13 +25,13 @@ class AndSpecification<T> extends Specification<T> {
     private left: Specification<T>,
     private right: Specification<T>
   ) {
-    super();
+    super()
   }
 
   isSatisfiedBy(candidate: T): boolean {
     return (
       this.left.isSatisfiedBy(candidate) && this.right.isSatisfiedBy(candidate)
-    );
+    )
   }
 }
 
@@ -43,13 +43,13 @@ class OrSpecification<T> extends Specification<T> {
     private left: Specification<T>,
     private right: Specification<T>
   ) {
-    super();
+    super()
   }
 
   isSatisfiedBy(candidate: T): boolean {
     return (
       this.left.isSatisfiedBy(candidate) || this.right.isSatisfiedBy(candidate)
-    );
+    )
   }
 }
 
@@ -58,10 +58,10 @@ class OrSpecification<T> extends Specification<T> {
  */
 class NotSpecification<T> extends Specification<T> {
   constructor(private spec: Specification<T>) {
-    super();
+    super()
   }
 
   isSatisfiedBy(candidate: T): boolean {
-    return !this.spec.isSatisfiedBy(candidate);
+    return !this.spec.isSatisfiedBy(candidate)
   }
 }

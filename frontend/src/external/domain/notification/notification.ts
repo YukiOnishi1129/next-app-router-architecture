@@ -1,18 +1,18 @@
-import { UserId } from "../user";
-import { NotificationId } from "./notification-id";
+import { UserId } from '../user'
+import { NotificationId } from './notification-id'
 
 /**
  * Notification type enum
  */
 export enum NotificationType {
-  REQUEST_CREATED = "REQUEST_CREATED",
-  REQUEST_SUBMITTED = "REQUEST_SUBMITTED",
-  REQUEST_APPROVED = "REQUEST_APPROVED",
-  REQUEST_REJECTED = "REQUEST_REJECTED",
-  REQUEST_ASSIGNED = "REQUEST_ASSIGNED",
-  COMMENT_ADDED = "COMMENT_ADDED",
-  MENTION = "MENTION",
-  SYSTEM = "SYSTEM",
+  REQUEST_CREATED = 'REQUEST_CREATED',
+  REQUEST_SUBMITTED = 'REQUEST_SUBMITTED',
+  REQUEST_APPROVED = 'REQUEST_APPROVED',
+  REQUEST_REJECTED = 'REQUEST_REJECTED',
+  REQUEST_ASSIGNED = 'REQUEST_ASSIGNED',
+  COMMENT_ADDED = 'COMMENT_ADDED',
+  MENTION = 'MENTION',
+  SYSTEM = 'SYSTEM',
 }
 
 /**
@@ -33,12 +33,12 @@ export class Notification {
   ) {}
 
   static create(params: {
-    type: NotificationType;
-    title: string;
-    message: string;
-    recipientId: string;
-    relatedEntityType?: string;
-    relatedEntityId?: string;
+    type: NotificationType
+    title: string
+    message: string
+    recipientId: string
+    relatedEntityType?: string
+    relatedEntityId?: string
   }): Notification {
     return new Notification(
       NotificationId.generate(),
@@ -51,20 +51,20 @@ export class Notification {
       false,
       null,
       new Date()
-    );
+    )
   }
 
   static restore(params: {
-    id: string;
-    type: NotificationType;
-    title: string;
-    message: string;
-    recipientId: string;
-    relatedEntityType: string | null;
-    relatedEntityId: string | null;
-    isRead: boolean;
-    readAt: Date | null;
-    createdAt: Date;
+    id: string
+    type: NotificationType
+    title: string
+    message: string
+    recipientId: string
+    relatedEntityType: string | null
+    relatedEntityId: string | null
+    isRead: boolean
+    readAt: Date | null
+    createdAt: Date
   }): Notification {
     return new Notification(
       NotificationId.create(params.id),
@@ -77,60 +77,60 @@ export class Notification {
       params.isRead,
       params.readAt,
       params.createdAt
-    );
+    )
   }
 
   getId(): NotificationId {
-    return this.id;
+    return this.id
   }
 
   getType(): NotificationType {
-    return this.type;
+    return this.type
   }
 
   getTitle(): string {
-    return this.title;
+    return this.title
   }
 
   getMessage(): string {
-    return this.message;
+    return this.message
   }
 
   getRecipientId(): UserId {
-    return this.recipientId;
+    return this.recipientId
   }
 
   getRelatedEntityType(): string | null {
-    return this.relatedEntityType;
+    return this.relatedEntityType
   }
 
   getRelatedEntityId(): string | null {
-    return this.relatedEntityId;
+    return this.relatedEntityId
   }
 
   getIsRead(): boolean {
-    return this.isRead;
+    return this.isRead
   }
 
   getReadAt(): Date | null {
-    return this.readAt ? new Date(this.readAt) : null;
+    return this.readAt ? new Date(this.readAt) : null
   }
 
   getCreatedAt(): Date {
-    return new Date(this.createdAt);
+    return new Date(this.createdAt)
   }
 
   markAsRead(): void {
     if (this.isRead) {
-      return;
+      return
     }
-    this.isRead = true;
-    this.readAt = new Date();
+    this.isRead = true
+    this.readAt = new Date()
   }
 
   markAsUnread(): void {
-    this.isRead = false;
-    this.readAt = null;
+    this.isRead = false
+    this.readAt = null
   }
 
   toJSON() {
@@ -145,6 +145,6 @@ export class Notification {
       isRead: this.isRead,
       readAt: this.readAt?.toISOString() || null,
       createdAt: this.createdAt.toISOString(),
-    };
+    }
   }
 }

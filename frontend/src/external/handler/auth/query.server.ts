@@ -1,77 +1,66 @@
-import "server-only";
+import 'server-only'
 
-import { z } from "zod";
-import { cookies } from "next/headers";
-import { authService, userManagementService } from "./shared";
+import { cookies } from 'next/headers'
 
-const getSessionSchema = z.object({
-  userId: z.string().optional(),
-});
+import { getSessionSchema } from '@/external/dto/auth'
 
-export type GetSessionInput = z.input<typeof getSessionSchema>;
+import { authService, userManagementService } from './shared'
 
-export type GetSessionResponse = {
-  user?: {
-    id: string;
-    name: string;
-    email: string;
-    status: string;
-    roles: string[];
-  };
-  isAuthenticated: boolean;
-};
+import type { GetSessionInput, GetSessionResponse } from '@/external/dto/auth'
 
 export async function getSessionServer(
   data?: GetSessionInput
 ): Promise<GetSessionResponse> {
   try {
-    const validated = getSessionSchema.parse(data ?? {});
-    const cookieStore = await cookies();
-    const token = cookieStore.get("auth-token")?.value;
-    const storedUserId = cookieStore.get("user-id")?.value;
+    const validated = getSessionSchema.parse(data ?? {})
+    const cookieStore = await cookies()
+    const token = cookieStore.get('auth-token')?.value
+    const storedUserId = cookieStore.get('user-id')?.value
 
     if (!token || !storedUserId) {
-      return { isAuthenticated: false };
+      return { isAuthenticated: false }
     }
 
-    const tokenInfo = await authService.verifyToken(token);
+    const tokenInfo = await authService.verifyToken(token)
     if (!tokenInfo) {
-      cookieStore.delete("auth-token");
-      cookieStore.delete("user-id");
-      return { isAuthenticated: false };
+      cookieStore.delete('auth-token')
+      cookieStore.delete('user-id')
+      return { isAuthenticated: false }
     }
 
-    const user = await userManagementService.findUserById(storedUserId);
+    const user = await userManagementService.findUserById(storedUserId)
     if (!user) {
-      return { isAuthenticated: false };
+      return { isAuthenticated: false }
     }
 
     if (validated.userId && validated.userId !== user.getId().getValue()) {
-      return { isAuthenticated: false };
+      return { isAuthenticated: false }
     }
 
     return {
       user: userManagementService.toUserProfile(user),
       isAuthenticated: true,
-    };
+    }
   } catch (error) {
-    console.error("Session error:", error);
-    return { isAuthenticated: false };
+    console.error('Session error:', error)
+    return { isAuthenticated: false }
   }
 }
 
 export async function checkPermissionServer(
   permission: string
 ): Promise<boolean> {
-  const session = await getSessionServer();
+  const session = await getSessionServer()
   if (!session.isAuthenticated || !session.user) {
-    return false;
+    return false
   }
 
-  const user = await userManagementService.findUserById(session.user.id);
+  const user = await userManagementService.findUserById(session.user.id)
   if (!user) {
-    return false;
+    return false
   }
 
-  return userManagementService.hasPermission(user, permission);
+  return userManagementService.hasPermission(user, permission)
 }
+
+export type { GetSessionInput, GetSessionResponse } from '@/external/dto/auth'

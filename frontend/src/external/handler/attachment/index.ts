@@ -1,18 +1,18 @@
-"use server";
+'use server'
 
-export { createAttachmentAction } from "./command.action";
+export { createAttachmentAction } from './command.action'
 
 export {
   listAttachmentsAction,
   getAttachmentContentAction,
-} from "./query.action";
+} from './query.action'
 
-export { createAttachmentServer } from "./command.server";
+export { createAttachmentServer } from './command.server'
 
 export {
   listAttachmentsServer,
   getAttachmentContentServer,
-} from "./query.server";
+} from './query.server'
 
 // Backwards-compatible aliases
 export {
@@ -20,40 +20,40 @@ export {
   deleteAttachmentAction as deleteAttachment,
   createAttachmentAction as uploadAttachmentAction,
   deleteAttachmentAction as deleteAttachmentAction,
-} from "./command.action";
+} from './command.action'
 
 export {
   listAttachmentsAction as getAttachments,
   getAttachmentContentAction as downloadAttachment,
   listAttachmentsAction as getAttachmentsAction,
   getAttachmentContentAction as downloadAttachmentAction,
-} from "./query.action";
+} from './query.action'
 
 export {
   createAttachmentServer as uploadAttachmentServer,
   deleteAttachmentServer as deleteAttachmentServer,
-} from "./command.server";
+} from './command.server'
 
 export {
   listAttachmentsServer as getAttachmentsServer,
   getAttachmentContentServer as downloadAttachmentServer,
-} from "./query.server";
+} from './query.server'
 
 export type {
   CreateAttachmentInput,
   CreateAttachmentResponse,
   DeleteAttachmentInput,
   DeleteAttachmentResponse,
-} from "./command.server";
+} from './command.server'
 
 export type {
   ListAttachmentsInput,
   ListAttachmentsResponse,
   GetAttachmentContentResponse,
-} from "./query.server";
+} from './query.server'
 
-import type { CreateAttachmentResponse } from "./command.server";
-import type { ListAttachmentsResponse } from "./query.server";
+import type { CreateAttachmentResponse } from './command.server'
+import type { ListAttachmentsResponse } from './query.server'
 
-export type AttachmentResponse = CreateAttachmentResponse;
-export type AttachmentListResponse = ListAttachmentsResponse;
+export type AttachmentResponse = CreateAttachmentResponse
+export type AttachmentListResponse = ListAttachmentsResponse

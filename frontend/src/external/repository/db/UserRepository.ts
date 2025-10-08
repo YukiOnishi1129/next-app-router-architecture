@@ -1,6 +1,7 @@
-import { eq, inArray } from "drizzle-orm";
-import { db } from "@/external/client/db/client";
-import { users } from "@/external/client/db/schema";
+import { eq, inArray } from 'drizzle-orm'
+
+import { db } from '@/external/client/db/client'
+import { users } from '@/external/client/db/schema'
 import {
   UserRepository as IUserRepository,
   User,
@@ -8,12 +9,12 @@ import {
   Email,
   UserStatus,
   UserRole,
-} from "@/external/domain";
+} from '@/external/domain'
 
 export class UserRepository implements IUserRepository {
   async findAll(): Promise<User[]> {
-    const result = await db.select().from(users);
-    return result.map((row) => this.mapToDomainEntity(row));
+    const result = await db.select().from(users)
+    return result.map((row) => this.mapToDomainEntity(row))
   }
 
   async findById(id: UserId): Promise<User | null> {
@@ -21,13 +22,13 @@ export class UserRepository implements IUserRepository {
       .select()
       .from(users)
       .where(eq(users.id, id.getValue()))
-      .limit(1);
+      .limit(1)
 
     if (result.length === 0) {
-      return null;
+      return null
     }
 
-    return this.mapToDomainEntity(result[0]);
+    return this.mapToDomainEntity(result[0])
   }
 
   async findByEmail(email: Email): Promise<User | null> {
@@ -35,27 +36,27 @@ export class UserRepository implements IUserRepository {
       .select()
       .from(users)
       .where(eq(users.email, email.getValue()))
-      .limit(1);
+      .limit(1)
 
     if (result.length === 0) {
-      return null;
+      return null
     }
 
-    return this.mapToDomainEntity(result[0]);
+    return this.mapToDomainEntity(result[0])
   }
 
   async findByIds(ids: UserId[]): Promise<User[]> {
     if (ids.length === 0) {
-      return [];
+      return []
     }
 
-    const idValues = ids.map((id) => id.getValue());
+    const idValues = ids.map((id) => id.getValue())
     const result = await db
       .select()
       .from(users)
-      .where(inArray(users.id, idValues));
+      .where(inArray(users.id, idValues))
 
-    return result.map((row) => this.mapToDomainEntity(row));
+    return result.map((row) => this.mapToDomainEntity(row))
   }
 
   async existsByEmail(email: Email): Promise<boolean> {
@@ -63,9 +64,9 @@ export class UserRepository implements IUserRepository {
       .select({ count: users.id })
       .from(users)
       .where(eq(users.email, email.getValue()))
-      .limit(1);
+      .limit(1)
 
-    return result.length > 0;
+    return result.length > 0
   }
 
   async save(entity: User): Promise<void> {
@@ -77,7 +78,7 @@ export class UserRepository implements IUserRepository {
       roles: entity.getRoles(),
       createdAt: entity.getCreatedAt(),
       updatedAt: entity.getUpdatedAt(),
-    };
+    }
 
     await db
       .insert(users)
@@ -91,11 +92,11 @@ export class UserRepository implements IUserRepository {
           roles: data.roles,
           updatedAt: data.updatedAt,
         },
-      });
+      })
   }
 
   async delete(id: UserId): Promise<void> {
-    await db.delete(users).where(eq(users.id, id.getValue()));
+    await db.delete(users).where(eq(users.id, id.getValue()))
   }
 
   private mapToDomainEntity(row: typeof users.$inferSelect): User {
@@ -107,6 +108,6 @@ export class UserRepository implements IUserRepository {
       roles: row.roles as UserRole[],
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
-    });
+    })
   }
 }

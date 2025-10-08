@@ -1,20 +1,20 @@
-import { UserId } from "../user";
-import { DomainEvent } from "../shared/events";
-import { RequestId } from "./request-id";
-import { RequestStatus, RequestPriority, RequestType } from "./request-status";
+import { DomainEvent } from '../shared/events'
+import { UserId } from '../user'
 import {
   RequestCreatedEvent,
   RequestSubmittedEvent,
   RequestApprovedEvent,
   RequestRejectedEvent,
-} from "./events";
+} from './events'
+import { RequestId } from './request-id'
+import { RequestStatus, RequestPriority, RequestType } from './request-status'
 
 /**
  * Request entity - represents a user request
  */
 export class Request {
-  private attachmentIds: string[] = [];
-  private domainEvents: DomainEvent[] = [];
+  private attachmentIds: string[] = []
+  private domainEvents: DomainEvent[] = []
 
   private constructor(
     private readonly id: RequestId,
@@ -33,14 +33,14 @@ export class Request {
   ) {}
 
   static create(params: {
-    title: string;
-    description: string;
-    type: RequestType;
-    priority: RequestPriority;
-    requesterId: string;
-    assigneeId?: string;
+    title: string
+    description: string
+    type: RequestType
+    priority: RequestPriority
+    requesterId: string
+    assigneeId?: string
   }): Request {
-    const now = new Date();
+    const now = new Date()
     const request = new Request(
       RequestId.generate(),
       params.title,
@@ -55,7 +55,7 @@ export class Request {
       null,
       null,
       null
-    );
+    )
 
     // Emit domain event
     request.addDomainEvent(
@@ -66,26 +66,26 @@ export class Request {
         params.type,
         params.priority
       )
-    );
+    )
 
-    return request;
+    return request
   }
 
   static restore(params: {
-    id: string;
-    title: string;
-    description: string;
-    type: RequestType;
-    priority: RequestPriority;
-    status: RequestStatus;
-    requesterId: string;
-    assigneeId: string | null;
-    attachmentIds: string[];
-    createdAt: Date;
-    updatedAt: Date;
-    submittedAt: Date | null;
-    reviewedAt: Date | null;
-    reviewerId: string | null;
+    id: string
+    title: string
+    description: string
+    type: RequestType
+    priority: RequestPriority
+    status: RequestStatus
+    requesterId: string
+    assigneeId: string | null
+    attachmentIds: string[]
+    createdAt: Date
+    updatedAt: Date
+    submittedAt: Date | null
+    reviewedAt: Date | null
+    reviewerId: string | null
   }): Request {
     const request = new Request(
       RequestId.create(params.id),
@@ -101,97 +101,97 @@ export class Request {
       params.submittedAt,
       params.reviewedAt,
       params.reviewerId ? UserId.create(params.reviewerId) : null
-    );
-    request.attachmentIds = [...params.attachmentIds];
-    return request;
+    )
+    request.attachmentIds = [...params.attachmentIds]
+    return request
   }
 
   getId(): RequestId {
-    return this.id;
+    return this.id
   }
 
   getTitle(): string {
-    return this.title;
+    return this.title
   }
 
   getDescription(): string {
-    return this.description;
+    return this.description
   }
 
   getType(): RequestType {
-    return this.type;
+    return this.type
   }
 
   getPriority(): RequestPriority {
-    return this.priority;
+    return this.priority
   }
 
   getStatus(): RequestStatus {
-    return this.status;
+    return this.status
   }
 
   getRequesterId(): UserId {
-    return this.requesterId;
+    return this.requesterId
   }
 
   getAssigneeId(): UserId | null {
-    return this.assigneeId;
+    return this.assigneeId
   }
 
   getAttachmentIds(): string[] {
-    return [...this.attachmentIds];
+    return [...this.attachmentIds]
   }
 
   getCreatedAt(): Date {
-    return new Date(this.createdAt);
+    return new Date(this.createdAt)
   }
 
   getUpdatedAt(): Date {
-    return new Date(this.updatedAt);
+    return new Date(this.updatedAt)
   }
 
   getSubmittedAt(): Date | null {
-    return this.submittedAt ? new Date(this.submittedAt) : null;
+    return this.submittedAt ? new Date(this.submittedAt) : null
   }
 
   getReviewedAt(): Date | null {
-    return this.reviewedAt ? new Date(this.reviewedAt) : null;
+    return this.reviewedAt ? new Date(this.reviewedAt) : null
   }
 
   getReviewerId(): UserId | null {
-    return this.reviewerId;
+    return this.reviewerId
   }
 
   isDraft(): boolean {
-    return this.status === RequestStatus.DRAFT;
+    return this.status === RequestStatus.DRAFT
   }
 
   isSubmitted(): boolean {
-    return this.status === RequestStatus.SUBMITTED;
+    return this.status === RequestStatus.SUBMITTED
   }
 
   isInReview(): boolean {
-    return this.status === RequestStatus.IN_REVIEW;
+    return this.status === RequestStatus.IN_REVIEW
   }
 
   isApproved(): boolean {
-    return this.status === RequestStatus.APPROVED;
+    return this.status === RequestStatus.APPROVED
   }
 
   isRejected(): boolean {
-    return this.status === RequestStatus.REJECTED;
+    return this.status === RequestStatus.REJECTED
   }
 
   isCancelled(): boolean {
-    return this.status === RequestStatus.CANCELLED;
+    return this.status === RequestStatus.CANCELLED
   }
 
   canEdit(): boolean {
-    return this.status === RequestStatus.DRAFT;
+    return this.status === RequestStatus.DRAFT
   }
 
   canSubmit(): boolean {
-    return this.status === RequestStatus.DRAFT;
+    return this.status === RequestStatus.DRAFT
   }
 
   canCancel(): boolean {
@@ -199,32 +199,32 @@ export class Request {
       RequestStatus.DRAFT,
       RequestStatus.SUBMITTED,
       RequestStatus.IN_REVIEW,
-    ].includes(this.status);
+    ].includes(this.status)
   }
 
   update(params: {
-    title: string;
-    description: string;
-    type: RequestType;
-    priority: RequestPriority;
+    title: string
+    description: string
+    type: RequestType
+    priority: RequestPriority
   }): void {
     if (!this.canEdit()) {
-      throw new Error("Request cannot be edited in current status");
+      throw new Error('Request cannot be edited in current status')
     }
-    this.title = params.title;
-    this.description = params.description;
-    this.type = params.type;
-    this.priority = params.priority;
-    this.updatedAt = new Date();
+    this.title = params.title
+    this.description = params.description
+    this.type = params.type
+    this.priority = params.priority
+    this.updatedAt = new Date()
   }
 
   submit(): void {
     if (!this.canSubmit()) {
-      throw new Error("Request cannot be submitted in current status");
+      throw new Error('Request cannot be submitted in current status')
     }
-    this.status = RequestStatus.SUBMITTED;
-    this.submittedAt = new Date();
-    this.updatedAt = new Date();
+    this.status = RequestStatus.SUBMITTED
+    this.submittedAt = new Date()
+    this.updatedAt = new Date()
 
     // Emit domain event
     this.addDomainEvent(
@@ -233,26 +233,26 @@ export class Request {
         this.requesterId.getValue(),
         this.submittedAt
       )
-    );
+    )
   }
 
   startReview(reviewerId: string): void {
     if (this.status !== RequestStatus.SUBMITTED) {
-      throw new Error("Request must be submitted before review");
+      throw new Error('Request must be submitted before review')
     }
-    this.status = RequestStatus.IN_REVIEW;
-    this.reviewerId = UserId.create(reviewerId);
-    this.updatedAt = new Date();
+    this.status = RequestStatus.IN_REVIEW
+    this.reviewerId = UserId.create(reviewerId)
+    this.updatedAt = new Date()
   }
 
   approve(reviewerId: string): void {
     if (this.status !== RequestStatus.IN_REVIEW) {
-      throw new Error("Request must be in review before approval");
+      throw new Error('Request must be in review before approval')
     }
-    this.status = RequestStatus.APPROVED;
-    this.reviewerId = UserId.create(reviewerId);
-    this.reviewedAt = new Date();
-    this.updatedAt = new Date();
+    this.status = RequestStatus.APPROVED
+    this.reviewerId = UserId.create(reviewerId)
+    this.reviewedAt = new Date()
+    this.updatedAt = new Date()
 
     // Emit domain event
     this.addDomainEvent(
@@ -262,17 +262,17 @@ export class Request {
         this.requesterId.getValue(),
         this.reviewedAt
       )
-    );
+    )
   }
 
   reject(reviewerId: string, reason?: string): void {
     if (this.status !== RequestStatus.IN_REVIEW) {
-      throw new Error("Request must be in review before rejection");
+      throw new Error('Request must be in review before rejection')
     }
-    this.status = RequestStatus.REJECTED;
-    this.reviewerId = UserId.create(reviewerId);
-    this.reviewedAt = new Date();
-    this.updatedAt = new Date();
+    this.status = RequestStatus.REJECTED
+    this.reviewerId = UserId.create(reviewerId)
+    this.reviewedAt = new Date()
+    this.updatedAt = new Date()
 
     // Emit domain event
     this.addDomainEvent(
@@ -283,34 +283,34 @@ export class Request {
         this.reviewedAt,
         reason
       )
-    );
+    )
   }
 
   cancel(): void {
     if (!this.canCancel()) {
-      throw new Error("Request cannot be cancelled in current status");
+      throw new Error('Request cannot be cancelled in current status')
     }
-    this.status = RequestStatus.CANCELLED;
-    this.updatedAt = new Date();
+    this.status = RequestStatus.CANCELLED
+    this.updatedAt = new Date()
   }
 
   assignTo(assigneeId: string): void {
-    this.assigneeId = UserId.create(assigneeId);
-    this.updatedAt = new Date();
+    this.assigneeId = UserId.create(assigneeId)
+    this.updatedAt = new Date()
   }
 
   addAttachment(attachmentId: string): void {
     if (!this.attachmentIds.includes(attachmentId)) {
-      this.attachmentIds.push(attachmentId);
-      this.updatedAt = new Date();
+      this.attachmentIds.push(attachmentId)
+      this.updatedAt = new Date()
     }
   }
 
   removeAttachment(attachmentId: string): void {
-    const index = this.attachmentIds.indexOf(attachmentId);
+    const index = this.attachmentIds.indexOf(attachmentId)
     if (index > -1) {
-      this.attachmentIds.splice(index, 1);
-      this.updatedAt = new Date();
+      this.attachmentIds.splice(index, 1)
+      this.updatedAt = new Date()
     }
   }
 
@@ -330,19 +330,19 @@ export class Request {
       submittedAt: this.submittedAt?.toISOString() || null,
       reviewedAt: this.reviewedAt?.toISOString() || null,
       reviewerId: this.reviewerId?.getValue() || null,
-    };
+    }
   }
 
   // Domain event handling
   private addDomainEvent(event: DomainEvent): void {
-    this.domainEvents.push(event);
+    this.domainEvents.push(event)
   }
 
   getDomainEvents(): DomainEvent[] {
-    return [...this.domainEvents];
+    return [...this.domainEvents]
   }
 
   clearDomainEvents(): void {
-    this.domainEvents = [];
+    this.domainEvents = []
   }
 }

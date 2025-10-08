@@ -16,17 +16,19 @@
 クライアントサイドのデータフェッチングとキャッシュ管理。
 
 ```typescript
-// features/users/queries/useUsers.ts
-import { useQuery } from "@tanstack/react-query";
-import { fetchUsersAction } from "@/external/actions/users";
+// features/requests/queries/useRequestList.ts
+import { useQuery } from '@tanstack/react-query'
+import { listRequestsAction } from '@/external/handler/request/query.action'
+import { requestFilterSchema } from '@/features/requests/schemas/requestFilter'
 
-export const useUsers = () => {
+export const useRequestList = (rawFilters: unknown) => {
+  const filters = requestFilterSchema.parse(rawFilters)
   return useQuery({
-    queryKey: ["users"],
-    queryFn: fetchUsersAction,
+    queryKey: ['requests', filters],
+    queryFn: () => listRequestsAction(filters),
     staleTime: 1000 * 60 * 5, // 5分
-  });
-};
+  })
+}
 ```
 
 ### キャッシュ戦略
@@ -42,43 +44,54 @@ export const useUsers = () => {
 型安全なフォーム実装とバリデーション。
 
 ```typescript
-// features/users/schemas/userSchema.ts
-import { z } from "zod";
+// features/requests/schemas/createRequest.ts
+import { z } from 'zod'
 
-export const createUserSchema = z.object({
-  name: z.string().min(1, "名前は必須です"),
-  email: z.string().email("有効なメールアドレスを入力してください"),
-  age: z.number().min(0).max(150),
-});
+export const createRequestSchema = z.object({
+  title: z.string().min(1).max(120),
+  type: z.enum(['expense', 'purchase', 'access']),
+  amount: z
+    .union([z.number().min(0), z.string().regex(/^\d+(\.\d+)?$/)])
+    .optional()
+    .transform(value => (typeof value === 'string' ? Number(value) : value)),
+  reason: z.string().min(1).max(2000),
+  attachments: z.array(z.string().url()).max(10),
+  approverId: z.string().uuid(),
+})
 
-export type CreateUserInput = z.infer<typeof createUserSchema>;
+export type CreateRequestInput = z.infer<typeof createRequestSchema>
 ```
 
 ```typescript
-// features/users/components/UserForm.tsx
+// features/requests/components/client/RequestForm/RequestFormContainer.tsx
+'use client'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { createUserSchema, type CreateUserInput } from '../schemas/userSchema'
+import {
+  createRequestSchema,
+  type CreateRequestInput,
+} from '@/features/requests/schemas/createRequest'
+import { createRequestAction } from '@/features/requests/actions/createRequest.action'
+import { RequestFormPresenter } from './RequestFormPresenter'
 
-export function UserForm() {
-  const form = useForm<CreateUserInput>({
-    resolver: zodResolver(createUserSchema),
+export function RequestFormContainer() {
+  const form = useForm<CreateRequestInput>({
+    resolver: zodResolver(createRequestSchema),
     defaultValues: {
-      name: '',
-      email: '',
-      age: 0,
+      title: '',
+      type: 'expense',
+      amount: undefined,
+      reason: '',
+      attachments: [],
+      approverId: '',
     },
   })
 
-  const onSubmit = async (data: CreateUserInput) => {
-    // Server Actionを呼び出し
-  }
+  const handleSubmit = form.handleSubmit(async (data) => {
+    await createRequestAction(data)
+  })
 
-  return (
-    <form onSubmit={form.handleSubmit(onSubmit)}>
-      {/* フォームフィールド */}
-    </form>
-  )
+  return <RequestFormPresenter form={form} onSubmit={handleSubmit} />
 }
 ```
 
@@ -151,26 +164,38 @@ Button.displayName = "Button"
 型安全なデータベース操作。
 
 ```typescript
-// external/db/schema.ts
-import { pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
+// external/client/db/schema/requests.ts
+import {
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+  numeric,
+  jsonb,
+} from 'drizzle-orm/pg-core'
 
-export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  email: text("email").unique().notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
-});
+export const requests = pgTable('requests', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  title: text('title').notNull(),
+  type: text('type').notNull(), // expense | purchase | access
+  amount: numeric('amount'),
+  reason: text('reason').notNull(),
+  attachments: jsonb('attachments').$type<string[]>().notNull().default([]),
+  status: text('status').notNull().default('draft'),
+  requesterId: uuid('requester_id').notNull(),
+  approverId: uuid('approver_id').notNull(),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+})
 
-// external/db/client.ts
-import "server-only";
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
-import * as schema from "./schema";
+// external/client/db/client.ts
+import 'server-only'
+import { drizzle } from 'drizzle-orm/postgres-js'
+import postgres from 'postgres'
+import * as schema from './schema'
 
-const connectionString = process.env.DATABASE_URL!;
-const client = postgres(connectionString);
-
-export const db = drizzle(client, { schema });
+const client = postgres(process.env.DATABASE_URL!)
+export const db = drizzle(client, { schema })
 ```
 
 ## 開発ツール

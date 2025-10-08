@@ -30,21 +30,43 @@ UI (app) → feature actions/queries → external adapters → (DB / BFF / Exter
 
 2. **Feature層での処理**
    ```typescript
-   // features/users/actions/createUser.ts
-   export async function createUserAction(data: CreateUserInput) {
-     const validated = createUserSchema.parse(data)
-     const user = await createUser(validated) // external層を呼び出し
-     revalidatePath('/users')
-     return { success: true, user }
+   // features/requests/actions/submitRequest.action.ts
+   'use server'
+   import { revalidatePath } from 'next/cache'
+   import { createRequestSchema } from '@/features/requests/schemas/createRequest'
+   import { createRequestServer } from '@/external/handler/request/command.server'
+
+   export async function submitRequestAction(rawInput: unknown) {
+     const input = createRequestSchema.parse(rawInput)
+     const request = await createRequestServer(input) // external層を呼び出し
+     revalidatePath('/requests')
+     return { success: true, data: request }
    }
    ```
 
 3. **External層での実行**
    ```typescript
-   // external/db/users.ts
+   // external/handler/request/command.server.ts
    import 'server-only'
-   export async function createUser(data: CreateUserData) {
-     return await db.insert(users).values(data).returning()
+   import { db } from '@/external/client/db/client'
+   import { requests } from '@/external/client/db/schema/requests'
+   import { auditRequestCreated } from '@/external/service/audit'
+
+   export async function createRequestServer(data: CreateRequestInput) {
+     const [record] = await db
+       .insert(requests)
+       .values({
+         ...data,
+         status: 'submitted',
+       })
+       .returning()
+
+     await auditRequestCreated({
+       requestId: record.id,
+       actorId: data.requesterId,
+     })
+
+     return record
    }
    ```
 
@@ -62,25 +84,41 @@ UI (app) → feature actions/queries → external adapters → (DB / BFF / Exter
   - ブラウザAPIの使用
   - イベントハンドラー
 
+#### Feature内での配置ポリシー
+
+各featureは`components/server`と`components/client`を持ち、以下のように役割を分担します。
+
+- `components/server/*PageTemplate`: 申請一覧や詳細ページの枠組みを構築し、TanStack Queryの`HydrationBoundary`でデータをプリフェッチ
+- `components/client/*Container`: 状態管理やServer Action呼び出しを担当（`useRequestList`などのフックを使用）
+- `components/client/*Presenter`: 純粋なUI。Propsのみを受け取り、副作用を持たない
+
+この「Container / Presenter / Hook」の三層構造により、ビジネスロジックと見た目を分離し、テスト容易性とStorybookによるドキュメント性を高めます。
+
 ### Server Actionsの配置戦略
 
 1. **app層に配置する場合**（薄い殻パターン）
    ```typescript
-   // app/users/actions.ts
+   // app/(authenticated)/requests/actions.ts
    'use server'
-   import { createUser } from '@/features/users/actions'
+   import { submitRequestAction } from '@/features/requests/actions/submitRequest.action'
    
-   export async function createUserAction(formData: FormData) {
-     return createUser(formData)
+   export async function submitRequest(formData: FormData) {
+     return submitRequestAction(Object.fromEntries(formData))
    }
    ```
 
 2. **features層に直接配置する場合**
    ```typescript
-   // features/users/actions/index.ts
+   // features/approvals/actions/index.ts
    'use server'
-   export async function createUserAction(data: CreateUserInput) {
-     // 直接実装
+   import { transitionRequestStatusServer } from '@/external/handler/request/command.server'
+
+   export async function approveRequestAction(requestId: string, comment?: string) {
+     return transitionRequestStatusServer({
+       requestId,
+       status: 'approved',
+       comment,
+     })
    }
    ```
 

@@ -2,83 +2,138 @@
 
 ## 概要
 
-External層は、サーバーサイドでのみ実行されるコードを管理する重要な層です。データベースアクセス、外部API連携、認証処理など、クライアントに公開すべきでない処理を安全に実装します。
+External層は、**サーバーサイドでのみ実行される**コードを管理する層です。  
+データベースアクセス、外部API連携、認証処理などを集約し、クライアントに公開すべきでないロジックを安全に実装します。  
+この層は、Next.js App RouterのServer Componentsと密に連携しつつも、ドメイン層・アプリケーション層と明確に境界を持つことを重視します。
 
 ## 設計原則
 
-### 1. Server-Onlyの徹底
-すべてのExternal層のファイルで`import 'server-only'`を使用し、クライアントバンドルへの混入を防ぎます。
+### 1. Server-Only の徹底
 
-```typescript
-// external/db/client.ts
+- `command.server.ts`, `query.server.ts`, `service/**` などサーバー専用のファイルは、必ず先頭で `import 'server-only'` を宣言します。
+- カスタムESLintルール `local-rules/require-server-only` が強制するため、宣言漏れはLintエラーになります。
+
+```ts
+// external/service/request/RequestWorkflowService.ts
 import 'server-only'
-import { drizzle } from 'drizzle-orm/postgres-js'
-import postgres from 'postgres'
-
-const connectionString = process.env.DATABASE_URL!
-const client = postgres(connectionString)
-
-export const db = drizzle(client)
 ```
 
-### 2. CQRS構成のハンドラー
-ExternalのhandlerはCommand/Queryを明確に分離し、Server FunctionsとServer Actionsの2層で管理します。
+### 2. DTO モジュールで入出力・スキーマを共有
+
+- 入出力型と Zod スキーマは `external/dto/**` に集約します。
+- Command/Query の server ファイルは DTO から import し、Action や index も同じ型を再利用します。
+- `.action.ts` から型を再利用すると `restrict-action-imports` でLintエラーになるため、DTO経由が基本です。
+
+```
+external/dto/
+├── auth/
+│   ├── auth.command.dto.ts         # Commandの入力・レスポンス型 + Zodスキーマ
+│   ├── auth.query.dto.ts           # Queryの入力・レスポンス型 + Zodスキーマ
+│   └── index.ts                    # Barrel export
+├── comment/
+│   ├── comment.dto.ts              # 共通DTO
+│   ├── comment.query.dto.ts
+│   └── index.ts
+├── request/
+│   ├── request.dto.ts
+│   ├── request.command.dto.ts
+│   ├── request.query.dto.ts
+│   └── index.ts
+└── …（notification / user / attachment など）
+```
+
+ファイル役割は以下です。
+
+- `*.dto.ts`: ドメインモデルから変換した純粋な DTO 型を提供。
+- `*.command.dto.ts` / `*.query.dto.ts`: Zod スキーマと入出力型を定義。
+- `index.ts`: Barrel export。Handler 側はここだけを import します。
+
+### 3. CQRS で Command / Query を分割
+
+External handler は Command と Query を明確に分離します。
 
 ```
 external/handler/
 └── auth/
     ├── shared.ts              # 共通サービス/コンテキスト
-    ├── command.server.ts      # Server-only command handlers
-    ├── command.action.ts      # Server Actions (command)
-    ├── query.server.ts        # Server-only query handlers
-    └── query.action.ts        # Server Actions (query)
+    ├── command.server.ts      # Server-only コマンド関数
+    ├── command.action.ts      # Server Action (command)
+    ├── query.server.ts        # Server-only クエリ関数
+    └── query.action.ts        # Server Action (query)
 ```
 
-Commandファイルでは「作成・更新・削除」などの状態変更を、Queryファイルでは「取得系」を扱います。命名は[AIP-190](https://google.aip.dev/190)に準拠し、例えば`createSessionServer`, `deleteSessionServer`, `getSessionServer`など動詞+リソースで統一します。
+- 命名は [AIP-190](https://google.aip.dev/190) の `動詞 + リソース` 形式 (`createSessionServer`, `listUsersServer` 等) に統一。
+- `command.server.ts` / `query.server.ts` では `ZodError` でバリデーションエラーを判定し、DTO経由で型を管理します。
+- `.action.ts` は Server Action として server 関数をラップするだけに留め、ビジネスロジックを持たせません。
 
-Server-only関数をServer Actionから利用することで、クライアントコンポーネントはActionを透過的に呼び出せるようにします。
-
-```typescript
+```ts
 // external/handler/auth/command.server.ts
-import "server-only";
-import { z } from "zod";
-import { cookies } from "next/headers";
-import { authService, userManagementService, auditService, SERVER_CONTEXT } from "./shared";
+import 'server-only'
 
-const createSessionSchema = z.object({
-  email: z.email(),
-  password: z.string().min(6),
-  redirectUrl: z.string().url().optional(),
-});
+import { cookies } from 'next/headers'
+import { ZodError } from 'zod'
 
-export type CreateSessionInput = z.input<typeof createSessionSchema>;
+import {
+  createSessionSchema,
+  type CreateSessionInput,
+  type CreateSessionResponse,
+} from '@/external/dto/auth'
 
-export async function createSessionServer(data: CreateSessionInput) {
-  const validated = createSessionSchema.parse(data);
-  const authResult = await authService.signInWithEmailPassword(
-    validated.email,
-    validated.password
-  );
-  const user = await userManagementService.getOrCreateUser({
-    email: authResult.userInfo.email,
-    name: authResult.userInfo.name,
-    externalId: authResult.userInfo.id,
-  });
-  await auditService.logUserLogin(user, SERVER_CONTEXT);
+import {
+  authService,
+  userManagementService,
+  auditService,
+  SERVER_CONTEXT,
+} from './shared'
 
-  const cookieStore = await cookies();
-  cookieStore.set("auth-token", authResult.idToken, { httpOnly: true, path: "/" });
-  cookieStore.set("user-id", user.getId().getValue(), { httpOnly: true, path: "/" });
+export async function createSessionServer(
+  data: CreateSessionInput
+): Promise<CreateSessionResponse> {
+  try {
+    const validated = createSessionSchema.parse(data)
+    const authResult = await authService.signInWithEmailPassword(
+      validated.email,
+      validated.password
+    )
+    const user = await userManagementService.getOrCreateUser({
+      email: authResult.userInfo.email,
+      name: authResult.userInfo.name,
+      externalId: authResult.userInfo.id,
+    })
 
-  return { success: true, redirectUrl: validated.redirectUrl ?? "/dashboard" };
+    await auditService.logUserLogin(user, SERVER_CONTEXT)
+
+    const cookieStore = await cookies()
+    cookieStore.set('auth-token', authResult.idToken, { httpOnly: true, path: '/' })
+    cookieStore.set('user-id', user.getId().getValue(), { httpOnly: true, path: '/' })
+
+    return { success: true, redirectUrl: validated.redirectUrl ?? '/dashboard' }
+  } catch (error) {
+    if (error instanceof ZodError) {
+      return { success: false, error: 'Invalid email or password format' }
+    }
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Authentication failed',
+    }
+  }
 }
+```
 
+```ts
 // external/handler/auth/command.action.ts
-'use server';
-import { createSessionServer, type CreateSessionInput } from "./command.server";
+'use server'
 
-export async function createSessionAction(data: CreateSessionInput) {
-  return createSessionServer(data);
+import {
+  createSessionServer,
+  type CreateSessionInput,
+  type CreateSessionResponse,
+} from './command.server'
+
+export async function createSessionAction(
+  data: CreateSessionInput
+): Promise<CreateSessionResponse> {
+  return createSessionServer(data)
 }
 ```
 
@@ -86,340 +141,132 @@ export async function createSessionAction(data: CreateSessionInput) {
 
 ```
 external/
-├── handler/            # エントリーポイント（Server Actions）
-│   ├── auth/          # 認証関連ハンドラー
-│   ├── user/          # ユーザー関連ハンドラー
-│   └── product/       # 商品関連ハンドラー
-│
-├── service/            # ビジネスロジック層
-│   ├── auth/          # 認証サービス
-│   ├── user/          # ユーザーサービス
-│   └── product/       # 商品サービス
-│
-├── repository/         # 永続化層
-│   ├── db/            # Drizzle ORM等の具体リポジトリ実装
-│   └── index.ts       # リポジトリの集約エクスポート
-│
-├── domain/             # ドメインモデル・ビジネスルール
-│   ├── user/          # ユーザードメイン
-│   ├── product/       # 商品ドメイン
-│   └── order/         # 注文ドメイン
-│
-└── client/             # 外部システムとの通信
-    ├── db/            # データベースクライアント
-    │   ├── client.ts  # DB接続
-    │   └── schema/    # スキーマ定義
-    ├── gcp/           # Google Cloud Platform
-    │   └── identity-platform.ts
-    ├── email/         # メールサービス
-└── storage/       # ストレージサービス
+├── dto/                    # DTO / スキーマ / Response 型
+├── handler/                # Server Action エントリーポイント
+│   ├── auth/
+│   ├── user/
+│   ├── request/
+│   └── …
+├── service/                # ビジネスロジック層
+│   ├── auth/
+│   ├── user/
+│   └── …
+├── repository/             # 永続化層（Drizzle 等）
+│   ├── db/
+│   └── index.ts
+├── domain/                 # ドメインモデル・ビジネスルール
+└── client/                 # 外部システムとの通信
+    ├── db/
+    ├── email/
+    └── storage/
 ```
 
-### リポジトリ層
+## Handler の実装パターン
 
-リポジトリはドメインのリポジトリインターフェースを実装し、データベースや外部システムへの永続化を担います。実装は `repository/db` 配下に置き、Drizzle等のクライアントを利用します。
+### Command / Query 分割のルール
 
-```typescript
-// external/repository/db/UserRepository.ts
-import "server-only";
-import { db } from "@/external/client/db/client";
-import { users } from "@/external/client/db/schema/users";
-import { eq } from "drizzle-orm";
-import { User } from "@/external/domain";
+| ファイル              | 役割 |
+|-----------------------|------|
+| `command.server.ts`   | DTOからスキーマ/型を import し、サービス・リポジトリを呼び出すサーバー専用関数。`ZodError`で入力エラーを判定。|
+| `command.action.ts`   | Server Action として上記 server 関数をラップ。クライアント/Server Componentから呼び出し可能。|
+| `query.server.ts`     | 取得系処理を実装し、DTOのレスポンス型を返す。|
+| `query.action.ts`     | Query server をラップする Server Action。|
+| `shared.ts`           | サービスインスタンス生成、DTOへのマッピング関数等の共有ロジック。|
 
-export class UserRepository {
-  async findById(id: string): Promise<User | null> {
-    const [record] = await db
-      .select()
-      .from(users)
-      .where(eq(users.id, id))
-      .limit(1);
+### DTO との連携例
 
-    return record ? User.restore(record) : null;
-  }
-}
-```
+```ts
+// external/handler/request/query.server.ts
+import 'server-only'
 
-## 実装パターン
+import { ZodError } from 'zod'
+import { UserId } from '@/external/domain'
 
-### ハンドラーのCommand/Query分割
+import {
+  requestListSchema,
+  type RequestListInput,
+  type RequestListResponse,
+} from '@/external/dto/request'
 
-External handlerはCQRSスタイルで構成し、クエリとコマンドを明確に分けます。
+import {
+  requestRepository,
+  userManagementService,
+  mapRequestToDto,
+} from './shared'
+import { getSessionServer } from '../auth/query.server'
 
-- `*_server.ts`: `import "server-only"` を宣言し、直接サービスやリポジトリを呼び出す純粋なサーバー関数。
-- `*_action.ts`: Server Actionとしてエクスポートし、クライアントコンポーネントやRSCから呼び出し可能にするラッパー。
-- `shared.ts`: 同一リソース内で共通利用するサービス初期化やコンテキスト。
-
-命名は[Google AIP-190](https://google.aip.dev/190)に基づき、操作 + リソース形 (例: `createSessionServer`, `listUsersServer`) を採用します。
-
-```typescript
-// external/handler/auth/command.server.ts
-export async function createSessionServer(data: CreateSessionInput) { ... }
-export async function createUserServer(data: CreateUserInput) { ... }
-export async function deleteSessionServer(userId?: string) { ... }
-
-// external/handler/auth/query.server.ts
-export async function getSessionServer(data?: GetSessionInput) { ... }
-export async function checkPermissionServer(permission: string) { ... }
-
-// external/handler/auth/command.action.ts
-'use server'
-export async function createSessionAction(data: CreateSessionInput) {
-  return createSessionServer(data)
-}
-```
-
-これにより、Server Components / API Route / Client Components からの呼び出し先を明確化し、テストや責務の分離が容易になります。
-
-### レイヤー間の連携
-
-```typescript
-// 1. Handler層（エントリーポイント）
-// external/handler/user/create.ts
-'use server'
-
-import { createUserSchema } from '@/features/users/schemas'
-import { userService } from '@/external/service/user'
-import { revalidatePath } from 'next/cache'
-
-export async function createUserAction(input: unknown) {
-  const validated = createUserSchema.safeParse(input)
-  
-  if (!validated.success) {
-    return {
-      success: false,
-      errors: validated.error.flatten().fieldErrors,
-    }
-  }
-
+export async function listMyRequestsServer(
+  params?: RequestListInput
+): Promise<RequestListResponse> {
   try {
-    const user = await userService.createUser(validated.data)
-    revalidatePath('/users')
-    return { success: true, data: user }
-  } catch (error) {
-    return { 
-      success: false, 
-      error: 'ユーザーの作成に失敗しました' 
-    }
-  }
-}
-
-// 2. Service層（ビジネスロジック）
-// external/service/user/index.ts
-import 'server-only'
-import { UserDomain, type CreateUserData } from '@/external/domain/user'
-import { userRepository } from '@/external/client/db/repository/user'
-import { emailClient } from '@/external/client/email'
-
-export const userService = {
-  async createUser(data: CreateUserData) {
-    // ドメインルールの検証
-    const userDomain = new UserDomain(data)
-    const errors = userDomain.validate()
-    
-    if (errors.length > 0) {
-      throw new Error(errors.join(', '))
+    const session = await getSessionServer()
+    if (!session.isAuthenticated || !session.user) {
+      return { success: false, error: 'Unauthorized' }
     }
 
-    // ユーザー作成
-    const user = await userRepository.create(userDomain.toEntity())
-    
-    // ウェルカムメール送信
-    await emailClient.sendWelcomeEmail(user.email, user.name)
-    
-    return user
-  },
-
-  async findByEmail(email: string) {
-    return await userRepository.findByEmail(email)
-  },
-}
-
-// 3. Domain層（ビジネスルール）
-// external/domain/user/index.ts
-export interface CreateUserData {
-  email: string
-  name: string
-  role: 'admin' | 'user' | 'guest'
-}
-
-export class UserDomain {
-  constructor(private data: CreateUserData) {}
-
-  validate(): string[] {
-    const errors: string[] = []
-    
-    // ビジネスルールの検証
-    if (this.data.email.includes('+')) {
-      errors.push('プラス記号を含むメールアドレスは使用できません')
-    }
-    
-    if (this.data.role === 'admin' && !this.data.email.endsWith('@company.com')) {
-      errors.push('管理者は会社のメールアドレスを使用する必要があります')
-    }
-    
-    return errors
-  }
-
-  toEntity() {
-    return {
-      email: this.data.email.toLowerCase(),
-      name: this.data.name.trim(),
-      role: this.data.role,
-      emailVerified: false,
-      createdAt: new Date(),
-    }
-  }
-}
-
-// 4. Client層（外部システム連携）
-// external/client/db/repository/user.ts
-import 'server-only'
-import { db } from '../client'
-import { users } from '../schema/users'
-import { eq } from 'drizzle-orm'
-
-export const userRepository = {
-  async create(userData: any) {
-    const [user] = await db
-      .insert(users)
-      .values(userData)
-      .returning()
-    
-    return user
-  },
-
-  async findByEmail(email: string) {
-    return await db
-      .select()
-      .from(users)
-      .where(eq(users.email, email))
-      .limit(1)
-  },
-}
-```
-
-### Google Cloud Identity Platform連携
-
-```typescript
-// external/client/gcp/identity-platform.ts
-import 'server-only'
-import { cookies } from 'next/headers'
-import jwt from 'jsonwebtoken'
-
-const IDENTITY_PLATFORM_BASE_URL = `https://identitytoolkit.googleapis.com/v1`
-const API_KEY = process.env.GCP_IDENTITY_PLATFORM_API_KEY
-
-export const identityPlatformClient = {
-  async verifyIdToken(idToken: string) {
-    const response = await fetch(
-      `${IDENTITY_PLATFORM_BASE_URL}/accounts:lookup?key=${API_KEY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ idToken }),
-      }
+    const validated = requestListSchema.parse(params ?? {})
+    const requesterId = UserId.create(session.user.id)
+    const requests = await requestRepository.findByRequesterId(
+      requesterId,
+      validated.limit,
+      validated.offset
     )
 
-    if (!response.ok) {
-      throw new Error('Token verification failed')
+    return {
+      success: true,
+      requests: requests.map(mapRequestToDto),
+      total: requests.length,
+      limit: validated.limit,
+      offset: validated.offset,
     }
-
-    const data = await response.json()
-    return data.users?.[0]
-  },
-
-  async refreshToken(refreshToken: string) {
-    const response = await fetch('https://oauth2.googleapis.com/token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        refresh_token: refreshToken,
-        client_id: process.env.GCP_CLIENT_ID!,
-        client_secret: process.env.GCP_CLIENT_SECRET!,
-        grant_type: 'refresh_token',
-      }),
-    })
-    
-    if (!response.ok) {
-      throw new Error('Token refresh failed')
+  } catch (error) {
+    if (error instanceof ZodError) {
+      return { success: false, error: 'Invalid input data' }
     }
-    
-    return await response.json()
-  },
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : 'Failed to list requests',
+    }
+  }
 }
 ```
+
+## レイヤー連携の流れ
+
+```
+Client Component / Server Component
+    ↓ (Server Action 呼び出し)
+external/handler/**/command.action.ts
+    ↓
+external/handler/**/command.server.ts
+    ↓
+external/service/** (ビジネスロジック)
+    ↓
+external/repository/** (永続化)
+```
+
+- Server Action は DTO で定義された型を返すため、呼び出し側は型安全に処理できます。
+- Handler は **薄いラッパー**に留め、ロジックは service / domain に委譲します。
+- DTO で型を共有することで、Action・Server 間や他の handler からの再利用が容易になります。
+
+## テスト指針
+
+- Handler のテストでは DTO スキーマの検証を含め、`ZodError` の扱いを確認します。
+- Service はドメインロジックのユニットテスト、Repository はデータソースのモックを通した統合テストを行います。
+- 外部APIクライアントはモック化し、失敗時のエラーハンドリングを重点的に確認します。
 
 ## セキュリティ考慮事項
 
-### 1. 環境変数の管理
-```typescript
-// すべての秘密情報は環境変数から取得
-const apiKey = process.env.EXTERNAL_API_KEY!
+1. **環境変数の厳格な管理**
+   - 秘密情報はすべて環境変数経由で取得し、Zod などで必須値を検証します。
+2. **入力検証の徹底**
+   - Command / Query server は DTO の Zod スキーマで必ず検証し、期待しないデータを流さない。
+3. **エラーハンドリング**
+   - 例外発生時は外部に詳細を漏らさず、DTO に沿ったエラー情報 (`{ success: false, error: string }`) を返します。
 
-// 型安全な環境変数
-const env = z.object({
-  DATABASE_URL: z.string(),
-  JWT_SECRET: z.string(),
-  EXTERNAL_API_KEY: z.string(),
-}).parse(process.env)
-```
+## まとめ
 
-### 2. 入力検証
-```typescript
-// Server Actionでは必ず入力を検証
-export async function updateUserAction(userId: number, data: unknown) {
-  const schema = z.object({
-    name: z.string().min(1).max(100),
-    email: z.string().email(),
-  })
-
-  const validated = schema.safeParse(data)
-  if (!validated.success) {
-    throw new Error('Invalid input')
-  }
-
-  // 処理を続行
-}
-```
-
-### 3. エラーハンドリング
-```typescript
-// センシティブな情報を含まないエラーメッセージ
-try {
-  await db.insert(users).values(data)
-} catch (error) {
-  console.error('Database error:', error)
-  return { error: '処理中にエラーが発生しました' }
-}
-```
-
-## テスト
-
-External層のテストは、実際のデータベースやAPIをモックして行います。
-
-```typescript
-// external/db/queries/users.test.ts
-import { describe, it, expect, beforeEach } from 'vitest'
-import { db } from '../client'
-import { getUserWithPosts } from './users'
-
-vi.mock('../client', () => ({
-  db: {
-    select: vi.fn(() => ({
-      from: vi.fn(() => ({
-        leftJoin: vi.fn(() => ({
-          where: vi.fn(() => Promise.resolve(mockData)),
-        })),
-      })),
-    })),
-  },
-}))
-
-describe('getUserWithPosts', () => {
-  it('ユーザーと投稿を取得する', async () => {
-    const result = await getUserWithPosts(1)
-    expect(result).toEqual(mockData)
-  })
-})
-```
+- External 層は Server-Only を徹底し、DTO モジュールを通じて型とバリデーションを一元管理します。
+- Command / Query の分離と AIP-190 準拠の命名で、責務と呼び出し経路を明確に保ちます。
+- カスタム ESLint ルールと DTO 化により、型の再利用や import 方針を統制しつつ、保守しやすい構成を実現しています。
