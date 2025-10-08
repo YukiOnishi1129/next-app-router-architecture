@@ -7,7 +7,7 @@
 import { beforeEach, describe, expect, it, vi, type Mocked } from "vitest";
 import { UserManagementService } from "../UserManagementService";
 import { UserRepository } from "@/external/repository/db/UserRepository";
-import { User, UserRole, UserStatus } from "@/external/domain";
+import { User, UserId, UserRole, UserStatus } from "@/external/domain";
 
 // Mock the repository
 vi.mock("@/external/repository/db/UserRepository");
@@ -138,8 +138,10 @@ describe("UserManagementService", () => {
       mockRepository.findById.mockResolvedValue(null);
 
       // Act & Assert
+      const nonExistentId = UserId.generate().getValue();
+
       await expect(
-        userService.updateUser("non-existent-id", { name: "New Name" })
+        userService.updateUser(nonExistentId, { name: "New Name" })
       ).rejects.toThrow("User not found");
     });
   });

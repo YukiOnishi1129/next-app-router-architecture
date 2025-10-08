@@ -2,6 +2,11 @@ import "@testing-library/jest-dom";
 import { cleanup } from "@testing-library/react";
 import { afterEach, vi } from "vitest";
 
+if (!process.env.DATABASE_URL) {
+  process.env.DATABASE_URL =
+    "postgres://user:password@localhost:5432/test_database";
+}
+
 // Mock CSS imports
 vi.mock("../app/globals.css", () => ({}));
 
