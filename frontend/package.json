@@ -17,6 +17,7 @@
     "db:generate": "tsx scripts/generate-migration.ts",
     "db:migrate": "tsx scripts/migrate.ts",
     "db:push": "drizzle-kit push:pg --config=drizzle.config.cjs",
+    "db:seed": "tsx scripts/seed.ts",
     "db:studio": "drizzle-kit studio --config=drizzle.config.cjs"
   },
   "dependencies": {
