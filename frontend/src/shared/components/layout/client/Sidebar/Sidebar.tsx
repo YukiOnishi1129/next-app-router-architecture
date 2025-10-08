@@ -8,7 +8,7 @@ const navItems = [
   { href: "/requests", label: "My Requests" },
   { href: "/approvals", label: "Approvals" },
   { href: "/dashboard", label: "Dashboard" },
-];
+] as const;
 
 export function Sidebar() {
   const pathname = usePathname();

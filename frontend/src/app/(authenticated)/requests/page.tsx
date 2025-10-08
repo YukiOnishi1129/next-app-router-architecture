@@ -2,11 +2,12 @@ import { RequestsPageTemplate } from "@/features/requests/components/server/Requ
 
 export default async function RequestsPage(props: PageProps<"/requests">) {
   const { status } = await props.searchParams;
+  const normalizedStatus = Array.isArray(status) ? status[0] : status;
 
   return (
     <RequestsPageTemplate
       filters={{
-        status: normalizeStatus(status),
+        status: normalizeStatus(normalizedStatus),
       }}
     />
   );
