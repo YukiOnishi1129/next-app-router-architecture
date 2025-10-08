@@ -1,7 +1,7 @@
-import { Repository } from "../shared/repository";
 import { Request } from "./request";
 import { RequestId } from "./request-id";
 import { RequestStatus } from "./request-status";
+import { Repository } from "../shared/repository";
 import { UserId } from "../user";
 
 /**

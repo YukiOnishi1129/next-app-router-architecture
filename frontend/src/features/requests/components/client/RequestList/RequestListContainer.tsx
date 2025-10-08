@@ -1,8 +1,9 @@
 "use client";
 
-import type { RequestFilterInput } from "@/features/requests/types";
 import { RequestListPresenter } from "./RequestListPresenter";
 import { useRequestList } from "./useRequestList";
+
+import type { RequestFilterInput } from "@/features/requests/types";
 
 type RequestListContainerProps = {
   filters: RequestFilterInput;

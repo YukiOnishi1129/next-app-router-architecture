@@ -1,6 +1,7 @@
 #!/usr/bin/env tsx
 
 import { migrate } from "drizzle-orm/node-postgres/migrator";
+
 import "./utils/loadEnv";
 import { db, closeConnection } from "../src/external/client/db/client";
 

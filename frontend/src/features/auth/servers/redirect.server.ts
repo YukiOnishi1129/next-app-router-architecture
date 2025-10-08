@@ -1,6 +1,7 @@
 import "server-only";
 
 import { redirect } from "next/navigation";
+
 import { getSessionServer } from "./session.server";
 
 export async function requireAuthServer() {

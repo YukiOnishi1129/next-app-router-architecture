@@ -1,6 +1,6 @@
-import { Repository } from "../shared/repository";
 import { Notification, NotificationType } from "./notification";
 import { NotificationId } from "./notification-id";
+import { Repository } from "../shared/repository";
 import { UserId } from "../user";
 
 /**

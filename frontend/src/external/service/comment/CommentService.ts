@@ -11,8 +11,11 @@ import {
   RequestRepository,
   UserRepository,
 } from "@/external/repository";
+
+import { AuditService } from "../audit/AuditService";
 import { NotificationService } from "../notification/NotificationService";
-import { AuditService, type AuditContext } from "../audit/AuditService";
+
+import type { AuditContext } from "../audit/AuditService";
 
 interface CommentContext {
   requestId: string;

@@ -1,7 +1,7 @@
 import "server-only";
 
-import { redirectIfAuthenticatedServer } from "@/features/auth/servers/redirect.server";
 import { LoginForm } from "@/features/auth/components/client/LoginForm";
+import { redirectIfAuthenticatedServer } from "@/features/auth/servers/redirect.server";
 
 export async function LoginPageTemplate() {
   await redirectIfAuthenticatedServer();

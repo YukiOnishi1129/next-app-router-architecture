@@ -4,10 +4,14 @@
  * This demonstrates testing of database operations without any external API calls.
  */
 
-import { beforeEach, describe, expect, it, vi, type Mocked } from "vitest";
-import { UserManagementService } from "../UserManagementService";
-import { UserRepository } from "@/external/repository/db/UserRepository";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import { User, UserId, UserRole, UserStatus } from "@/external/domain";
+import { UserRepository } from "@/external/repository/db/UserRepository";
+
+import { UserManagementService } from "../UserManagementService";
+
+import type { Mocked } from "vitest";
 
 // Mock the repository
 vi.mock("@/external/repository/db/UserRepository");

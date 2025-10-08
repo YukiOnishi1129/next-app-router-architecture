@@ -5,13 +5,14 @@ import {
   RequestId,
   User,
   UserId,
+  AuditEventType,
 } from "@/external/domain";
 import {
   AttachmentRepository,
   RequestRepository,
   UserRepository,
 } from "@/external/repository";
-import { AuditEventType } from "@/external/domain";
+
 import { AuditService, AuditContext } from "../audit/AuditService";
 
 type UploadAttachmentParams = {

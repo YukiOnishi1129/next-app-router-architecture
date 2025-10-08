@@ -1,4 +1,5 @@
 import { eq, and, gte, lte, desc } from "drizzle-orm";
+
 import { db } from "@/external/client/db/client";
 import { auditLogs } from "@/external/client/db/schema";
 import {
@@ -132,7 +133,7 @@ export class AuditLogRepository implements IAuditLogRepository {
     await db.insert(auditLogs).values(data);
   }
 
-  async delete(id: AuditLogId): Promise<void> {
+  async delete(): Promise<void> {
     // Audit logs should not be deleted in most cases
     // This method is here to satisfy the interface
     throw new Error("Audit logs cannot be deleted");

@@ -1,12 +1,11 @@
 import "server-only";
 
 import { z } from "zod";
+
+import { attachmentService, mapAttachmentToDto } from "./shared";
 import { getSessionServer } from "../auth/query.server";
-import {
-  attachmentService,
-  mapAttachmentToDto,
-  type AttachmentDto,
-} from "./shared";
+
+import type { AttachmentDto } from "./shared";
 
 const createAttachmentSchema = z.object({
   requestId: z.string(),

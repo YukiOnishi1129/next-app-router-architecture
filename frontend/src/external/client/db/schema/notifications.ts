@@ -1,4 +1,5 @@
 import { pgTable, text, timestamp, boolean, pgEnum } from "drizzle-orm/pg-core";
+
 import { users } from "./users";
 
 // Define enum for notification types

@@ -1,13 +1,15 @@
 import "server-only";
 
 import { z } from "zod";
-import { getSessionServer } from "../auth/query.server";
+
 import {
   notificationService,
   userManagementService,
   mapNotificationToDto,
-  type NotificationDto,
 } from "./shared";
+import { getSessionServer } from "../auth/query.server";
+
+import type { NotificationDto } from "./shared";
 
 const listNotificationsSchema = z.object({
   unreadOnly: z.boolean().default(false),

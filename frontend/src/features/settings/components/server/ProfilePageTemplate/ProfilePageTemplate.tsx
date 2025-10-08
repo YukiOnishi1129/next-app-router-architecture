@@ -1,8 +1,9 @@
 import "server-only";
 
-import { Card } from "@/shared/components/ui/card";
-import { Button } from "@/shared/components/ui/button";
 import { getSessionServer } from "@/features/auth/servers/session.server";
+
+import { Button } from "@/shared/components/ui/button";
+import { Card } from "@/shared/components/ui/card";
 
 export async function ProfilePageTemplate() {
   const session = await getSessionServer();

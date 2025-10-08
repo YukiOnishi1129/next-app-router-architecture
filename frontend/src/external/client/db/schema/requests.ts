@@ -1,4 +1,5 @@
 import { pgTable, text, timestamp, pgEnum } from "drizzle-orm/pg-core";
+
 import { users } from "./users";
 
 // Define enums for request properties

@@ -1,4 +1,5 @@
 import { pgTable, text, timestamp, jsonb, pgEnum } from "drizzle-orm/pg-core";
+
 import { users } from "./users";
 
 // Define enum for audit action types

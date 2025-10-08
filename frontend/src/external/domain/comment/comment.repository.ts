@@ -1,7 +1,7 @@
-import { Repository } from "../shared/repository";
 import { Comment } from "./comment";
 import { CommentId } from "./comment-id";
 import { RequestId } from "../request";
+import { Repository } from "../shared/repository";
 
 /**
  * Comment repository interface

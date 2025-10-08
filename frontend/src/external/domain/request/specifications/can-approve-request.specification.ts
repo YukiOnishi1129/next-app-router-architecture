@@ -1,6 +1,6 @@
 import { Specification } from "../../shared/specification";
-import { Request } from "../request";
 import { User, UserRole } from "../../user";
+import { Request } from "../request";
 
 /**
  * Specification to check if a user can approve a request

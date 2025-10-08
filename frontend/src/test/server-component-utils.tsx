@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+
 import { render as rtlRender, RenderOptions } from "@testing-library/react";
 import { vi } from "vitest";
 

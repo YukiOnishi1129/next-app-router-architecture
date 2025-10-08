@@ -1,5 +1,5 @@
-import { CommentService } from "@/external/service";
 import { Comment } from "@/external/domain";
+import { CommentService } from "@/external/service";
 
 export const commentService = new CommentService();
 

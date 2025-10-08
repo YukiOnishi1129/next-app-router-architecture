@@ -1,18 +1,21 @@
 import "server-only";
 
 import { z } from "zod";
+
 import {
   RequestPriority,
   RequestType,
 } from "@/external/domain/request/request-status";
-import { getSessionServer } from "../auth/query.server";
+
 import {
   workflowService,
   approvalService,
   userManagementService,
   mapRequestToDto,
-  type RequestDto,
 } from "./shared";
+import { getSessionServer } from "../auth/query.server";
+
+import type { RequestDto } from "./shared";
 
 const createRequestSchema = z.object({
   title: z.string().min(1).max(200),

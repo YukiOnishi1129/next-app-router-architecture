@@ -1,5 +1,5 @@
-import { Email } from "../shared/value-objects";
 import { UserId } from "./user-id";
+import { Email } from "../shared/value-objects";
 
 /**
  * User status enum

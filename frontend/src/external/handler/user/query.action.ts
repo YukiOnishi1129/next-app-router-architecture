@@ -4,9 +4,12 @@ import {
   getCurrentUserServer,
   getUserServer,
   listUsersServer,
-  type GetUserResponse,
-  type ListUsersInput,
-  type ListUsersResponse,
+} from "./query.server";
+
+import type {
+  GetUserResponse,
+  ListUsersInput,
+  ListUsersResponse,
 } from "./query.server";
 
 export async function listUsersAction(

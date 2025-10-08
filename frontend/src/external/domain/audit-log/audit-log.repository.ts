@@ -1,6 +1,6 @@
-import { Repository } from "../shared/repository";
 import { AuditLog, AuditEventType } from "./audit-log";
 import { AuditLogId } from "./audit-log-id";
+import { Repository } from "../shared/repository";
 import { UserId } from "../user";
 
 /**

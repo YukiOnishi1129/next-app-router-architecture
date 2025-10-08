@@ -1,8 +1,9 @@
 import "server-only";
 
 import { z } from "zod";
-import { getSessionServer } from "../auth/query.server";
+
 import { notificationService, userManagementService } from "./shared";
+import { getSessionServer } from "../auth/query.server";
 
 const markNotificationReadSchema = z.object({
   notificationId: z.string(),

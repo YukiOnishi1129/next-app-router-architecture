@@ -1,13 +1,13 @@
-import { UserId } from "../user";
 import { DomainEvent } from "../shared/events";
-import { RequestId } from "./request-id";
-import { RequestStatus, RequestPriority, RequestType } from "./request-status";
+import { UserId } from "../user";
 import {
   RequestCreatedEvent,
   RequestSubmittedEvent,
   RequestApprovedEvent,
   RequestRejectedEvent,
 } from "./events";
+import { RequestId } from "./request-id";
+import { RequestStatus, RequestPriority, RequestType } from "./request-status";
 
 /**
  * Request entity - represents a user request

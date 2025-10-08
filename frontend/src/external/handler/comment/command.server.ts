@@ -1,8 +1,11 @@
 import "server-only";
 
 import { z } from "zod";
+
+import { commentService, mapCommentToDto } from "./shared";
 import { getSessionServer } from "../auth/query.server";
-import { commentService, mapCommentToDto, type CommentDto } from "./shared";
+
+import type { CommentDto } from "./shared";
 
 const createCommentSchema = z.object({
   requestId: z.string(),

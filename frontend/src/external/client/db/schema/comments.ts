@@ -1,6 +1,7 @@
 import { pgTable, text, timestamp, boolean } from "drizzle-orm/pg-core";
-import { users } from "./users";
+
 import { requests } from "./requests";
+import { users } from "./users";
 
 export const comments = pgTable("comments", {
   id: text("id").primaryKey(),

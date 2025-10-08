@@ -1,3 +1,4 @@
+import { db } from "@/external/client/db/client";
 import {
   Request,
   RequestId,
@@ -8,9 +9,9 @@ import {
   UserId,
 } from "@/external/domain";
 import { RequestRepository } from "@/external/repository";
-import { NotificationService } from "../notification/NotificationService";
+
 import { AuditService } from "../audit/AuditService";
-import { db } from "@/external/client/db/client";
+import { NotificationService } from "../notification/NotificationService";
 
 export interface CreateRequestDto {
   title: string;

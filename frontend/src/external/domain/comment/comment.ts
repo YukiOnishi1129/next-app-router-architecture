@@ -1,5 +1,5 @@
-import { UserId } from "../user";
 import { RequestId } from "../request";
+import { UserId } from "../user";
 import { CommentId } from "./comment-id";
 
 /**

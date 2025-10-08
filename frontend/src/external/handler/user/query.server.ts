@@ -1,9 +1,13 @@
 import "server-only";
 
 import { z } from "zod";
+
 import { UserRole, UserStatus } from "@/external/domain/user/user";
+
+import { userManagementService, mapUserToDto } from "./shared";
 import { getSessionServer } from "../auth/query.server";
-import { userManagementService, mapUserToDto, type UserDto } from "./shared";
+
+import type { UserDto } from "./shared";
 
 const listUsersSchema = z.object({
   status: z.enum(UserStatus).optional(),

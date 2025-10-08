@@ -2,6 +2,8 @@
 
 import "./utils/loadEnv";
 import { randomUUID } from "crypto";
+
+import { db, closeConnection } from "../src/external/client/db/client";
 import {
   attachments,
   auditLogs,
@@ -10,7 +12,6 @@ import {
   requests,
   users,
 } from "../src/external/client/db/schema";
-import { db, closeConnection } from "../src/external/client/db/client";
 
 async function main() {
   console.log("Seeding database...");

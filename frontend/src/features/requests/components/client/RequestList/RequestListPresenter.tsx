@@ -1,5 +1,8 @@
-import { RequestStatusBadge } from "@/shared/components/ui/request-status-badge";
+"use client";
+
 import { Card } from "@/shared/components/ui/card";
+import { RequestStatusBadge } from "@/shared/components/ui/request-status-badge";
+
 import type { RequestSummary } from "@/features/requests/types";
 
 type RequestListPresenterProps = {

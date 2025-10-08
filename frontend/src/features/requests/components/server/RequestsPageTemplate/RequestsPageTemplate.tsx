@@ -1,7 +1,8 @@
 import "server-only";
 
-import type { RequestFilterInput } from "@/features/requests/types";
 import { RequestList } from "@/features/requests/components/client/RequestList";
+
+import type { RequestFilterInput } from "@/features/requests/types";
 
 type RequestsPageTemplateProps = {
   filters?: RequestFilterInput;

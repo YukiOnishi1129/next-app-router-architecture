@@ -1,16 +1,19 @@
 import "server-only";
 
 import { z } from "zod";
+
 import { UserRole, UserStatus } from "@/external/domain/user/user";
-import { getSessionServer } from "../auth/query.server";
+
 import {
   auditService,
   userManagementService,
   SERVER_AUDIT_CONTEXT,
   AuditEventType,
   mapUserToDto,
-  type UserDto,
 } from "./shared";
+import { getSessionServer } from "../auth/query.server";
+
+import type { UserDto } from "./shared";
 
 const updateUserRoleSchema = z.object({
   userId: z.string(),

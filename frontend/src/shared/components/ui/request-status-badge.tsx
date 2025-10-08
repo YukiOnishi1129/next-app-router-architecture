@@ -1,5 +1,8 @@
-import type { ComponentProps } from "react";
+"use client";
+
 import { Badge } from "@/shared/components/ui/badge";
+
+import type { ComponentProps } from "react";
 
 type RequestStatus = "draft" | "submitted" | "approved" | "rejected";
 

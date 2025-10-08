@@ -1,7 +1,8 @@
 import "server-only";
 
-import type { RequestStatus } from "@/features/requests/types";
 import { RequestStatusBadge } from "@/shared/components/ui/request-status-badge";
+
+import type { RequestStatus } from "@/features/requests/types";
 
 type RequestDetailPageTemplateProps = {
   requestId: string;

@@ -1,7 +1,7 @@
-import { Repository } from "../shared/repository";
 import { Attachment } from "./attachment";
 import { AttachmentId } from "./attachment-id";
 import { RequestId } from "../request";
+import { Repository } from "../shared/repository";
 
 /**
  * Attachment repository interface

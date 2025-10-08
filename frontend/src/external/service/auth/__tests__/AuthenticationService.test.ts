@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { AuthenticationService } from "../AuthenticationService";
+
 import { IdentityPlatformClient } from "@/external/client/gcp/identity-platform";
+
+import { AuthenticationService } from "../AuthenticationService";
 
 const createIdentityPlatformClientMock = () => ({
   signUpWithEmailPassword: vi.fn(),

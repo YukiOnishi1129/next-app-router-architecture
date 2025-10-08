@@ -1,6 +1,6 @@
-import { NotificationService } from "@/external/service/notification/NotificationService";
-import { UserManagementService } from "@/external/service/auth/UserManagementService";
 import { Notification } from "@/external/domain/notification/notification";
+import { UserManagementService } from "@/external/service/auth/UserManagementService";
+import { NotificationService } from "@/external/service/notification/NotificationService";
 
 export const notificationService = new NotificationService();
 export const userManagementService = new UserManagementService();

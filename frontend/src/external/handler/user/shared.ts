@@ -1,7 +1,7 @@
-import { AuditService } from "@/external/service/audit/AuditService";
 import { AuditEventType } from "@/external/domain";
-import { UserManagementService } from "@/external/service/auth/UserManagementService";
 import { UserStatus, UserRole, User } from "@/external/domain/user/user";
+import { AuditService } from "@/external/service/audit/AuditService";
+import { UserManagementService } from "@/external/service/auth/UserManagementService";
 
 export const userManagementService = new UserManagementService();
 export const auditService = new AuditService();

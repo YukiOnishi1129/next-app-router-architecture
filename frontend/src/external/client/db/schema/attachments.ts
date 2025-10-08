@@ -5,8 +5,9 @@ import {
   integer,
   boolean,
 } from "drizzle-orm/pg-core";
-import { users } from "./users";
+
 import { requests } from "./requests";
+import { users } from "./users";
 
 export const attachments = pgTable("attachments", {
   id: text("id").primaryKey(),

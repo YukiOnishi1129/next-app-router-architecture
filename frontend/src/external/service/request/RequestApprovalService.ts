@@ -1,3 +1,4 @@
+import { db } from "@/external/client/db/client";
 import {
   Request,
   RequestId,
@@ -12,9 +13,9 @@ import {
   NotificationRepository,
   AuditLogRepository,
 } from "@/external/repository";
-import { NotificationService } from "../notification/NotificationService";
+
 import { AuditService } from "../audit/AuditService";
-import { db } from "@/external/client/db/client";
+import { NotificationService } from "../notification/NotificationService";
 
 // Define ApprovalAction enum since it doesn't exist in the domain
 export enum ApprovalAction {
@@ -116,7 +117,7 @@ export class RequestApprovalService {
     }
 
     // Start transaction
-    await db.transaction(async (tx) => {
+    await db.transaction(async () => {
       // Start review if needed
       if (request.isSubmitted()) {
         request.startReview(approver.getId().getValue());

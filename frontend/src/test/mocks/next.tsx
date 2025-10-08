@@ -1,4 +1,5 @@
 import React from "react";
+
 import { vi } from "vitest";
 
 // Mock Next.js Image component

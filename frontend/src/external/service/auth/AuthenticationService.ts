@@ -158,7 +158,7 @@ export class AuthenticationService {
   /**
    * Revoke authentication (placeholder for now)
    */
-  async revokeAuthentication(token: string): Promise<void> {
+  async revokeAuthentication(): Promise<void> {
     // In a production environment, you would call the Admin SDK endpoint
     // to revoke the token. For now, this is a placeholder
     console.log(`Revoking authentication token`);

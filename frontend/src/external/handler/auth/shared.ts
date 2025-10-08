@@ -1,9 +1,8 @@
+import { AuditService } from "@/external/service/audit/AuditService";
 import { AuthenticationService } from "@/external/service/auth/AuthenticationService";
 import { UserManagementService } from "@/external/service/auth/UserManagementService";
-import {
-  AuditService,
-  type AuditContext,
-} from "@/external/service/audit/AuditService";
+
+import type { AuditContext } from "@/external/service/audit/AuditService";
 
 export const authService = new AuthenticationService({
   apiKey: process.env.GCP_IDENTITY_PLATFORM_API_KEY!,
