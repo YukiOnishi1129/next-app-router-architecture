@@ -1,25 +1,19 @@
-import { AuditEventType } from "@/external/domain";
-import { UserStatus, UserRole, User } from "@/external/domain/user/user";
-import { AuditService } from "@/external/service/audit/AuditService";
-import { UserManagementService } from "@/external/service/auth/UserManagementService";
+import { AuditEventType } from '@/external/domain'
+import { User } from '@/external/domain/user/user'
+import { AuditService } from '@/external/service/audit/AuditService'
+import { UserManagementService } from '@/external/service/auth/UserManagementService'
 
-export const userManagementService = new UserManagementService();
-export const auditService = new AuditService();
+import type { UserDto } from '@/external/dto/user'
 
-export type UserDto = {
-  id: string;
-  name: string;
-  email: string;
-  status: UserStatus;
-  roles: UserRole[];
-  createdAt: string;
-  updatedAt: string;
-};
+export const userManagementService = new UserManagementService()
+export const auditService = new AuditService()
+
+export type { UserDto } from '@/external/dto/user'
 
 export const SERVER_AUDIT_CONTEXT = {
-  ipAddress: "server",
-  userAgent: "server-command",
-};
+  ipAddress: 'server',
+  userAgent: 'server-command',
+}
 
 export function mapUserToDto(user: User): UserDto {
   return {
@@ -30,7 +24,7 @@ export function mapUserToDto(user: User): UserDto {
     roles: user.getRoles(),
     createdAt: user.getCreatedAt().toISOString(),
     updatedAt: user.getUpdatedAt().toISOString(),
-  };
+  }
 }
 
-export { AuditEventType };
+export { AuditEventType }

@@ -1,12 +1,10 @@
-import "server-only";
+import { RequestList } from '@/features/requests/components/client/RequestList'
 
-import { RequestList } from "@/features/requests/components/client/RequestList";
-
-import type { RequestFilterInput } from "@/features/requests/types";
+import type { RequestFilterInput } from '@/features/requests/types'
 
 type RequestsPageTemplateProps = {
-  filters?: RequestFilterInput;
-};
+  filters?: RequestFilterInput
+}
 
 export async function RequestsPageTemplate({
   filters = {},
@@ -22,5 +20,5 @@ export async function RequestsPageTemplate({
 
       <RequestList filters={filters} />
     </section>
-  );
+  )
 }

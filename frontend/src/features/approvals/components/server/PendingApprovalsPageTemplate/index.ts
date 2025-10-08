@@ -1,1 +1,1 @@
-export * from "./PendingApprovalsPageTemplate";
+export * from './PendingApprovalsPageTemplate'

@@ -1,64 +1,34 @@
-"use server";
-
-"use server";
-
-"use server";
-
-"use server";
-
-"use server";
-
-"use server";
-
-"use server";
-
-"use server";
-
-"use server";
-
-"use server";
-
-"use server";
-
-"use server";
-
-"use server";
-
-"use server";
-
-"use server";
-
-"use server";
+'use server'
 
 import {
   updateUserRoleServer,
   updateUserStatusServer,
   updateUserProfileServer,
-} from "./command.server";
+} from './command.server'
 
 import type {
   UpdateUserRoleInput,
   UpdateUserStatusInput,
   UpdateUserProfileInput,
   UpdateUserResponse,
-} from "./command.server";
+} from './command.server'
 
 export async function updateUserRoleAction(
   data: UpdateUserRoleInput
 ): Promise<UpdateUserResponse> {
-  return updateUserRoleServer(data);
+  return updateUserRoleServer(data)
 }
 
 export async function updateUserStatusAction(
   data: UpdateUserStatusInput
 ): Promise<UpdateUserResponse> {
-  return updateUserStatusServer(data);
+  return updateUserStatusServer(data)
 }
 
 export async function updateUserProfileAction(
   data: UpdateUserProfileInput
 ): Promise<UpdateUserResponse> {
-  return updateUserProfileServer(data);
+  return updateUserProfileServer(data)
 }
 
 export type {
@@ -66,4 +36,4 @@ export type {
   UpdateUserStatusInput,
   UpdateUserProfileInput,
   UpdateUserResponse,
-} from "./command.server";
+} from './command.server'

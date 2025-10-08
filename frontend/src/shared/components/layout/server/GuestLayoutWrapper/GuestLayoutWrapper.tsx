@@ -1,13 +1,11 @@
-import "server-only";
-
-import { redirectIfAuthenticatedServer } from "@/features/auth/servers/redirect.server";
+import { redirectIfAuthenticatedServer } from '@/features/auth/servers/redirect.server'
 
 export async function GuestLayoutWrapper({
   children,
 }: {
-  children: React.ReactNode;
+  children: React.ReactNode
 }) {
-  await redirectIfAuthenticatedServer();
+  await redirectIfAuthenticatedServer()
 
   return (
     <div className="bg-muted min-h-screen">
@@ -15,5 +13,5 @@ export async function GuestLayoutWrapper({
         {children}
       </div>
     </div>
-  );
+  )
 }

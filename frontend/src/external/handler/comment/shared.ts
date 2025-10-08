@@ -1,18 +1,11 @@
-import { Comment } from "@/external/domain";
-import { CommentService } from "@/external/service";
+import { Comment } from '@/external/domain'
+import { CommentService } from '@/external/service'
 
-export const commentService = new CommentService();
+import type { CommentDto } from '@/external/dto/comment'
 
-export type CommentDto = {
-  id: string;
-  content: string;
-  requestId: string;
-  authorId: string;
-  parentId?: string;
-  createdAt: string;
-  updatedAt: string;
-  isEdited: boolean;
-};
+export const commentService = new CommentService()
+
+export type { CommentDto } from '@/external/dto/comment'
 
 export function mapCommentToDto(
   comment: Comment,
@@ -26,21 +19,21 @@ export function mapCommentToDto(
     createdAt: comment.getCreatedAt().toISOString(),
     updatedAt: comment.getUpdatedAt().toISOString(),
     isEdited: comment.isEdited(),
-  };
+  }
 
   if (parentId) {
-    return { ...base, parentId };
+    return { ...base, parentId }
   }
 
   const maybeParent = (
     comment as unknown as {
-      getParentId?: () => { getValue(): string };
+      getParentId?: () => { getValue(): string }
     }
-  ).getParentId?.();
+  ).getParentId?.()
 
   if (maybeParent) {
-    return { ...base, parentId: maybeParent.getValue() };
+    return { ...base, parentId: maybeParent.getValue() }
   }
 
-  return base;
+  return base
 }

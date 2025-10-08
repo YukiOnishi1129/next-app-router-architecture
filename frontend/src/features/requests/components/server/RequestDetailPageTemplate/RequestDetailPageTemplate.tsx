@@ -1,20 +1,18 @@
-import "server-only";
+import { RequestStatusBadge } from '@/shared/components/ui/request-status-badge'
 
-import { RequestStatusBadge } from "@/shared/components/ui/request-status-badge";
-
-import type { RequestStatus } from "@/features/requests/types";
+import type { RequestStatus } from '@/features/requests/types'
 
 type RequestDetailPageTemplateProps = {
-  requestId: string;
-  highlightCommentId?: string;
-};
+  requestId: string
+  highlightCommentId?: string
+}
 
 const statusOrder: RequestStatus[] = [
-  "draft",
-  "submitted",
-  "approved",
-  "rejected",
-];
+  'draft',
+  'submitted',
+  'approved',
+  'rejected',
+]
 
 export async function RequestDetailPageTemplate({
   requestId,
@@ -56,11 +54,11 @@ export async function RequestDetailPageTemplate({
         <section className="space-y-2">
           <h2 className="text-lg font-medium">Highlighted comment</h2>
           <div className="border-border bg-muted/40 rounded-md border p-4 text-sm">
-            Comment reference:{" "}
+            Comment reference:{' '}
             <span className="font-mono">{highlightCommentId}</span>
           </div>
         </section>
       ) : null}
     </section>
-  );
+  )
 }

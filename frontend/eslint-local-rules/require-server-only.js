@@ -1,12 +1,12 @@
 module.exports = {
   meta: {
-    type: "problem",
+    type: 'problem',
     docs: {
       description: 'Require import "server-only" in specific server files',
-      category: "Best Practices",
+      category: 'Best Practices',
       recommended: true,
     },
-    fixable: "code",
+    fixable: 'code',
     schema: [],
     messages: {
       missingServerOnly:
@@ -16,7 +16,7 @@ module.exports = {
   create(context) {
     return {
       Program(node) {
-        const filename = context.getFilename();
+        const filename = context.getFilename()
 
         // Check if file matches the patterns that require server-only
         const requiresServerOnly =
@@ -29,41 +29,41 @@ module.exports = {
           // external/handlers/xxx/xxx.command.ts
           /\/external\/handlers\/[^/]+\/[^/]+\.command\.ts$/.test(filename) ||
           // external/services/xxx/xxx.service.ts
-          /\/external\/services\/[^/]+\/[^/]+\.service\.ts$/.test(filename);
+          /\/external\/services\/[^/]+\/[^/]+\.service\.ts$/.test(filename)
 
         if (!requiresServerOnly) {
-          return;
+          return
         }
 
         // Check if the file has import "server-only"
         const hasServerOnlyImport = node.body.some((statement) => {
           return (
-            statement.type === "ImportDeclaration" &&
-            statement.source.value === "server-only"
-          );
-        });
+            statement.type === 'ImportDeclaration' &&
+            statement.source.value === 'server-only'
+          )
+        })
 
         if (!hasServerOnlyImport) {
           context.report({
             node: node,
-            messageId: "missingServerOnly",
+            messageId: 'missingServerOnly',
             fix(fixer) {
               // Add import "server-only" at the beginning of the file
-              const firstStatement = node.body[0];
+              const firstStatement = node.body[0]
               if (firstStatement) {
                 return fixer.insertTextBefore(
                   firstStatement,
                   'import "server-only";\n'
-                );
+                )
               }
               return fixer.insertTextAfterRange(
                 [0, 0],
                 'import "server-only";\n'
-              );
+              )
             },
-          });
+          })
         }
       },
-    };
+    }
   },
-};
+}

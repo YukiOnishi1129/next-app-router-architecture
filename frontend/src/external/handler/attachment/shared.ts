@@ -1,21 +1,14 @@
-import { Attachment } from "@/external/domain/attachment";
-import { AttachmentService } from "@/external/service/attachment/AttachmentService";
+import { Attachment } from '@/external/domain/attachment'
+import { AttachmentService } from '@/external/service/attachment/AttachmentService'
 
-export const attachmentService = new AttachmentService();
+import type { AttachmentDto } from '@/external/dto/attachment'
 
-export type AttachmentDto = {
-  id: string;
-  fileName: string;
-  fileSize: number;
-  mimeType: string;
-  uploadedBy: string;
-  requestId: string;
-  createdAt: string;
-  url: string;
-};
+export const attachmentService = new AttachmentService()
+
+export type { AttachmentDto } from '@/external/dto/attachment'
 
 export function mapAttachmentToDto(attachment: Attachment): AttachmentDto {
-  const json = attachment.toJSON();
+  const json = attachment.toJSON()
   return {
     id: json.id,
     fileName: json.fileName,
@@ -25,5 +18,5 @@ export function mapAttachmentToDto(attachment: Attachment): AttachmentDto {
     requestId: json.requestId,
     createdAt: json.uploadedAt,
     url: `/api/attachments/${json.id}/download`,
-  };
+  }
 }

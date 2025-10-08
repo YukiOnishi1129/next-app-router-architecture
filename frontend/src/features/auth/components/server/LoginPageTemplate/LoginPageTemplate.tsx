@@ -1,10 +1,8 @@
-import "server-only";
-
-import { LoginForm } from "@/features/auth/components/client/LoginForm";
-import { redirectIfAuthenticatedServer } from "@/features/auth/servers/redirect.server";
+import { LoginForm } from '@/features/auth/components/client/LoginForm'
+import { redirectIfAuthenticatedServer } from '@/features/auth/servers/redirect.server'
 
 export async function LoginPageTemplate() {
-  await redirectIfAuthenticatedServer();
+  await redirectIfAuthenticatedServer()
 
   return (
     <section className="space-y-6">
@@ -18,5 +16,5 @@ export async function LoginPageTemplate() {
 
       <LoginForm />
     </section>
-  );
+  )
 }

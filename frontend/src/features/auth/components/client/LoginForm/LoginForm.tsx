@@ -1,18 +1,18 @@
-"use client";
+'use client'
 
-import { useState } from "react";
+import { useState } from 'react'
 
-import { Button } from "@/shared/components/ui/button";
+import { Button } from '@/shared/components/ui/button'
 
 export function LoginForm() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+    event.preventDefault()
     // TODO: Integrate with signIn action once implemented
-    console.info("Attempted sign-in", { email, password });
-  };
+    console.info('Attempted sign-in', { email, password })
+  }
 
   return (
     <form className="space-y-4" onSubmit={handleSubmit}>
@@ -42,5 +42,5 @@ export function LoginForm() {
         Sign in
       </Button>
     </form>
-  );
+  )
 }

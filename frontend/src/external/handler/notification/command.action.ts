@@ -1,41 +1,11 @@
-"use server";
-
-"use server";
-
-"use server";
-
-"use server";
-
-"use server";
-
-"use server";
-
-"use server";
-
-"use server";
-
-"use server";
-
-"use server";
-
-"use server";
-
-"use server";
-
-"use server";
-
-"use server";
-
-"use server";
-
-"use server";
+'use server'
 
 import {
   markNotificationReadServer,
   markAllNotificationsReadServer,
   updateNotificationPreferencesServer,
   sendTestNotificationServer,
-} from "./command.server";
+} from './command.server'
 
 import type {
   MarkNotificationReadInput,
@@ -43,30 +13,31 @@ import type {
   UpdateNotificationPreferencesInput,
   NotificationCommandResponse,
   UpdateNotificationPreferencesResponse,
-} from "./command.server";
+  MarkAllNotificationsReadResponse,
+} from './command.server'
 
 export async function markNotificationReadAction(
   data: MarkNotificationReadInput
 ): Promise<NotificationCommandResponse> {
-  return markNotificationReadServer(data);
+  return markNotificationReadServer(data)
 }
 
 export async function markAllNotificationsReadAction(
   data?: MarkAllNotificationsReadInput
-): Promise<NotificationCommandResponse & { count?: number }> {
-  return markAllNotificationsReadServer(data);
+): Promise<MarkAllNotificationsReadResponse> {
+  return markAllNotificationsReadServer(data)
 }
 
 export async function updateNotificationPreferencesAction(
   data: UpdateNotificationPreferencesInput
 ): Promise<UpdateNotificationPreferencesResponse> {
-  return updateNotificationPreferencesServer(data);
+  return updateNotificationPreferencesServer(data)
 }
 
 export async function sendTestNotificationAction(
   userId: string
 ): Promise<NotificationCommandResponse> {
-  return sendTestNotificationServer(userId);
+  return sendTestNotificationServer(userId)
 }
 
 export type {
@@ -75,4 +46,5 @@ export type {
   UpdateNotificationPreferencesInput,
   NotificationCommandResponse,
   UpdateNotificationPreferencesResponse,
-} from "./command.server";
+  MarkAllNotificationsReadResponse,
+} from './command.server'

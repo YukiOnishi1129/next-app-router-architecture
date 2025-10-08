@@ -1,40 +1,10 @@
-"use server";
-
-"use server";
-
-"use server";
-
-"use server";
-
-"use server";
-
-"use server";
-
-"use server";
-
-"use server";
-
-"use server";
-
-"use server";
-
-"use server";
-
-"use server";
-
-"use server";
-
-"use server";
-
-"use server";
-
-"use server";
+'use server'
 
 import {
   createCommentServer,
   updateCommentServer,
   deleteCommentServer,
-} from "./command.server";
+} from './command.server'
 
 import type {
   CreateCommentInput,
@@ -43,24 +13,24 @@ import type {
   UpdateCommentResponse,
   DeleteCommentInput,
   DeleteCommentResponse,
-} from "./command.server";
+} from './command.server'
 
 export async function createCommentAction(
   data: CreateCommentInput
 ): Promise<CreateCommentResponse> {
-  return createCommentServer(data);
+  return createCommentServer(data)
 }
 
 export async function updateCommentAction(
   data: UpdateCommentInput
 ): Promise<UpdateCommentResponse> {
-  return updateCommentServer(data);
+  return updateCommentServer(data)
 }
 
 export async function deleteCommentAction(
   data: DeleteCommentInput
 ): Promise<DeleteCommentResponse> {
-  return deleteCommentServer(data);
+  return deleteCommentServer(data)
 }
 
 export type {
@@ -70,4 +40,4 @@ export type {
   UpdateCommentResponse,
   DeleteCommentInput,
   DeleteCommentResponse,
-} from "./command.server";
+} from './command.server'

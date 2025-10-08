@@ -1,6 +1,4 @@
-import "server-only";
-
-import { RequestForm } from "@/features/requests/components/client/RequestForm";
+import { RequestForm } from '@/features/requests/components/client/RequestForm'
 
 export async function NewRequestPageTemplate() {
   return (
@@ -15,5 +13,5 @@ export async function NewRequestPageTemplate() {
 
       <RequestForm />
     </section>
-  );
+  )
 }

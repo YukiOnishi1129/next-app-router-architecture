@@ -1,34 +1,4 @@
-"use server";
-
-"use server";
-
-"use server";
-
-"use server";
-
-"use server";
-
-"use server";
-
-"use server";
-
-"use server";
-
-"use server";
-
-"use server";
-
-"use server";
-
-"use server";
-
-"use server";
-
-"use server";
-
-"use server";
-
-"use server";
+'use server'
 
 import {
   assignRequestServer,
@@ -39,7 +9,7 @@ import {
   reviewRequestServer,
   submitRequestServer,
   updateRequestServer,
-} from "./command.server";
+} from './command.server'
 
 import type {
   AssignRequestInput,
@@ -51,57 +21,57 @@ import type {
   ReviewRequestInput,
   SubmitRequestInput,
   UpdateRequestInput,
-} from "./command.server";
+} from './command.server'
 
 export async function createRequestAction(
   data: CreateRequestInput
 ): Promise<RequestCommandResponse> {
-  return createRequestServer(data);
+  return createRequestServer(data)
 }
 
 export async function updateRequestAction(
   data: UpdateRequestInput
 ): Promise<RequestCommandResponse> {
-  return updateRequestServer(data);
+  return updateRequestServer(data)
 }
 
 export async function submitRequestAction(
   data: SubmitRequestInput
 ): Promise<RequestCommandResponse> {
-  return submitRequestServer(data);
+  return submitRequestServer(data)
 }
 
 export async function reviewRequestAction(
   data: ReviewRequestInput
 ): Promise<RequestCommandResponse> {
-  return reviewRequestServer(data);
+  return reviewRequestServer(data)
 }
 
 export async function approveRequestAction(
   data: ApproveRequestInput
 ): Promise<RequestCommandResponse> {
-  return approveRequestServer(data);
+  return approveRequestServer(data)
 }
 
 export async function rejectRequestAction(
   data: RejectRequestInput
 ): Promise<RequestCommandResponse> {
-  return rejectRequestServer(data);
+  return rejectRequestServer(data)
 }
 
 export async function cancelRequestAction(
   data: CancelRequestInput
 ): Promise<RequestCommandResponse> {
-  return cancelRequestServer(data);
+  return cancelRequestServer(data)
 }
 
 export async function assignRequestAction(
   data: AssignRequestInput
 ): Promise<RequestCommandResponse> {
-  return assignRequestServer(data);
+  return assignRequestServer(data)
 }
 
-export type { RequestCommandResponse } from "./command.server";
+export type { RequestCommandResponse } from './command.server'
 export type {
   CreateRequestInput,
   UpdateRequestInput,
@@ -111,4 +81,4 @@ export type {
   RejectRequestInput,
   CancelRequestInput,
   AssignRequestInput,
-} from "./command.server";
+} from './command.server'

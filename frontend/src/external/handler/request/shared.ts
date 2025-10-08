@@ -1,50 +1,33 @@
-import { Request } from "@/external/domain";
-import {
-  RequestPriority,
-  RequestStatus,
-  RequestType,
-} from "@/external/domain/request/request-status";
-import { RequestRepository } from "@/external/repository";
-import { AuditService } from "@/external/service/audit/AuditService";
-import { UserManagementService } from "@/external/service/auth/UserManagementService";
-import { NotificationService } from "@/external/service/notification/NotificationService";
-import { RequestApprovalService } from "@/external/service/request/RequestApprovalService";
-import { RequestWorkflowService } from "@/external/service/request/RequestWorkflowService";
+import { Request } from '@/external/domain'
+import { RequestRepository } from '@/external/repository'
+import { AuditService } from '@/external/service/audit/AuditService'
+import { UserManagementService } from '@/external/service/auth/UserManagementService'
+import { NotificationService } from '@/external/service/notification/NotificationService'
+import { RequestApprovalService } from '@/external/service/request/RequestApprovalService'
+import { RequestWorkflowService } from '@/external/service/request/RequestWorkflowService'
 
-const notificationService = new NotificationService();
-const auditService = new AuditService();
+import type { RequestDto } from '@/external/dto/request'
+
+const notificationService = new NotificationService()
+const auditService = new AuditService()
 
 export const workflowService = new RequestWorkflowService(
   notificationService,
   auditService
-);
+)
 
 export const approvalService = new RequestApprovalService(
   notificationService,
   auditService
-);
+)
 
-export const userManagementService = new UserManagementService();
-export const requestRepository = new RequestRepository();
+export const userManagementService = new UserManagementService()
+export const requestRepository = new RequestRepository()
 
-export type RequestDto = {
-  id: string;
-  title: string;
-  description: string;
-  type: RequestType;
-  priority: RequestPriority;
-  status: RequestStatus;
-  requesterId: string;
-  assigneeId?: string | null;
-  createdAt: string;
-  updatedAt: string;
-  submittedAt?: string | null;
-  reviewedAt?: string | null;
-  reviewerId?: string | null;
-};
+export type { RequestDto } from '@/external/dto/request'
 
 export function mapRequestToDto(request: Request): RequestDto {
-  const json = request.toJSON();
+  const json = request.toJSON()
   return {
     id: json.id,
     title: json.title,
@@ -59,5 +42,5 @@ export function mapRequestToDto(request: Request): RequestDto {
     submittedAt: json.submittedAt,
     reviewedAt: json.reviewedAt,
     reviewerId: json.reviewerId,
-  };
+  }
 }

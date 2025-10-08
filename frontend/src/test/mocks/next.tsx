@@ -1,9 +1,9 @@
-import React from "react";
+import React from 'react'
 
-import { vi } from "vitest";
+import { vi } from 'vitest'
 
 // Mock Next.js Image component
-vi.mock("next/image", () => ({
+vi.mock('next/image', () => ({
   default: ({
     src,
     alt,
@@ -13,32 +13,33 @@ vi.mock("next/image", () => ({
     ...props
   }: React.ImgHTMLAttributes<HTMLImageElement> & { priority?: boolean }) => {
     return (
+      // eslint-disable-next-line @next/next/no-img-element
       <img
         src={src}
         alt={alt}
         width={width}
         height={height}
-        data-priority={priority ? "true" : undefined}
+        data-priority={priority ? 'true' : undefined}
         {...props}
       />
-    );
+    )
   },
-}));
+}))
 
 // Mock Next.js Link component
-vi.mock("next/link", () => ({
+vi.mock('next/link', () => ({
   default: ({
     children,
     href,
     ...props
   }: React.AnchorHTMLAttributes<HTMLAnchorElement> & {
-    children: React.ReactNode;
-    href: string;
+    children: React.ReactNode
+    href: string
   }) => {
     return (
       <a href={href} {...props}>
         {children}
       </a>
-    );
+    )
   },
-}));
+}))

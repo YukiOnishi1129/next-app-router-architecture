@@ -1,21 +1,19 @@
-import "server-only";
-
-import { RequestStatusBadge } from "@/shared/components/ui/request-status-badge";
+import { RequestStatusBadge } from '@/shared/components/ui/request-status-badge'
 
 const MOCK_APPROVALS = [
   {
-    id: "approval-001",
-    title: "Marketing campaign budget",
-    requester: "Alicia Chen",
+    id: 'approval-001',
+    title: 'Marketing campaign budget',
+    requester: 'Alicia Chen',
     submittedAt: new Date().toISOString(),
   },
   {
-    id: "approval-002",
-    title: "Production database access",
-    requester: "Jonah Patel",
+    id: 'approval-002',
+    title: 'Production database access',
+    requester: 'Jonah Patel',
     submittedAt: new Date(Date.now() - 3600 * 1000).toISOString(),
   },
-];
+]
 
 export async function PendingApprovalsPageTemplate() {
   return (
@@ -37,7 +35,7 @@ export async function PendingApprovalsPageTemplate() {
               <div>
                 <h2 className="text-sm font-medium">{item.title}</h2>
                 <p className="text-muted-foreground text-xs">
-                  Requested by {item.requester} on{" "}
+                  Requested by {item.requester} on{' '}
                   {new Date(item.submittedAt).toLocaleDateString()}
                 </p>
               </div>
@@ -47,5 +45,5 @@ export async function PendingApprovalsPageTemplate() {
         ))}
       </div>
     </section>
-  );
+  )
 }

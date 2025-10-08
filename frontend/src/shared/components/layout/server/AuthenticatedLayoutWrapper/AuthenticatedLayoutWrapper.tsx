@@ -1,21 +1,19 @@
-import "server-only";
+import { dehydrate, HydrationBoundary } from '@tanstack/react-query'
 
-import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
+import { requireAuthServer } from '@/features/auth/servers/redirect.server'
 
-import { requireAuthServer } from "@/features/auth/servers/redirect.server";
-
-import { Header } from "@/shared/components/layout/client/Header";
-import { Sidebar } from "@/shared/components/layout/client/Sidebar";
-import { getQueryClient } from "@/shared/lib/query-client";
+import { Header } from '@/shared/components/layout/client/Header'
+import { Sidebar } from '@/shared/components/layout/client/Sidebar'
+import { getQueryClient } from '@/shared/lib/query-client'
 
 export async function AuthenticatedLayoutWrapper({
   children,
 }: {
-  children: React.ReactNode;
+  children: React.ReactNode
 }) {
-  await requireAuthServer();
+  await requireAuthServer()
 
-  const queryClient = getQueryClient();
+  const queryClient = getQueryClient()
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
@@ -27,5 +25,5 @@ export async function AuthenticatedLayoutWrapper({
         </div>
       </div>
     </HydrationBoundary>
-  );
+  )
 }
