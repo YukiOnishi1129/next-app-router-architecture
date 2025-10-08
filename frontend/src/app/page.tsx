@@ -1,9 +1,9 @@
-import { redirect } from "next/navigation";
+import { redirect } from 'next/navigation'
 
-import { getSessionServer } from "@/features/auth/servers/session.server";
+import { getSessionServer } from '@/features/auth/servers/session.server'
 
 export default async function HomePage() {
-  const session = await getSessionServer();
+  const session = await getSessionServer()
 
-  redirect(session ? "/requests" : "/login");
+  redirect(session ? '/requests' : '/login')
 }

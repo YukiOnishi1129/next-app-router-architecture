@@ -1,6 +1,6 @@
-"use client";
+'use client'
 
-import Link from "next/link";
+import Link from 'next/link'
 
 export function Header() {
   return (
@@ -20,5 +20,5 @@ export function Header() {
         </Link>
       </nav>
     </header>
-  );
+  )
 }

@@ -1,14 +1,14 @@
-"use client";
+'use client'
 
-import { Button } from "@/shared/components/ui/button";
+import { Button } from '@/shared/components/ui/button'
 
-import type { CreateRequestFormValues } from "@/features/requests/schemas";
-import type { UseFormReturn } from "react-hook-form";
+import type { CreateRequestFormValues } from '@/features/requests/schemas'
+import type { UseFormReturn } from 'react-hook-form'
 
 type RequestFormPresenterProps = {
-  form: UseFormReturn<CreateRequestFormValues>;
-  onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
-};
+  form: UseFormReturn<CreateRequestFormValues>
+  onSubmit: (event: React.FormEvent<HTMLFormElement>) => void
+}
 
 export function RequestFormPresenter({
   form,
@@ -17,7 +17,7 @@ export function RequestFormPresenter({
   const {
     register,
     formState: { errors, isSubmitting },
-  } = form;
+  } = form
 
   return (
     <form className="space-y-4" onSubmit={onSubmit}>
@@ -25,7 +25,7 @@ export function RequestFormPresenter({
         Title
         <input
           className="border-border bg-background focus:ring-primary mt-1 w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none"
-          {...register("title")}
+          {...register('title')}
           aria-invalid={Boolean(errors.title)}
         />
         {errors.title ? (
@@ -42,7 +42,7 @@ export function RequestFormPresenter({
           type="number"
           step="0.01"
           min={0}
-          {...register("amount")}
+          {...register('amount')}
           aria-invalid={Boolean(errors.amount)}
         />
         {errors.amount ? (
@@ -57,7 +57,7 @@ export function RequestFormPresenter({
         <textarea
           className="border-border bg-background focus:ring-primary mt-1 w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none"
           rows={4}
-          {...register("reason")}
+          {...register('reason')}
           aria-invalid={Boolean(errors.reason)}
         />
         {errors.reason ? (
@@ -72,8 +72,8 @@ export function RequestFormPresenter({
         className="w-full sm:w-auto"
         disabled={isSubmitting}
       >
-        {isSubmitting ? "Submitting…" : "Submit request"}
+        {isSubmitting ? 'Submitting…' : 'Submit request'}
       </Button>
     </form>
-  );
+  )
 }

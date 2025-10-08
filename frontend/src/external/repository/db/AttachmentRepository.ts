@@ -1,13 +1,13 @@
-import { eq, and } from "drizzle-orm";
+import { eq, and } from 'drizzle-orm'
 
-import { db } from "@/external/client/db/client";
-import { attachments } from "@/external/client/db/schema";
+import { db } from '@/external/client/db/client'
+import { attachments } from '@/external/client/db/schema'
 import {
   AttachmentRepository as IAttachmentRepository,
   Attachment,
   AttachmentId,
   RequestId,
-} from "@/external/domain";
+} from '@/external/domain'
 
 export class AttachmentRepository implements IAttachmentRepository {
   async findById(id: AttachmentId): Promise<Attachment | null> {
@@ -15,13 +15,13 @@ export class AttachmentRepository implements IAttachmentRepository {
       .select()
       .from(attachments)
       .where(eq(attachments.id, id.getValue()))
-      .limit(1);
+      .limit(1)
 
     if (result.length === 0) {
-      return null;
+      return null
     }
 
-    return this.mapToDomainEntity(result[0]);
+    return this.mapToDomainEntity(result[0])
   }
 
   async findByRequestId(requestId: RequestId): Promise<Attachment[]> {
@@ -33,9 +33,9 @@ export class AttachmentRepository implements IAttachmentRepository {
           eq(attachments.requestId, requestId.getValue()),
           eq(attachments.deleted, false)
         )
-      );
+      )
 
-    return result.map((row) => this.mapToDomainEntity(row));
+    return result.map((row) => this.mapToDomainEntity(row))
   }
 
   async save(entity: Attachment): Promise<void> {
@@ -51,7 +51,7 @@ export class AttachmentRepository implements IAttachmentRepository {
       deleted: entity.isDeleted(),
       deletedAt: entity.getDeletedAt(),
       deletedById: entity.getDeletedById()?.getValue() || null,
-    };
+    }
 
     await db
       .insert(attachments)
@@ -63,7 +63,7 @@ export class AttachmentRepository implements IAttachmentRepository {
           deletedAt: data.deletedAt,
           deletedById: data.deletedById,
         },
-      });
+      })
   }
 
   async delete(id: AttachmentId): Promise<void> {
@@ -74,7 +74,7 @@ export class AttachmentRepository implements IAttachmentRepository {
         deleted: true,
         deletedAt: new Date(),
       })
-      .where(eq(attachments.id, id.getValue()));
+      .where(eq(attachments.id, id.getValue()))
   }
 
   async deleteByRequestId(requestId: RequestId): Promise<void> {
@@ -85,7 +85,7 @@ export class AttachmentRepository implements IAttachmentRepository {
         deleted: true,
         deletedAt: new Date(),
       })
-      .where(eq(attachments.requestId, requestId.getValue()));
+      .where(eq(attachments.requestId, requestId.getValue()))
   }
 
   private mapToDomainEntity(row: typeof attachments.$inferSelect): Attachment {
@@ -101,6 +101,6 @@ export class AttachmentRepository implements IAttachmentRepository {
       deleted: row.deleted,
       deletedAt: row.deletedAt,
       deletedById: row.deletedById,
-    });
+    })
   }
 }

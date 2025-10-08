@@ -1,3 +1,3 @@
-"use client";
+'use client'
 
-export { RequestListContainer as RequestList } from "./RequestListContainer";
+export { RequestListContainer as RequestList } from './RequestListContainer'

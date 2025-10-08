@@ -26,6 +26,7 @@ const eslintConfig = [
       'dist/**',
       'build/**',
       'test-runner-jest.config.js',
+      '**/*.d.ts',
     ],
   },
   {

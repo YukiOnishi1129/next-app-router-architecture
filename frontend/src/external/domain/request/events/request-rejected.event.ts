@@ -1,4 +1,4 @@
-import { DomainEvent } from "../../shared/events";
+import { DomainEvent } from '../../shared/events'
 
 export class RequestRejectedEvent extends DomainEvent {
   constructor(
@@ -8,7 +8,7 @@ export class RequestRejectedEvent extends DomainEvent {
     private readonly rejectedAt: Date,
     private readonly reason?: string
   ) {
-    super(aggregateId, "RequestRejected");
+    super(aggregateId, 'RequestRejected')
   }
 
   toPayload(): Record<string, unknown> {
@@ -18,6 +18,6 @@ export class RequestRejectedEvent extends DomainEvent {
       requesterId: this.requesterId,
       rejectedAt: this.rejectedAt.toISOString(),
       reason: this.reason,
-    };
+    }
   }
 }

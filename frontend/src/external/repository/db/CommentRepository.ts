@@ -1,30 +1,30 @@
-import { eq, and, desc, count } from "drizzle-orm";
+import { eq, and, desc, count } from 'drizzle-orm'
 
-import { db } from "@/external/client/db/client";
-import { comments } from "@/external/client/db/schema";
+import { db } from '@/external/client/db/client'
+import { comments } from '@/external/client/db/schema'
 import {
   CommentRepository as ICommentRepository,
   Comment,
   CommentId,
   RequestId,
-} from "@/external/domain";
+} from '@/external/domain'
 
 export class CommentRepository implements ICommentRepository {
   private applyPagination<T>(query: T, limit?: number, offset?: number): T {
     let result = query as unknown as {
-      limit: (value: number) => unknown;
-      offset: (value: number) => unknown;
-    };
+      limit: (value: number) => unknown
+      offset: (value: number) => unknown
+    }
 
     if (limit !== undefined) {
-      result = result.limit(limit) as typeof result;
+      result = result.limit(limit) as typeof result
     }
 
     if (offset !== undefined) {
-      result = result.offset(offset) as typeof result;
+      result = result.offset(offset) as typeof result
     }
 
-    return result as unknown as T;
+    return result as unknown as T
   }
 
   async findById(id: CommentId): Promise<Comment | null> {
@@ -32,13 +32,13 @@ export class CommentRepository implements ICommentRepository {
       .select()
       .from(comments)
       .where(eq(comments.id, id.getValue()))
-      .limit(1);
+      .limit(1)
 
     if (result.length === 0) {
-      return null;
+      return null
     }
 
-    return this.mapToDomainEntity(result[0]);
+    return this.mapToDomainEntity(result[0])
   }
 
   async findByRequestId(
@@ -55,11 +55,11 @@ export class CommentRepository implements ICommentRepository {
           eq(comments.deleted, false)
         )
       )
-      .orderBy(desc(comments.createdAt));
+      .orderBy(desc(comments.createdAt))
 
-    const query = this.applyPagination(baseQuery, limit, offset);
-    const result = await query;
-    return result.map((row) => this.mapToDomainEntity(row));
+    const query = this.applyPagination(baseQuery, limit, offset)
+    const result = await query
+    return result.map((row) => this.mapToDomainEntity(row))
   }
 
   async countByRequestId(requestId: RequestId): Promise<number> {
@@ -71,9 +71,9 @@ export class CommentRepository implements ICommentRepository {
           eq(comments.requestId, requestId.getValue()),
           eq(comments.deleted, false)
         )
-      );
+      )
 
-    return result[0]?.value || 0;
+    return result[0]?.value || 0
   }
 
   async save(entity: Comment): Promise<void> {
@@ -87,7 +87,7 @@ export class CommentRepository implements ICommentRepository {
       edited: entity.isEdited(),
       deleted: entity.isDeleted(),
       deletedAt: entity.getDeletedAt(),
-    };
+    }
 
     await db
       .insert(comments)
@@ -101,7 +101,7 @@ export class CommentRepository implements ICommentRepository {
           deleted: data.deleted,
           deletedAt: data.deletedAt,
         },
-      });
+      })
   }
 
   async delete(id: CommentId): Promise<void> {
@@ -113,7 +113,7 @@ export class CommentRepository implements ICommentRepository {
         deletedAt: new Date(),
         updatedAt: new Date(),
       })
-      .where(eq(comments.id, id.getValue()));
+      .where(eq(comments.id, id.getValue()))
   }
 
   private mapToDomainEntity(row: typeof comments.$inferSelect): Comment {
@@ -127,6 +127,6 @@ export class CommentRepository implements ICommentRepository {
       edited: row.edited,
       deleted: row.deleted,
       deletedAt: row.deletedAt,
-    });
+    })
   }
 }

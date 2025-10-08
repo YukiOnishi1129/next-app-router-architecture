@@ -1,8 +1,8 @@
-"use client";
+'use client'
 
-import * as React from "react";
+import * as React from 'react'
 
-import { cn } from "@/shared/lib/utils";
+import { cn } from '@/shared/lib/utils'
 
 const Card = React.forwardRef<
   HTMLDivElement,
@@ -11,12 +11,12 @@ const Card = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      "border-border bg-background text-foreground rounded-lg border shadow-sm",
+      'border-border bg-background text-foreground rounded-lg border shadow-sm',
       className
     )}
     {...props}
   />
-));
-Card.displayName = "Card";
+))
+Card.displayName = 'Card'
 
-export { Card };
+export { Card }

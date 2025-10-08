@@ -1,5 +1,5 @@
-import { DomainEvent } from "../../shared/events";
-import { RequestType, RequestPriority } from "../request-status";
+import { DomainEvent } from '../../shared/events'
+import { RequestType, RequestPriority } from '../request-status'
 
 export class RequestCreatedEvent extends DomainEvent {
   constructor(
@@ -9,7 +9,7 @@ export class RequestCreatedEvent extends DomainEvent {
     private readonly type: RequestType,
     private readonly priority: RequestPriority
   ) {
-    super(aggregateId, "RequestCreated");
+    super(aggregateId, 'RequestCreated')
   }
 
   toPayload(): Record<string, unknown> {
@@ -19,6 +19,6 @@ export class RequestCreatedEvent extends DomainEvent {
       title: this.title,
       type: this.type,
       priority: this.priority,
-    };
+    }
   }
 }

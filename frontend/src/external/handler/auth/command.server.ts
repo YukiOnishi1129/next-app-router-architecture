@@ -163,7 +163,7 @@ export async function deleteSessionServer(
     const user = await userManagementService.findUserById(storedUserId)
     if (user) {
       try {
-        await authService.revokeAuthentication(token)
+        await authService.revokeAuthentication()
       } catch (error) {
         console.error('Failed to revoke token:', error)
       }

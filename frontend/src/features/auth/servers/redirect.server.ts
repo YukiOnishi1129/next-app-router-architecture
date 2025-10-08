@@ -1,21 +1,21 @@
-import "server-only";
+import 'server-only'
 
-import { redirect } from "next/navigation";
+import { redirect } from 'next/navigation'
 
-import { getSessionServer } from "./session.server";
+import { getSessionServer } from './session.server'
 
 export async function requireAuthServer() {
-  const session = await getSessionServer();
+  const session = await getSessionServer()
   if (!session) {
-    redirect("/login");
+    redirect('/login')
   }
-  return session;
+  return session
 }
 
 export async function redirectIfAuthenticatedServer() {
-  const session = await getSessionServer();
+  const session = await getSessionServer()
   if (session) {
-    redirect("/requests");
+    redirect('/requests')
   }
-  return session;
+  return session
 }

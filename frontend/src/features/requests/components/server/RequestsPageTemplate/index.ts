@@ -1,1 +1,1 @@
-export * from "./RequestsPageTemplate";
+export * from './RequestsPageTemplate'

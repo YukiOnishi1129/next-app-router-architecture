@@ -1,4 +1,4 @@
-import { db } from "@/external/client/db/client";
+import { db } from '@/external/client/db/client'
 import {
   Request,
   RequestId,
@@ -6,39 +6,39 @@ import {
   User,
   UserId,
   AuditLog,
-} from "@/external/domain";
+} from '@/external/domain'
 import {
   RequestRepository,
   UserRepository,
   NotificationRepository,
   AuditLogRepository,
-} from "@/external/repository";
+} from '@/external/repository'
 
-import { AuditService } from "../audit/AuditService";
-import { NotificationService } from "../notification/NotificationService";
+import { AuditService } from '../audit/AuditService'
+import { NotificationService } from '../notification/NotificationService'
 
 // Define ApprovalAction enum since it doesn't exist in the domain
 export enum ApprovalAction {
-  APPROVED = "APPROVED",
-  REJECTED = "REJECTED",
-  NEEDS_INFO = "NEEDS_INFO",
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED',
+  NEEDS_INFO = 'NEEDS_INFO',
 }
 
 export class RequestApprovalService {
-  private requestRepository: RequestRepository;
-  private userRepository: UserRepository;
-  private notificationRepository: NotificationRepository;
-  private auditLogRepository: AuditLogRepository;
+  private requestRepository: RequestRepository
+  private userRepository: UserRepository
+  private notificationRepository: NotificationRepository
+  private auditLogRepository: AuditLogRepository
 
   constructor(
     private notificationService: NotificationService,
     private auditService: AuditService
   ) {
     // Initialize concrete repository implementations
-    this.requestRepository = new RequestRepository();
-    this.userRepository = new UserRepository();
-    this.notificationRepository = new NotificationRepository();
-    this.auditLogRepository = new AuditLogRepository();
+    this.requestRepository = new RequestRepository()
+    this.userRepository = new UserRepository()
+    this.notificationRepository = new NotificationRepository()
+    this.auditLogRepository = new AuditLogRepository()
   }
 
   /**
@@ -49,13 +49,13 @@ export class RequestApprovalService {
       requestId,
       reviewer,
       ApprovalAction.NEEDS_INFO
-    );
+    )
 
     if (!request.isInReview()) {
-      throw new Error("Failed to move request into review state");
+      throw new Error('Failed to move request into review state')
     }
 
-    return request;
+    return request
   }
 
   /**
@@ -71,7 +71,7 @@ export class RequestApprovalService {
       approver,
       ApprovalAction.APPROVED,
       comment
-    );
+    )
   }
 
   /**
@@ -87,7 +87,7 @@ export class RequestApprovalService {
       reviewer,
       ApprovalAction.REJECTED,
       reason
-    );
+    )
   }
 
   /**
@@ -101,45 +101,45 @@ export class RequestApprovalService {
   ): Promise<Request> {
     const request = await this.requestRepository.findById(
       RequestId.create(requestId)
-    );
+    )
     if (!request) {
-      throw new Error(`Request not found: ${requestId}`);
+      throw new Error(`Request not found: ${requestId}`)
     }
 
     // Validate approver permissions
-    this.validateApproverPermissions(request, approver);
+    this.validateApproverPermissions(request, approver)
 
     // Validate request status - check if it's in a reviewable state
     if (!request.isSubmitted() && !request.isInReview()) {
       throw new Error(
         `Request is not in reviewable status: ${request.getStatus()}`
-      );
+      )
     }
 
     // Start transaction
     await db.transaction(async () => {
       // Start review if needed
       if (request.isSubmitted()) {
-        request.startReview(approver.getId().getValue());
+        request.startReview(approver.getId().getValue())
       }
 
       // Process approval action
       switch (action) {
         case ApprovalAction.APPROVED:
-          request.approve(approver.getId().getValue());
-          break;
+          request.approve(approver.getId().getValue())
+          break
         case ApprovalAction.REJECTED:
-          request.reject(approver.getId().getValue(), comment);
-          break;
+          request.reject(approver.getId().getValue(), comment)
+          break
         case ApprovalAction.NEEDS_INFO:
           // Keep in review status but add comment
-          break;
+          break
         default:
-          throw new Error(`Invalid approval action: ${action}`);
+          throw new Error(`Invalid approval action: ${action}`)
       }
 
       // Save the updated request
-      await this.requestRepository.save(request);
+      await this.requestRepository.save(request)
 
       // Log audit trail
       await this.auditService.logApprovalAction(
@@ -147,13 +147,13 @@ export class RequestApprovalService {
         approver,
         action,
         comment
-      );
-    });
+      )
+    })
 
     // Send notifications (outside transaction)
-    await this.notificationService.notifyRequestStatusChange(request, approver);
+    await this.notificationService.notifyRequestStatusChange(request, approver)
 
-    return request;
+    return request
   }
 
   /**
@@ -162,19 +162,19 @@ export class RequestApprovalService {
   async getApprovalHistory(requestId: string): Promise<AuditLog[]> {
     // Get audit logs related to approval actions for this request
     const logs = await this.auditLogRepository.findByEntityId(
-      "REQUEST",
+      'REQUEST',
       requestId
-    );
+    )
 
     // Filter for approval-related actions
     return logs.filter((log: AuditLog) => {
-      const eventType = log.getEventType();
+      const eventType = log.getEventType()
       return [
-        "REQUEST_APPROVED",
-        "REQUEST_REJECTED",
-        "REQUEST_STATUS_CHANGED",
-      ].includes(eventType);
-    });
+        'REQUEST_APPROVED',
+        'REQUEST_REJECTED',
+        'REQUEST_STATUS_CHANGED',
+      ].includes(eventType)
+    })
   }
 
   /**
@@ -183,45 +183,45 @@ export class RequestApprovalService {
   canApprove(request: Request, user: User): boolean {
     // Business rule: User cannot approve their own request
     if (request.getRequesterId().getValue() === user.getId().getValue()) {
-      return false;
+      return false
     }
 
     // Business rule: Only admins can approve (no manager role in domain)
     if (!user.isAdmin()) {
-      return false;
+      return false
     }
 
     // Business rule: Request must be in submitted or in review status
     if (!request.isSubmitted() && !request.isInReview()) {
-      return false;
+      return false
     }
 
-    return true;
+    return true
   }
 
   /**
    * Get pending approvals for a user
    */
   async getPendingApprovals(approverId: string): Promise<Request[]> {
-    const user = await this.userRepository.findById(UserId.create(approverId));
+    const user = await this.userRepository.findById(UserId.create(approverId))
     if (!user || !user.isAdmin()) {
-      return [];
+      return []
     }
 
     // Get all submitted and in-review requests
     const submittedRequests = await this.requestRepository.findByStatus(
       RequestStatus.SUBMITTED
-    );
+    )
     const inReviewRequests = await this.requestRepository.findByStatus(
       RequestStatus.IN_REVIEW
-    );
+    )
 
-    const allPendingRequests = [...submittedRequests, ...inReviewRequests];
+    const allPendingRequests = [...submittedRequests, ...inReviewRequests]
 
     // Filter out requests created by the approver
     return allPendingRequests.filter(
       (request) => request.getRequesterId().getValue() !== approverId
-    );
+    )
   }
 
   /**
@@ -229,7 +229,7 @@ export class RequestApprovalService {
    */
   private validateApproverPermissions(request: Request, approver: User): void {
     if (!this.canApprove(request, approver)) {
-      throw new Error("User does not have permission to approve this request");
+      throw new Error('User does not have permission to approve this request')
     }
   }
 }

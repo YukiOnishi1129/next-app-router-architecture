@@ -1,18 +1,18 @@
-"use client";
+'use client'
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 
-import { cn } from "@/shared/lib/utils";
+import { cn } from '@/shared/lib/utils'
 
 const navItems = [
-  { href: "/requests", label: "My Requests" },
-  { href: "/approvals", label: "Approvals" },
-  { href: "/dashboard", label: "Dashboard" },
-] as const;
+  { href: '/requests', label: 'My Requests' },
+  { href: '/approvals', label: 'Approvals' },
+  { href: '/dashboard', label: 'Dashboard' },
+] as const
 
 export function Sidebar() {
-  const pathname = usePathname();
+  const pathname = usePathname()
 
   return (
     <aside className="border-border bg-muted/50 hidden w-64 border-r md:block">
@@ -25,10 +25,10 @@ export function Sidebar() {
             key={item.href}
             href={item.href}
             className={cn(
-              "hover:bg-muted rounded-md px-4 py-2 text-sm transition",
+              'hover:bg-muted rounded-md px-4 py-2 text-sm transition',
               pathname?.startsWith(item.href)
-                ? "bg-background text-foreground shadow-sm"
-                : "text-muted-foreground"
+                ? 'bg-background text-foreground shadow-sm'
+                : 'text-muted-foreground'
             )}
           >
             {item.label}
@@ -36,5 +36,5 @@ export function Sidebar() {
         ))}
       </nav>
     </aside>
-  );
+  )
 }

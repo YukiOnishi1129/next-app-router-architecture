@@ -9,32 +9,32 @@
 import {
   IdentityPlatformClient,
   UserInfo,
-} from "@/external/client/gcp/identity-platform";
+} from '@/external/client/gcp/identity-platform'
 
 export interface AuthToken {
-  token: string;
-  refreshToken: string;
-  expiresAt: Date;
-  userId: string;
+  token: string
+  refreshToken: string
+  expiresAt: Date
+  userId: string
 }
 
 export interface EmailPasswordAuthResult {
-  idToken: string;
-  refreshToken: string;
+  idToken: string
+  refreshToken: string
   userInfo: {
-    id: string;
-    email: string;
-    name: string;
-    emailVerified: boolean;
-  };
-  expiresAt: Date;
+    id: string
+    email: string
+    name: string
+    emailVerified: boolean
+  }
+  expiresAt: Date
 }
 
 export class AuthenticationService {
-  private identityPlatformClient: IdentityPlatformClient;
+  private identityPlatformClient: IdentityPlatformClient
 
   constructor(gcpConfig: { apiKey: string; projectId: string }) {
-    this.identityPlatformClient = new IdentityPlatformClient(gcpConfig);
+    this.identityPlatformClient = new IdentityPlatformClient(gcpConfig)
   }
 
   /**
@@ -51,21 +51,21 @@ export class AuthenticationService {
         email,
         password,
         displayName,
-      });
+      })
 
     // Get detailed user info
     const userInfo = await this.identityPlatformClient.getUserInfo(
       authResult.idToken
-    );
+    )
 
     // Send verification email
-    await this.identityPlatformClient.sendEmailVerification(authResult.idToken);
+    await this.identityPlatformClient.sendEmailVerification(authResult.idToken)
 
     // Calculate expiration time
-    const expiresAt = new Date();
+    const expiresAt = new Date()
     expiresAt.setSeconds(
       expiresAt.getSeconds() + parseInt(authResult.expiresIn)
-    );
+    )
 
     return {
       idToken: authResult.idToken,
@@ -73,11 +73,11 @@ export class AuthenticationService {
       userInfo: {
         id: userInfo.localId,
         email: userInfo.email,
-        name: userInfo.displayName || userInfo.email.split("@")[0],
+        name: userInfo.displayName || userInfo.email.split('@')[0],
         emailVerified: userInfo.emailVerified,
       },
       expiresAt,
-    };
+    }
   }
 
   /**
@@ -92,18 +92,18 @@ export class AuthenticationService {
       await this.identityPlatformClient.signInWithEmailPassword({
         email,
         password,
-      });
+      })
 
     // Get detailed user info
     const userInfo = await this.identityPlatformClient.getUserInfo(
       authResult.idToken
-    );
+    )
 
     // Calculate expiration time
-    const expiresAt = new Date();
+    const expiresAt = new Date()
     expiresAt.setSeconds(
       expiresAt.getSeconds() + parseInt(authResult.expiresIn)
-    );
+    )
 
     return {
       idToken: authResult.idToken,
@@ -111,11 +111,11 @@ export class AuthenticationService {
       userInfo: {
         id: userInfo.localId,
         email: userInfo.email,
-        name: userInfo.displayName || userInfo.email.split("@")[0],
+        name: userInfo.displayName || userInfo.email.split('@')[0],
         emailVerified: userInfo.emailVerified,
       },
       expiresAt,
-    };
+    }
   }
 
   /**
@@ -123,15 +123,15 @@ export class AuthenticationService {
    */
   async verifyToken(idToken: string): Promise<UserInfo | null> {
     try {
-      const isValid = await this.identityPlatformClient.verifyIdToken(idToken);
+      const isValid = await this.identityPlatformClient.verifyIdToken(idToken)
       if (!isValid) {
-        return null;
+        return null
       }
 
-      return await this.identityPlatformClient.getUserInfo(idToken);
+      return await this.identityPlatformClient.getUserInfo(idToken)
     } catch (error) {
-      console.error("Token verification failed:", error);
-      return null;
+      console.error('Token verification failed:', error)
+      return null
     }
   }
 
@@ -143,15 +143,15 @@ export class AuthenticationService {
   ): Promise<{ token: string; refreshToken?: string } | null> {
     try {
       const newTokens =
-        await this.identityPlatformClient.refreshIdToken(refreshToken);
+        await this.identityPlatformClient.refreshIdToken(refreshToken)
 
       return {
         token: newTokens.idToken,
         refreshToken: newTokens.refreshToken,
-      };
+      }
     } catch (error) {
-      console.error("Token refresh failed:", error);
-      return null;
+      console.error('Token refresh failed:', error)
+      return null
     }
   }
 
@@ -161,7 +161,7 @@ export class AuthenticationService {
   async revokeAuthentication(): Promise<void> {
     // In a production environment, you would call the Admin SDK endpoint
     // to revoke the token. For now, this is a placeholder
-    console.log(`Revoking authentication token`);
+    console.log(`Revoking authentication token`)
   }
 
   /**
@@ -170,34 +170,31 @@ export class AuthenticationService {
   async updateUserProfile(
     idToken: string,
     updates: {
-      displayName?: string;
-      photoUrl?: string;
+      displayName?: string
+      photoUrl?: string
     }
   ): Promise<UserInfo> {
-    return await this.identityPlatformClient.updateUserProfile(
-      idToken,
-      updates
-    );
+    return await this.identityPlatformClient.updateUserProfile(idToken, updates)
   }
 
   /**
    * Send password reset email
    */
   async sendPasswordResetEmail(email: string): Promise<void> {
-    return await this.identityPlatformClient.sendPasswordResetEmail(email);
+    return await this.identityPlatformClient.sendPasswordResetEmail(email)
   }
 
   /**
    * Delete user account
    */
   async deleteUserAccount(idToken: string): Promise<void> {
-    return await this.identityPlatformClient.deleteUserAccount(idToken);
+    return await this.identityPlatformClient.deleteUserAccount(idToken)
   }
 
   /**
    * Send email verification
    */
   async sendEmailVerification(idToken: string): Promise<void> {
-    return await this.identityPlatformClient.sendEmailVerification(idToken);
+    return await this.identityPlatformClient.sendEmailVerification(idToken)
   }
 }

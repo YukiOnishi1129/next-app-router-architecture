@@ -1,51 +1,51 @@
-import { UserId } from "../user";
-import { AuditLogId } from "./audit-log-id";
+import { UserId } from '../user'
+import { AuditLogId } from './audit-log-id'
 
 /**
  * Audit event types
  */
 export enum AuditEventType {
   // User events
-  USER_CREATED = "USER_CREATED",
-  USER_UPDATED = "USER_UPDATED",
-  USER_STATUS_CHANGED = "USER_STATUS_CHANGED",
-  USER_ROLE_ASSIGNED = "USER_ROLE_ASSIGNED",
-  USER_ROLE_REMOVED = "USER_ROLE_REMOVED",
+  USER_CREATED = 'USER_CREATED',
+  USER_UPDATED = 'USER_UPDATED',
+  USER_STATUS_CHANGED = 'USER_STATUS_CHANGED',
+  USER_ROLE_ASSIGNED = 'USER_ROLE_ASSIGNED',
+  USER_ROLE_REMOVED = 'USER_ROLE_REMOVED',
 
   // Request events
-  REQUEST_CREATED = "REQUEST_CREATED",
-  REQUEST_UPDATED = "REQUEST_UPDATED",
-  REQUEST_SUBMITTED = "REQUEST_SUBMITTED",
-  REQUEST_ASSIGNED = "REQUEST_ASSIGNED",
-  REQUEST_STATUS_CHANGED = "REQUEST_STATUS_CHANGED",
-  REQUEST_APPROVED = "REQUEST_APPROVED",
-  REQUEST_REJECTED = "REQUEST_REJECTED",
-  REQUEST_CANCELLED = "REQUEST_CANCELLED",
+  REQUEST_CREATED = 'REQUEST_CREATED',
+  REQUEST_UPDATED = 'REQUEST_UPDATED',
+  REQUEST_SUBMITTED = 'REQUEST_SUBMITTED',
+  REQUEST_ASSIGNED = 'REQUEST_ASSIGNED',
+  REQUEST_STATUS_CHANGED = 'REQUEST_STATUS_CHANGED',
+  REQUEST_APPROVED = 'REQUEST_APPROVED',
+  REQUEST_REJECTED = 'REQUEST_REJECTED',
+  REQUEST_CANCELLED = 'REQUEST_CANCELLED',
 
   // Attachment events
-  ATTACHMENT_UPLOADED = "ATTACHMENT_UPLOADED",
-  ATTACHMENT_DELETED = "ATTACHMENT_DELETED",
+  ATTACHMENT_UPLOADED = 'ATTACHMENT_UPLOADED',
+  ATTACHMENT_DELETED = 'ATTACHMENT_DELETED',
 
   // Comment events
-  COMMENT_CREATED = "COMMENT_CREATED",
-  COMMENT_EDITED = "COMMENT_EDITED",
-  COMMENT_DELETED = "COMMENT_DELETED",
+  COMMENT_CREATED = 'COMMENT_CREATED',
+  COMMENT_EDITED = 'COMMENT_EDITED',
+  COMMENT_DELETED = 'COMMENT_DELETED',
 
   // System events
-  SYSTEM_LOGIN = "SYSTEM_LOGIN",
-  SYSTEM_LOGOUT = "SYSTEM_LOGOUT",
-  SYSTEM_ERROR = "SYSTEM_ERROR",
+  SYSTEM_LOGIN = 'SYSTEM_LOGIN',
+  SYSTEM_LOGOUT = 'SYSTEM_LOGOUT',
+  SYSTEM_ERROR = 'SYSTEM_ERROR',
 }
 
 export type AuditAction =
-  | "CREATE"
-  | "UPDATE"
-  | "DELETE"
-  | "VIEW"
-  | "SUBMIT"
-  | "APPROVE"
-  | "REJECT"
-  | "CANCEL";
+  | 'CREATE'
+  | 'UPDATE'
+  | 'DELETE'
+  | 'VIEW'
+  | 'SUBMIT'
+  | 'APPROVE'
+  | 'REJECT'
+  | 'CANCEL'
 
 /**
  * Audit context - contains additional information about the audit event
@@ -59,19 +59,19 @@ export class AuditContext {
   ) {}
 
   getIpAddress(): string | null {
-    return this.ipAddress;
+    return this.ipAddress
   }
 
   getUserAgent(): string | null {
-    return this.userAgent;
+    return this.userAgent
   }
 
   getSessionId(): string | null {
-    return this.sessionId;
+    return this.sessionId
   }
 
   getMetadata(): Record<string, unknown> {
-    return { ...this.metadata };
+    return { ...this.metadata }
   }
 }
 
@@ -95,18 +95,18 @@ export class AuditLog {
   ) {}
 
   static create(params: {
-    eventType: AuditEventType;
-    entityType: string;
-    entityId: string;
-    actorId: string | null;
-    description: string;
-    changes?: Record<string, { old: unknown; new: unknown }>;
+    eventType: AuditEventType
+    entityType: string
+    entityId: string
+    actorId: string | null
+    description: string
+    changes?: Record<string, { old: unknown; new: unknown }>
     context?: {
-      ipAddress?: string;
-      userAgent?: string;
-      sessionId?: string;
-      metadata?: Record<string, unknown>;
-    };
+      ipAddress?: string
+      userAgent?: string
+      sessionId?: string
+      metadata?: Record<string, unknown>
+    }
   }): AuditLog {
     return new AuditLog(
       AuditLogId.generate(),
@@ -123,24 +123,24 @@ export class AuditLog {
         params.context?.metadata || {}
       ),
       new Date()
-    );
+    )
   }
 
   static restore(params: {
-    id: string;
-    eventType: AuditEventType;
-    entityType: string;
-    entityId: string;
-    actorId: string | null;
-    description: string;
-    changes: Record<string, { old: unknown; new: unknown }> | null;
+    id: string
+    eventType: AuditEventType
+    entityType: string
+    entityId: string
+    actorId: string | null
+    description: string
+    changes: Record<string, { old: unknown; new: unknown }> | null
     context: {
-      ipAddress: string | null;
-      userAgent: string | null;
-      sessionId: string | null;
-      metadata: Record<string, unknown>;
-    };
-    createdAt: Date;
+      ipAddress: string | null
+      userAgent: string | null
+      sessionId: string | null
+      metadata: Record<string, unknown>
+    }
+    createdAt: Date
   }): AuditLog {
     return new AuditLog(
       AuditLogId.create(params.id),
@@ -157,59 +157,59 @@ export class AuditLog {
         params.context.metadata
       ),
       params.createdAt
-    );
+    )
   }
 
   getId(): AuditLogId {
-    return this.id;
+    return this.id
   }
 
   getEventType(): AuditEventType {
-    return this.eventType;
+    return this.eventType
   }
 
   getEntityType(): string {
-    return this.entityType;
+    return this.entityType
   }
 
   getEntityId(): string {
-    return this.entityId;
+    return this.entityId
   }
 
   getActorId(): UserId | null {
-    return this.actorId;
+    return this.actorId
   }
 
   getDescription(): string {
-    return this.description;
+    return this.description
   }
 
   getChanges(): Record<string, { old: unknown; new: unknown }> | null {
-    return this.changes ? { ...this.changes } : null;
+    return this.changes ? { ...this.changes } : null
   }
 
   getContext(): AuditContext {
-    return this.context;
+    return this.context
   }
 
   getCreatedAt(): Date {
-    return new Date(this.createdAt);
+    return new Date(this.createdAt)
   }
 
   isSystemEvent(): boolean {
-    return this.actorId === null;
+    return this.actorId === null
   }
 
   isUserEvent(): boolean {
-    return this.eventType.toString().startsWith("USER_");
+    return this.eventType.toString().startsWith('USER_')
   }
 
   isRequestEvent(): boolean {
-    return this.eventType.toString().startsWith("REQUEST_");
+    return this.eventType.toString().startsWith('REQUEST_')
   }
 
   hasChanges(): boolean {
-    return this.changes !== null && Object.keys(this.changes).length > 0;
+    return this.changes !== null && Object.keys(this.changes).length > 0
   }
 
   toJSON() {
@@ -228,6 +228,6 @@ export class AuditLog {
         metadata: this.context.getMetadata(),
       },
       createdAt: this.createdAt.toISOString(),
-    };
+    }
   }
 }

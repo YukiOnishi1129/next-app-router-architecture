@@ -1,12 +1,12 @@
-import "server-only";
+import 'server-only'
 
-import { getSessionServer } from "@/features/auth/servers/session.server";
+import { getSessionServer } from '@/features/auth/servers/session.server'
 
-import { Button } from "@/shared/components/ui/button";
-import { Card } from "@/shared/components/ui/card";
+import { Button } from '@/shared/components/ui/button'
+import { Card } from '@/shared/components/ui/card'
 
 export async function ProfilePageTemplate() {
-  const session = await getSessionServer();
+  const session = await getSessionServer()
 
   return (
     <section className="space-y-6 px-6 py-8">
@@ -27,9 +27,9 @@ export async function ProfilePageTemplate() {
 
         <dl className="grid grid-cols-2 gap-y-2 text-sm">
           <dt className="text-muted-foreground">Name</dt>
-          <dd>{session?.user?.name ?? "Unknown"}</dd>
+          <dd>{session?.user?.name ?? 'Unknown'}</dd>
           <dt className="text-muted-foreground">Email</dt>
-          <dd>{session?.user?.email ?? "Unknown"}</dd>
+          <dd>{session?.user?.email ?? 'Unknown'}</dd>
         </dl>
 
         <Button type="button" className="w-full sm:w-auto" variant="outline">
@@ -37,5 +37,5 @@ export async function ProfilePageTemplate() {
         </Button>
       </Card>
     </section>
-  );
+  )
 }

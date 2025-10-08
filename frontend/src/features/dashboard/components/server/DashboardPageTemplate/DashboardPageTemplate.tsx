@@ -1,14 +1,14 @@
-import "server-only";
+import 'server-only'
 
-import { Card } from "@/shared/components/ui/card";
-import { RequestStatusBadge } from "@/shared/components/ui/request-status-badge";
+import { Card } from '@/shared/components/ui/card'
+import { RequestStatusBadge } from '@/shared/components/ui/request-status-badge'
 
 export async function DashboardPageTemplate() {
   const stats = [
-    { label: "Draft requests", value: 3, status: "draft" as const },
-    { label: "Submitted", value: 5, status: "submitted" as const },
-    { label: "Approved", value: 12, status: "approved" as const },
-  ];
+    { label: 'Draft requests', value: 3, status: 'draft' as const },
+    { label: 'Submitted', value: 5, status: 'submitted' as const },
+    { label: 'Approved', value: 12, status: 'approved' as const },
+  ]
 
   return (
     <section className="space-y-6 px-6 py-8">
@@ -33,5 +33,5 @@ export async function DashboardPageTemplate() {
         ))}
       </div>
     </section>
-  );
+  )
 }

@@ -1,7 +1,7 @@
-import { Button } from "@/shared/components/ui/button";
+import { Button } from '@/shared/components/ui/button'
 
 export default function PasswordResetPage(
-  _props: PageProps<"/password-reset">
+  _props: PageProps<'/password-reset'>
 ) {
   return (
     <section className="space-y-4">
@@ -25,5 +25,5 @@ export default function PasswordResetPage(
         </Button>
       </form>
     </section>
-  );
+  )
 }

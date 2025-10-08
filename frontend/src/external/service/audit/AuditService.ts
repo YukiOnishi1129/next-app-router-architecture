@@ -4,16 +4,16 @@ import {
   Request,
   AuditLog,
   AuditEventType,
-} from "@/external/domain";
-import { AuditLogRepository } from "@/external/repository";
+} from '@/external/domain'
+import { AuditLogRepository } from '@/external/repository'
 
-import { ApprovalAction } from "../request/RequestApprovalService";
+import { ApprovalAction } from '../request/RequestApprovalService'
 
 export class AuditService {
-  private auditLogRepository: AuditLogRepository;
+  private auditLogRepository: AuditLogRepository
 
   constructor() {
-    this.auditLogRepository = new AuditLogRepository();
+    this.auditLogRepository = new AuditLogRepository()
   }
 
   /**
@@ -25,7 +25,7 @@ export class AuditService {
   ): Promise<void> {
     const auditLog = AuditLog.create({
       eventType: AuditEventType.REQUEST_CREATED,
-      entityType: "REQUEST",
+      entityType: 'REQUEST',
       entityId: request.getId().getValue(),
       actorId: request.getRequesterId().getValue(),
       description: `Request "${request.getTitle()}" created`,
@@ -38,9 +38,9 @@ export class AuditService {
           priority: request.getPriority(),
         },
       },
-    });
+    })
 
-    await this.auditLogRepository.save(auditLog);
+    await this.auditLogRepository.save(auditLog)
   }
 
   /**
@@ -54,7 +54,7 @@ export class AuditService {
   ): Promise<void> {
     const auditLog = AuditLog.create({
       eventType: AuditEventType.REQUEST_UPDATED,
-      entityType: "REQUEST",
+      entityType: 'REQUEST',
       entityId: requestId,
       actorId: updater.getId().getValue(),
       description: `Request updated by ${updater.getName()}`,
@@ -64,9 +64,9 @@ export class AuditService {
         userAgent: context?.userAgent,
         metadata: {},
       },
-    });
+    })
 
-    await this.auditLogRepository.save(auditLog);
+    await this.auditLogRepository.save(auditLog)
   }
 
   /**
@@ -80,7 +80,7 @@ export class AuditService {
   ): Promise<void> {
     const auditLog = AuditLog.create({
       eventType: AuditEventType.REQUEST_CANCELLED,
-      entityType: "REQUEST",
+      entityType: 'REQUEST',
       entityId: requestId,
       actorId: canceller.getId().getValue(),
       description: `Request cancelled by ${canceller.getName()}`,
@@ -89,9 +89,9 @@ export class AuditService {
         userAgent: context?.userAgent,
         metadata: { reason },
       },
-    });
+    })
 
-    await this.auditLogRepository.save(auditLog);
+    await this.auditLogRepository.save(auditLog)
   }
 
   /**
@@ -107,7 +107,7 @@ export class AuditService {
       eventType,
       description,
       context,
-    } = params;
+    } = params
 
     const auditLog = AuditLog.create({
       eventType: eventType ?? AuditEventType.SYSTEM_ERROR,
@@ -123,9 +123,9 @@ export class AuditService {
           ...(metadata ?? {}),
         },
       },
-    });
+    })
 
-    await this.auditLogRepository.save(auditLog);
+    await this.auditLogRepository.save(auditLog)
   }
 
   /**
@@ -138,11 +138,11 @@ export class AuditService {
     comment?: string,
     context?: AuditContext
   ): Promise<void> {
-    const eventType = this.mapApprovalActionToEventType(action);
+    const eventType = this.mapApprovalActionToEventType(action)
 
     const auditLog = AuditLog.create({
       eventType,
-      entityType: "REQUEST",
+      entityType: 'REQUEST',
       entityId: requestId,
       actorId: approver.getId().getValue(),
       description: `Request ${action.toLowerCase()} by ${approver.getName()}`,
@@ -154,9 +154,9 @@ export class AuditService {
           comment,
         },
       },
-    });
+    })
 
-    await this.auditLogRepository.save(auditLog);
+    await this.auditLogRepository.save(auditLog)
   }
 
   /**
@@ -165,7 +165,7 @@ export class AuditService {
   async logUserLogin(user: User, context?: AuditContext): Promise<void> {
     const auditLog = AuditLog.create({
       eventType: AuditEventType.SYSTEM_LOGIN,
-      entityType: "USER",
+      entityType: 'USER',
       entityId: user.getId().getValue(),
       actorId: user.getId().getValue(),
       description: `User ${user.getName()} logged in`,
@@ -176,9 +176,9 @@ export class AuditService {
           loginTime: new Date().toISOString(),
         },
       },
-    });
+    })
 
-    await this.auditLogRepository.save(auditLog);
+    await this.auditLogRepository.save(auditLog)
   }
 
   /**
@@ -187,7 +187,7 @@ export class AuditService {
   async logUserLogout(user: User, context?: AuditContext): Promise<void> {
     const auditLog = AuditLog.create({
       eventType: AuditEventType.SYSTEM_LOGOUT,
-      entityType: "USER",
+      entityType: 'USER',
       entityId: user.getId().getValue(),
       actorId: user.getId().getValue(),
       description: `User ${user.getName()} logged out`,
@@ -198,9 +198,9 @@ export class AuditService {
           logoutTime: new Date().toISOString(),
         },
       },
-    });
+    })
 
-    await this.auditLogRepository.save(auditLog);
+    await this.auditLogRepository.save(auditLog)
   }
 
   /**
@@ -214,7 +214,7 @@ export class AuditService {
   ): Promise<void> {
     const auditLog = AuditLog.create({
       eventType: AuditEventType.SYSTEM_ERROR, // Using SYSTEM_ERROR as there's no EXPORT event type
-      entityType: "SYSTEM",
+      entityType: 'SYSTEM',
       entityId: `export_${exportType}`,
       actorId: user.getId().getValue(),
       description: `Data export performed by ${user.getName()}`,
@@ -227,9 +227,9 @@ export class AuditService {
           exportTime: new Date().toISOString(),
         },
       },
-    });
+    })
 
-    await this.auditLogRepository.save(auditLog);
+    await this.auditLogRepository.save(auditLog)
   }
 
   /**
@@ -239,7 +239,7 @@ export class AuditService {
     resourceType: string,
     resourceId: string
   ): Promise<AuditLog[]> {
-    return this.auditLogRepository.findByEntityId(resourceType, resourceId);
+    return this.auditLogRepository.findByEntityId(resourceType, resourceId)
   }
 
   /**
@@ -261,10 +261,10 @@ export class AuditService {
           endDate,
         },
         limit
-      );
+      )
     }
 
-    return this.auditLogRepository.findByActorId(UserId.create(userId), limit);
+    return this.auditLogRepository.findByActorId(UserId.create(userId), limit)
   }
 
   /**
@@ -283,7 +283,7 @@ export class AuditService {
         endDate,
       },
       limit
-    );
+    )
   }
 
   /**
@@ -292,11 +292,11 @@ export class AuditService {
   private mapApprovalActionToEventType(action: ApprovalAction): AuditEventType {
     switch (action) {
       case ApprovalAction.APPROVED:
-        return AuditEventType.REQUEST_APPROVED;
+        return AuditEventType.REQUEST_APPROVED
       case ApprovalAction.REJECTED:
-        return AuditEventType.REQUEST_REJECTED;
+        return AuditEventType.REQUEST_REJECTED
       default:
-        return AuditEventType.REQUEST_UPDATED;
+        return AuditEventType.REQUEST_UPDATED
     }
   }
 
@@ -306,7 +306,7 @@ export class AuditService {
   private formatChanges(
     changes: Record<string, unknown>
   ): Record<string, { old: unknown; new: unknown }> | undefined {
-    const formattedChanges: Record<string, { old: unknown; new: unknown }> = {};
+    const formattedChanges: Record<string, { old: unknown; new: unknown }> = {}
 
     for (const [key, value] of Object.entries(changes)) {
       if (value !== undefined) {
@@ -314,50 +314,50 @@ export class AuditService {
         formattedChanges[key] = {
           old: null,
           new: value,
-        };
+        }
       }
     }
 
     return Object.keys(formattedChanges).length > 0
       ? formattedChanges
-      : undefined;
+      : undefined
   }
 }
 
 export interface AuditContext {
-  ipAddress?: string;
-  userAgent?: string;
+  ipAddress?: string
+  userAgent?: string
 }
 
 // Re-export enums for backward compatibility
 export enum AuditAction {
-  CREATE = "CREATE",
-  UPDATE = "UPDATE",
-  DELETE = "DELETE",
-  APPROVE = "APPROVE",
-  REJECT = "REJECT",
-  CANCEL = "CANCEL",
-  LOGIN = "LOGIN",
-  LOGOUT = "LOGOUT",
-  VIEW = "VIEW",
-  EXPORT = "EXPORT",
+  CREATE = 'CREATE',
+  UPDATE = 'UPDATE',
+  DELETE = 'DELETE',
+  APPROVE = 'APPROVE',
+  REJECT = 'REJECT',
+  CANCEL = 'CANCEL',
+  LOGIN = 'LOGIN',
+  LOGOUT = 'LOGOUT',
+  VIEW = 'VIEW',
+  EXPORT = 'EXPORT',
 }
 
 export enum ResourceType {
-  REQUEST = "REQUEST",
-  USER = "USER",
-  APPROVAL = "APPROVAL",
-  NOTIFICATION = "NOTIFICATION",
-  SYSTEM = "SYSTEM",
+  REQUEST = 'REQUEST',
+  USER = 'USER',
+  APPROVAL = 'APPROVAL',
+  NOTIFICATION = 'NOTIFICATION',
+  SYSTEM = 'SYSTEM',
 }
 
 export interface AuditActionParams {
-  action: string;
-  entityType: string;
-  entityId: string;
-  userId: string;
-  metadata?: Record<string, unknown>;
-  eventType?: AuditEventType;
-  description?: string;
-  context?: AuditContext;
+  action: string
+  entityType: string
+  entityId: string
+  userId: string
+  metadata?: Record<string, unknown>
+  eventType?: AuditEventType
+  description?: string
+  context?: AuditContext
 }

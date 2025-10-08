@@ -1,1 +1,1 @@
-export * from "./LoginPageTemplate";
+export * from './LoginPageTemplate'

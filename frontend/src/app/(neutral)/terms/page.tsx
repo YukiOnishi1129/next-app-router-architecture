@@ -1,4 +1,4 @@
-export default function TermsPage(_props: PageProps<"/terms">) {
+export default function TermsPage(_props: PageProps<'/terms'>) {
   return (
     <article className="space-y-4">
       <h1 className="text-2xl font-semibold">Terms of Service</h1>
@@ -7,5 +7,5 @@ export default function TermsPage(_props: PageProps<"/terms">) {
         real policy content for your organization.
       </p>
     </article>
-  );
+  )
 }

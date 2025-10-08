@@ -1,37 +1,37 @@
-import { Specification } from "../../shared/specification";
-import { User, UserRole } from "../../user";
-import { Request } from "../request";
+import { Specification } from '../../shared/specification'
+import { User, UserRole } from '../../user'
+import { Request } from '../request'
 
 /**
  * Specification to check if a user can approve a request
  */
 export class CanApproveRequestSpecification extends Specification<{
-  request: Request;
-  user: User;
+  request: Request
+  user: User
 }> {
   isSatisfiedBy(candidate: { request: Request; user: User }): boolean {
-    const { request, user } = candidate;
+    const { request, user } = candidate
 
     // User must be active
     if (!user.isActive()) {
-      return false;
+      return false
     }
 
     // User must have admin role
     if (!user.hasRole(UserRole.ADMIN)) {
-      return false;
+      return false
     }
 
     // Request must be in review
     if (!request.isInReview()) {
-      return false;
+      return false
     }
 
     // User cannot approve their own request
     if (request.getRequesterId().equals(user.getId())) {
-      return false;
+      return false
     }
 
-    return true;
+    return true
   }
 }

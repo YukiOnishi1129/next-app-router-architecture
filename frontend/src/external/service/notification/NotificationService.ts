@@ -7,33 +7,33 @@ import {
   Notification,
   NotificationId,
   NotificationType,
-} from "@/external/domain";
-import { NotificationRepository, UserRepository } from "@/external/repository";
+} from '@/external/domain'
+import { NotificationRepository, UserRepository } from '@/external/repository'
 
 export interface NotificationChannel {
-  sendNotification(notification: Notification, recipient: User): Promise<void>;
+  sendNotification(notification: Notification, recipient: User): Promise<void>
 }
 
 export interface NotificationPreferences {
-  emailEnabled: boolean;
-  inAppEnabled: boolean;
-  types: string[];
+  emailEnabled: boolean
+  inAppEnabled: boolean
+  types: string[]
 }
 
 const DEFAULT_NOTIFICATION_TYPES = [
-  "request.created",
-  "request.updated",
-  "request.approved",
-  "request.rejected",
-  "comment.added",
-  "assignment.changed",
-];
+  'request.created',
+  'request.updated',
+  'request.approved',
+  'request.rejected',
+  'comment.added',
+  'assignment.changed',
+]
 
 const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
   emailEnabled: true,
   inAppEnabled: true,
   types: [...DEFAULT_NOTIFICATION_TYPES],
-};
+}
 
 export class EmailChannel implements NotificationChannel {
   async sendNotification(
@@ -43,7 +43,7 @@ export class EmailChannel implements NotificationChannel {
     // Implementation would send actual email
     console.log(
       `Sending email to ${recipient.getEmail().getValue()}: ${notification.getTitle()}`
-    );
+    )
     // In production, integrate with email service (SendGrid, SES, etc.)
   }
 }
@@ -57,28 +57,28 @@ export class InAppChannel implements NotificationChannel {
     // The frontend will poll or use websockets to receive them
     console.log(
       `Creating in-app notification for ${recipient.getName()}: ${notification.getTitle()}`
-    );
+    )
   }
 }
 
 export class NotificationService {
-  private channels: Map<string, NotificationChannel>;
-  private notificationRepository: NotificationRepository;
-  private userRepository: UserRepository;
-  private userPreferences: Map<string, NotificationPreferences>;
+  private channels: Map<string, NotificationChannel>
+  private notificationRepository: NotificationRepository
+  private userRepository: UserRepository
+  private userPreferences: Map<string, NotificationPreferences>
 
   constructor() {
     // Initialize repositories
-    this.notificationRepository = new NotificationRepository();
-    this.userRepository = new UserRepository();
+    this.notificationRepository = new NotificationRepository()
+    this.userRepository = new UserRepository()
 
     // Initialize notification channels
     this.channels = new Map([
-      ["email", new EmailChannel()],
-      ["inApp", new InAppChannel()],
-    ]);
+      ['email', new EmailChannel()],
+      ['inApp', new InAppChannel()],
+    ])
 
-    this.userPreferences = new Map();
+    this.userPreferences = new Map()
   }
 
   /**
@@ -86,7 +86,7 @@ export class NotificationService {
    */
   async notifyNewRequest(request: Request): Promise<void> {
     // Get admins to notify
-    const admins = await this.getAdmins();
+    const admins = await this.getAdmins()
 
     for (const admin of admins) {
       const notification = Notification.create({
@@ -95,14 +95,14 @@ export class NotificationService {
         message: `A new ${request.getPriority()} priority request has been submitted`,
         type: NotificationType.REQUEST_CREATED,
         relatedEntityId: request.getId().getValue(),
-        relatedEntityType: "REQUEST",
-      });
+        relatedEntityType: 'REQUEST',
+      })
 
       // Save notification
-      await this.notificationRepository.save(notification);
+      await this.notificationRepository.save(notification)
 
       // Send through channels
-      await this.sendNotification(notification, admin, ["email", "inApp"]);
+      await this.sendNotification(notification, admin, ['email', 'inApp'])
     }
   }
 
@@ -116,12 +116,12 @@ export class NotificationService {
     // Get requester
     const requester = await this.userRepository.findById(
       request.getRequesterId()
-    );
+    )
     if (!requester) {
       console.error(
         `Requester not found: ${request.getRequesterId().getValue()}`
-      );
-      return;
+      )
+      return
     }
 
     const notification = Notification.create({
@@ -130,18 +130,18 @@ export class NotificationService {
       message: `Your request "${request.getTitle()}" has been ${request.getStatus().toLowerCase()} by ${changedBy.getName()}`,
       type: NotificationType.REQUEST_APPROVED,
       relatedEntityId: request.getId().getValue(),
-      relatedEntityType: "REQUEST",
-    });
+      relatedEntityType: 'REQUEST',
+    })
 
     // Save notification
-    await this.notificationRepository.save(notification);
+    await this.notificationRepository.save(notification)
 
     // Send through channels
-    await this.sendNotification(notification, requester, ["email", "inApp"]);
+    await this.sendNotification(notification, requester, ['email', 'inApp'])
 
     // Notify other stakeholders if needed
     if (request.isApproved()) {
-      await this.notifyStakeholders(request, notification);
+      await this.notifyStakeholders(request, notification)
     }
   }
 
@@ -155,12 +155,12 @@ export class NotificationService {
     // Get requester
     const requester = await this.userRepository.findById(
       request.getRequesterId()
-    );
+    )
     if (!requester) {
       console.error(
         `Requester not found: ${request.getRequesterId().getValue()}`
-      );
-      return;
+      )
+      return
     }
 
     const notification = Notification.create({
@@ -169,18 +169,18 @@ export class NotificationService {
       message: `Request "${request.getTitle()}" priority changed from ${oldPriority} to ${request.getPriority()}`,
       type: NotificationType.REQUEST_SUBMITTED,
       relatedEntityId: request.getId().getValue(),
-      relatedEntityType: "REQUEST",
-    });
+      relatedEntityType: 'REQUEST',
+    })
 
     // Save notification
-    await this.notificationRepository.save(notification);
+    await this.notificationRepository.save(notification)
 
     // Send through channels (only in-app for priority changes)
-    await this.sendNotification(notification, requester, ["inApp"]);
+    await this.sendNotification(notification, requester, ['inApp'])
 
     // If changed to URGENT priority, notify admins
-    if (request.getPriority() === "URGENT" && oldPriority !== "URGENT") {
-      const admins = await this.getAdmins();
+    if (request.getPriority() === 'URGENT' && oldPriority !== 'URGENT') {
+      const admins = await this.getAdmins()
       for (const admin of admins) {
         const adminNotification = Notification.create({
           recipientId: admin.getId().getValue(),
@@ -188,14 +188,14 @@ export class NotificationService {
           message: `Request priority has been elevated to URGENT`,
           type: NotificationType.REQUEST_SUBMITTED,
           relatedEntityId: request.getId().getValue(),
-          relatedEntityType: "REQUEST",
-        });
+          relatedEntityType: 'REQUEST',
+        })
 
-        await this.notificationRepository.save(adminNotification);
+        await this.notificationRepository.save(adminNotification)
         await this.sendNotification(adminNotification, admin, [
-          "email",
-          "inApp",
-        ]);
+          'email',
+          'inApp',
+        ])
       }
     }
   }
@@ -208,7 +208,7 @@ export class NotificationService {
     reason: string
   ): Promise<void> {
     // Get all stakeholders
-    const recipients = await this.getRequestStakeholders(request);
+    const recipients = await this.getRequestStakeholders(request)
 
     for (const recipient of recipients) {
       const notification = Notification.create({
@@ -217,11 +217,11 @@ export class NotificationService {
         message: `Request "${request.getTitle()}" has been cancelled. Reason: ${reason}`,
         type: NotificationType.SYSTEM,
         relatedEntityId: request.getId().getValue(),
-        relatedEntityType: "REQUEST",
-      });
+        relatedEntityType: 'REQUEST',
+      })
 
-      await this.notificationRepository.save(notification);
-      await this.sendNotification(notification, recipient, ["email", "inApp"]);
+      await this.notificationRepository.save(notification)
+      await this.sendNotification(notification, recipient, ['email', 'inApp'])
     }
   }
 
@@ -229,15 +229,15 @@ export class NotificationService {
    * Notify assignee about new assignment
    */
   async notifyAssignment(request: Request): Promise<void> {
-    const assigneeId = request.getAssigneeId();
+    const assigneeId = request.getAssigneeId()
     if (!assigneeId) {
-      return;
+      return
     }
 
-    const assignee = await this.userRepository.findById(assigneeId);
+    const assignee = await this.userRepository.findById(assigneeId)
     if (!assignee) {
-      console.error(`Assignee not found: ${assigneeId.getValue()}`);
-      return;
+      console.error(`Assignee not found: ${assigneeId.getValue()}`)
+      return
     }
 
     const notification = Notification.create({
@@ -246,11 +246,11 @@ export class NotificationService {
       message: `You have been assigned to request "${request.getTitle()}"`,
       type: NotificationType.REQUEST_ASSIGNED,
       relatedEntityId: request.getId().getValue(),
-      relatedEntityType: "REQUEST",
-    });
+      relatedEntityType: 'REQUEST',
+    })
 
-    await this.notificationRepository.save(notification);
-    await this.sendNotification(notification, assignee, ["email", "inApp"]);
+    await this.notificationRepository.save(notification)
+    await this.sendNotification(notification, assignee, ['email', 'inApp'])
   }
 
   /**
@@ -262,39 +262,39 @@ export class NotificationService {
     author: User,
     additionalRecipientIds: string[] = []
   ): Promise<void> {
-    const recipients = new Map<string, User>();
+    const recipients = new Map<string, User>()
 
     const requester = await this.userRepository.findById(
       request.getRequesterId()
-    );
+    )
     if (
       requester &&
       requester.getId().getValue() !== author.getId().getValue()
     ) {
-      recipients.set(requester.getId().getValue(), requester);
+      recipients.set(requester.getId().getValue(), requester)
     }
 
-    const assigneeId = request.getAssigneeId();
+    const assigneeId = request.getAssigneeId()
     if (assigneeId) {
-      const assignee = await this.userRepository.findById(assigneeId);
+      const assignee = await this.userRepository.findById(assigneeId)
       if (
         assignee &&
         assignee.getId().getValue() !== author.getId().getValue()
       ) {
-        recipients.set(assignee.getId().getValue(), assignee);
+        recipients.set(assignee.getId().getValue(), assignee)
       }
     }
 
     for (const recipientId of additionalRecipientIds) {
       if (recipientId === author.getId().getValue()) {
-        continue;
+        continue
       }
       if (!recipients.has(recipientId)) {
         const user = await this.userRepository.findById(
           UserId.create(recipientId)
-        );
+        )
         if (user) {
-          recipients.set(recipientId, user);
+          recipients.set(recipientId, user)
         }
       }
     }
@@ -308,11 +308,11 @@ export class NotificationService {
           .getValue()}`,
         type: NotificationType.COMMENT_ADDED,
         relatedEntityId: request.getId().getValue(),
-        relatedEntityType: "REQUEST",
-      });
+        relatedEntityType: 'REQUEST',
+      })
 
-      await this.notificationRepository.save(notification);
-      await this.sendNotification(notification, recipient, ["inApp", "email"]);
+      await this.notificationRepository.save(notification)
+      await this.sendNotification(notification, recipient, ['inApp', 'email'])
     }
   }
 
@@ -326,12 +326,12 @@ export class NotificationService {
     // Get requester
     const requester = await this.userRepository.findById(
       request.getRequesterId()
-    );
+    )
     if (!requester) {
       console.error(
         `Requester not found: ${request.getRequesterId().getValue()}`
-      );
-      return;
+      )
+      return
     }
 
     const notification = Notification.create({
@@ -340,15 +340,15 @@ export class NotificationService {
       message: `Request "${request.getTitle()}" has ${daysRemaining} days remaining`,
       type: NotificationType.SYSTEM,
       relatedEntityId: request.getId().getValue(),
-      relatedEntityType: "REQUEST",
-    });
+      relatedEntityType: 'REQUEST',
+    })
 
-    await this.notificationRepository.save(notification);
-    await this.sendNotification(notification, requester, ["email", "inApp"]);
+    await this.notificationRepository.save(notification)
+    await this.sendNotification(notification, requester, ['email', 'inApp'])
 
     // Also notify admins if request is still pending review
     if (request.isSubmitted() || request.isInReview()) {
-      const admins = await this.getAdmins();
+      const admins = await this.getAdmins()
       for (const admin of admins) {
         const adminNotification = Notification.create({
           recipientId: admin.getId().getValue(),
@@ -356,11 +356,11 @@ export class NotificationService {
           message: `Request "${request.getTitle()}" needs review - ${daysRemaining} days remaining`,
           type: NotificationType.SYSTEM,
           relatedEntityId: request.getId().getValue(),
-          relatedEntityType: "REQUEST",
-        });
+          relatedEntityType: 'REQUEST',
+        })
 
-        await this.notificationRepository.save(adminNotification);
-        await this.sendNotification(adminNotification, admin, ["email"]);
+        await this.notificationRepository.save(adminNotification)
+        await this.sendNotification(adminNotification, admin, ['email'])
       }
     }
   }
@@ -375,15 +375,15 @@ export class NotificationService {
   ): Promise<void> {
     // Send through each channel
     for (const channelName of channelNames) {
-      const channel = this.channels.get(channelName);
+      const channel = this.channels.get(channelName)
       if (channel) {
         try {
-          await channel.sendNotification(notification, recipient);
+          await channel.sendNotification(notification, recipient)
         } catch (error) {
           console.error(
             `Failed to send notification through ${channelName}:`,
             error
-          );
+          )
         }
       }
     }
@@ -395,35 +395,35 @@ export class NotificationService {
   async getUserNotifications(
     userId: string,
     options: {
-      unreadOnly?: boolean;
-      limit?: number;
-      offset?: number;
+      unreadOnly?: boolean
+      limit?: number
+      offset?: number
     } = {}
   ): Promise<{
-    notifications: Notification[];
-    total: number;
-    unreadCount: number;
+    notifications: Notification[]
+    total: number
+    unreadCount: number
   }> {
-    const { unreadOnly = false, limit, offset } = options;
-    const recipientId = UserId.create(userId);
+    const { unreadOnly = false, limit, offset } = options
+    const recipientId = UserId.create(userId)
     const allNotifications =
-      await this.notificationRepository.findByRecipientId(recipientId);
+      await this.notificationRepository.findByRecipientId(recipientId)
 
     const filtered = unreadOnly
       ? allNotifications.filter((n) => !n.getIsRead())
-      : allNotifications;
+      : allNotifications
 
-    const start = offset ?? 0;
-    const end = limit !== undefined ? start + limit : undefined;
-    const paginated = filtered.slice(start, end);
+    const start = offset ?? 0
+    const end = limit !== undefined ? start + limit : undefined
+    const paginated = filtered.slice(start, end)
 
-    const unreadCount = allNotifications.filter((n) => !n.getIsRead()).length;
+    const unreadCount = allNotifications.filter((n) => !n.getIsRead()).length
 
     return {
       notifications: paginated,
       total: filtered.length,
       unreadCount,
-    };
+    }
   }
 
   /**
@@ -435,16 +435,16 @@ export class NotificationService {
   ): Promise<Notification> {
     const notification = await this.notificationRepository.findById(
       NotificationId.create(notificationId)
-    );
+    )
 
     if (!notification || notification.getRecipientId().getValue() !== userId) {
-      throw new Error("Notification not found or unauthorized");
+      throw new Error('Notification not found or unauthorized')
     }
 
-    notification.markAsRead();
-    await this.notificationRepository.save(notification);
+    notification.markAsRead()
+    await this.notificationRepository.save(notification)
 
-    return notification;
+    return notification
   }
 
   /**
@@ -453,22 +453,22 @@ export class NotificationService {
   async markAllAsRead(userId: string, before?: Date): Promise<number> {
     const notifications = await this.notificationRepository.findByRecipientId(
       UserId.create(userId)
-    );
+    )
 
-    let updatedCount = 0;
+    let updatedCount = 0
     for (const notification of notifications) {
       if (before && notification.getCreatedAt().getTime() > before.getTime()) {
-        continue;
+        continue
       }
 
       if (!notification.getIsRead()) {
-        notification.markAsRead();
-        await this.notificationRepository.save(notification);
-        updatedCount += 1;
+        notification.markAsRead()
+        await this.notificationRepository.save(notification)
+        updatedCount += 1
       }
     }
 
-    return updatedCount;
+    return updatedCount
   }
 
   /**
@@ -478,7 +478,7 @@ export class NotificationService {
     _userId: string
   ): Promise<NotificationPreferences> {
     // Deprecated method retained for backward compatibility
-    return DEFAULT_NOTIFICATION_PREFERENCES;
+    return DEFAULT_NOTIFICATION_PREFERENCES
   }
 
   /**
@@ -489,21 +489,21 @@ export class NotificationService {
     _preferences: NotificationPreferences
   ): Promise<NotificationPreferences> {
     // Deprecated method retained for backward compatibility
-    return this.updateUserPreferences(userId, _preferences);
+    return this.updateUserPreferences(userId, _preferences)
   }
 
   /**
    * Get user notification preferences with defaults
    */
   async getUserPreferences(userId: string): Promise<NotificationPreferences> {
-    const stored = this.userPreferences.get(userId);
+    const stored = this.userPreferences.get(userId)
     if (stored) {
-      return { ...stored, types: [...stored.types] };
+      return { ...stored, types: [...stored.types] }
     }
     return {
       ...DEFAULT_NOTIFICATION_PREFERENCES,
       types: [...DEFAULT_NOTIFICATION_TYPES],
-    };
+    }
   }
 
   /**
@@ -513,15 +513,15 @@ export class NotificationService {
     userId: string,
     preferences: Partial<NotificationPreferences>
   ): Promise<NotificationPreferences> {
-    const current = await this.getUserPreferences(userId);
+    const current = await this.getUserPreferences(userId)
     const updated: NotificationPreferences = {
       emailEnabled: preferences.emailEnabled ?? current.emailEnabled,
       inAppEnabled: preferences.inAppEnabled ?? current.inAppEnabled,
       types: preferences.types ? [...preferences.types] : [...current.types],
-    };
+    }
 
-    this.userPreferences.set(userId, updated);
-    return updated;
+    this.userPreferences.set(userId, updated)
+    return updated
   }
 
   /**
@@ -530,15 +530,15 @@ export class NotificationService {
   async sendTestNotification(user: User): Promise<void> {
     const notification = Notification.create({
       recipientId: user.getId().getValue(),
-      title: "Test Notification",
-      message: "This is a test notification.",
+      title: 'Test Notification',
+      message: 'This is a test notification.',
       type: NotificationType.SYSTEM,
-      relatedEntityType: "SYSTEM",
-      relatedEntityId: "test",
-    });
+      relatedEntityType: 'SYSTEM',
+      relatedEntityId: 'test',
+    })
 
-    await this.notificationRepository.save(notification);
-    await this.sendNotification(notification, user, ["email", "inApp"]);
+    await this.notificationRepository.save(notification)
+    await this.sendNotification(notification, user, ['email', 'inApp'])
   }
 
   /**
@@ -548,58 +548,58 @@ export class NotificationService {
     // In a production environment, this would query the database with a role filter
     // For now, we'll fetch users individually or implement a custom query
     // TODO: Implement a proper query to fetch admin users from database
-    const adminIds: string[] = []; // This should be fetched from configuration or database
-    const admins: User[] = [];
+    const adminIds: string[] = [] // This should be fetched from configuration or database
+    const admins: User[] = []
 
     for (const adminId of adminIds) {
-      const admin = await this.userRepository.findById(UserId.create(adminId));
+      const admin = await this.userRepository.findById(UserId.create(adminId))
       if (admin && admin.isAdmin()) {
-        admins.push(admin);
+        admins.push(admin)
       }
     }
 
-    return admins;
+    return admins
   }
 
   /**
    * Get request stakeholders
    */
   private async getRequestStakeholders(request: Request): Promise<User[]> {
-    const stakeholders: User[] = [];
+    const stakeholders: User[] = []
 
     // Add requester
     const requester = await this.userRepository.findById(
       request.getRequesterId()
-    );
+    )
     if (requester) {
-      stakeholders.push(requester);
+      stakeholders.push(requester)
     }
 
     // Add assignee if exists
-    const assigneeId = request.getAssigneeId();
+    const assigneeId = request.getAssigneeId()
     if (assigneeId) {
-      const assignee = await this.userRepository.findById(assigneeId);
+      const assignee = await this.userRepository.findById(assigneeId)
       if (assignee) {
-        stakeholders.push(assignee);
+        stakeholders.push(assignee)
       }
     }
 
     // Add admins if request is still pending
     if (request.isSubmitted() || request.isInReview()) {
-      const admins = await this.getAdmins();
-      stakeholders.push(...admins);
+      const admins = await this.getAdmins()
+      stakeholders.push(...admins)
     }
 
     // Remove duplicates
-    const uniqueIds = new Set(stakeholders.map((s) => s.getId().getValue()));
+    const uniqueIds = new Set(stakeholders.map((s) => s.getId().getValue()))
     return stakeholders.filter((s: User) => {
-      const id = s.getId().getValue();
+      const id = s.getId().getValue()
       if (uniqueIds.has(id)) {
-        uniqueIds.delete(id);
-        return true;
+        uniqueIds.delete(id)
+        return true
       }
-      return false;
-    });
+      return false
+    })
   }
 
   /**
@@ -612,6 +612,6 @@ export class NotificationService {
     // In production, this might notify other systems or departments
     console.log(
       `Notifying stakeholders about approved request ${request.getId().getValue()}`
-    );
+    )
   }
 }

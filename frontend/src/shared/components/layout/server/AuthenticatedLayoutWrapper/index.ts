@@ -1,1 +1,1 @@
-export * from "./AuthenticatedLayoutWrapper";
+export * from './AuthenticatedLayoutWrapper'

@@ -1,14 +1,14 @@
-"use client";
+'use client'
 
-import { Card } from "@/shared/components/ui/card";
-import { RequestStatusBadge } from "@/shared/components/ui/request-status-badge";
+import { Card } from '@/shared/components/ui/card'
+import { RequestStatusBadge } from '@/shared/components/ui/request-status-badge'
 
-import type { RequestSummary } from "@/features/requests/types";
+import type { RequestSummary } from '@/features/requests/types'
 
 type RequestListPresenterProps = {
-  requests: RequestSummary[];
-  isLoading?: boolean;
-};
+  requests: RequestSummary[]
+  isLoading?: boolean
+}
 
 export function RequestListPresenter({
   requests,
@@ -19,7 +19,7 @@ export function RequestListPresenter({
       <div className="text-muted-foreground space-y-2 text-sm">
         Loading requests...
       </div>
-    );
+    )
   }
 
   if (!requests.length) {
@@ -27,7 +27,7 @@ export function RequestListPresenter({
       <div className="border-muted-foreground/40 text-muted-foreground rounded-md border border-dashed p-6 text-center text-sm">
         No requests found. Try creating a new one.
       </div>
-    );
+    )
   }
 
   return (
@@ -45,13 +45,13 @@ export function RequestListPresenter({
             </dd>
             <dt>Amount</dt>
             <dd className="text-right">
-              {typeof request.amount === "number"
+              {typeof request.amount === 'number'
                 ? `$${request.amount.toFixed(2)}`
-                : "—"}
+                : '—'}
             </dd>
           </dl>
         </Card>
       ))}
     </div>
-  );
+  )
 }
