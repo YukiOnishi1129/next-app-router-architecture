@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 const { defineConfig } = require("drizzle-kit");
 const { config: loadEnv } = require("dotenv");
 const { existsSync } = require("fs");
