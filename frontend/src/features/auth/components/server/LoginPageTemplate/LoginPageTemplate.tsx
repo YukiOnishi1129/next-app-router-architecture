@@ -1,4 +1,6 @@
-import { LoginForm } from '@/features/auth/components/client/LoginForm'
+import Link from 'next/link'
+
+import { LoginForm } from '@/features/auth/components/client/LoginForm/LoginForm'
 import { redirectIfAuthenticatedServer } from '@/features/auth/servers/redirect.server'
 
 export async function LoginPageTemplate() {
@@ -15,6 +17,16 @@ export async function LoginPageTemplate() {
       </header>
 
       <LoginForm />
+
+      <p className="text-muted-foreground text-center text-sm">
+        No account yet?{' '}
+        <Link
+          href="/signup"
+          className="text-primary font-semibold hover:underline"
+        >
+          Create one now
+        </Link>
+      </p>
     </section>
   )
 }

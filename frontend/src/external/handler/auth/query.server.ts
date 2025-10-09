@@ -14,24 +14,27 @@ export async function getSessionServer(
   try {
     const validated = getSessionSchema.parse(data ?? {})
     const cookieStore = await cookies()
-    const token = cookieStore.get('auth-token')?.value
-    const storedUserId = cookieStore.get('user-id')?.value
+    const token = cookieStore.get('id-token')?.value
 
-    if (!token || !storedUserId) {
+    if (!token) {
       return { isAuthenticated: false }
     }
 
     const tokenInfo = await authService.verifyToken(token)
-    if (!tokenInfo) {
-      cookieStore.delete('auth-token')
-      cookieStore.delete('user-id')
+    if (!tokenInfo || !tokenInfo.email) {
+      cookieStore.delete('id-token')
+      cookieStore.delete('refresh-token')
       return { isAuthenticated: false }
     }
 
-    const user = await userManagementService.findUserById(storedUserId)
-    if (!user) {
-      return { isAuthenticated: false }
-    }
+    const user = await userManagementService.getOrCreateUser({
+      email: tokenInfo.email,
+      name:
+        tokenInfo.displayName ||
+        tokenInfo.email.split('@')[0] ||
+        'Unknown user',
+      externalId: tokenInfo.localId,
+    })
 
     if (validated.userId && validated.userId !== user.getId().getValue()) {
       return { isAuthenticated: false }

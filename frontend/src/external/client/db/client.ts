@@ -1,31 +1,64 @@
+import 'server-only'
+
 import { drizzle } from 'drizzle-orm/node-postgres'
 import { Pool } from 'pg'
 
 import * as schema from './schema'
 
-const connectionString = process.env.DATABASE_URL
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-if (!connectionString) {
-  throw new Error(
-    'DATABASE_URL is not defined. Ensure your environment variables are configured.'
-  )
+type DrizzleDatabase = NodePgDatabase<typeof schema>
+
+let cachedPool: Pool | null = null
+let cachedDb: DrizzleDatabase | null = null
+
+const ensureConnections = () => {
+  if (cachedPool && cachedDb) {
+    return { pool: cachedPool, db: cachedDb }
+  }
+
+  const connectionString = process.env.DATABASE_URL
+  if (!connectionString) {
+    throw new Error(
+      'DATABASE_URL is not defined. Ensure your environment variables are configured.'
+    )
+  }
+
+  if (!cachedPool) {
+    cachedPool = new Pool({
+      connectionString,
+      max: 20,
+      idleTimeoutMillis: 30_000,
+      connectionTimeoutMillis: 2_000,
+    })
+  }
+
+  if (!cachedDb) {
+    cachedDb = drizzle(cachedPool, { schema })
+  }
+
+  return { pool: cachedPool, db: cachedDb }
 }
 
-// Create a connection pool
-const pool = new Pool({
-  connectionString,
-  max: 20, // maximum number of clients in the pool
-  idleTimeoutMillis: 30000, // how long a client is allowed to remain idle before being closed
-  connectionTimeoutMillis: 2000, // how long to wait when connecting a new client
-})
+const createLazyProxy = <T extends object>(resolver: () => T): T =>
+  new Proxy({} as T, {
+    get(_target, property, receiver) {
+      const instance = resolver()
+      const value = Reflect.get(instance, property, receiver)
+      return typeof value === 'function' ? value.bind(instance) : value
+    },
+  })
 
-// Create the Drizzle ORM instance
-export const db = drizzle(pool, { schema })
+export const db: DrizzleDatabase = createLazyProxy(() => ensureConnections().db)
+export const pool: Pool = createLazyProxy(() => ensureConnections().pool)
 
-// Export the pool for direct access if needed
-export { pool }
+export const getDb = () => ensureConnections().db
+export const getPool = () => ensureConnections().pool
 
-// Helper function to close the connection pool (useful for testing)
 export async function closeConnection() {
-  await pool.end()
+  if (cachedPool) {
+    await cachedPool.end()
+    cachedPool = null
+    cachedDb = null
+  }
 }

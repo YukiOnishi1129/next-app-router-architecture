@@ -84,7 +84,7 @@ Violations usually signal copy/paste mistakes or misclassified files.
 
 ## 6. `use-nextjs-helpers`
 
-Next.js 15.5 introduces `PageProps` and `LayoutProps` to type route params. This rule enforces their usage whenever `page.tsx` / `layout.tsx` components accept props.
+Next.js 15.5 introduces `PageProps` and `LayoutProps` to type route params. This rule enforces their usage whenever `page.tsx` / `layout.tsx` components accept props. これらの型はグローバルに宣言されているため、`import` は不要です。
 
 ### Example (Correct)
 

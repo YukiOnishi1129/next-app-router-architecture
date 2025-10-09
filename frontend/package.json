@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
-    "build": "next build --turbopack",
+    "dev": "next dev",
+    "build": "next build",
     "start": "next start",
     "lint": "eslint . --cache",
     "lint:src": "eslint src --cache",
@@ -45,6 +45,7 @@
     "@eslint/eslintrc": "^3",
     "@next/eslint-plugin-next": "^15.5.4",
     "@rushstack/eslint-patch": "^1.13.0",
+    "@storybook/nextjs": "^9.1.10",
     "@tailwindcss/postcss": "^4",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.0",

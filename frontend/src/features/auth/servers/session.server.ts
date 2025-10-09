@@ -1,9 +1,19 @@
-import { getServerSession } from 'next-auth'
 import 'server-only'
 
-import { authOptions } from '@/features/auth/lib/option'
+import { cache } from 'react'
 
-export const getSessionServer = async () => {
-  const session = await getServerSession(authOptions)
-  return session
-}
+import { getSessionServer as getAuthSession } from '@/external/handler/auth/query.server'
+
+import type { GetSessionResponse } from '@/external/dto/auth'
+
+export const getSessionServer = cache(
+  async (): Promise<GetSessionResponse | null> => {
+    const session = await getAuthSession()
+
+    if (!session.isAuthenticated || !session.user) {
+      return null
+    }
+
+    return session
+  }
+)

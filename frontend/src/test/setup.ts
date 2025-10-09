@@ -10,6 +10,9 @@ if (!process.env.DATABASE_URL) {
 // Mock CSS imports
 vi.mock('../app/globals.css', () => ({}))
 
+// Stub server-only imports for client-side tests
+vi.mock('server-only', () => ({}))
+
 // Import Next.js mocks
 import './mocks/next'
 
