@@ -9,7 +9,12 @@ export function SignOutButtonPresenter({
   isSigningOut,
 }: SignOutButtonPresenterProps) {
   return (
-    <Button type="button" variant="outline" onClick={onSignOut} disabled={isSigningOut}>
+    <Button
+      type="button"
+      variant="outline"
+      onClick={onSignOut}
+      disabled={isSigningOut}
+    >
       {isSigningOut ? 'Signing out…' : 'Sign out'}
     </Button>
   )

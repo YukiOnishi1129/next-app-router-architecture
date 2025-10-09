@@ -4,7 +4,10 @@ import { useMutation } from '@tanstack/react-query'
 
 import { signInAction } from '@/features/auth/actions/session.actions'
 
-import type { CreateSessionResponse, CreateSessionInput } from '@/external/dto/auth'
+import type {
+  CreateSessionResponse,
+  CreateSessionInput,
+} from '@/external/dto/auth'
 
 export const useLoginMutation = () => {
   return useMutation<CreateSessionResponse, Error, CreateSessionInput>({

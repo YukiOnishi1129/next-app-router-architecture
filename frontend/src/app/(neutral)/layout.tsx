@@ -1,6 +1,6 @@
-import type { Metadata } from 'next'
-
 import { NeutralLayoutWrapper } from '@/shared/components/layout/server/NeutralLayoutWrapper'
+
+import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: '情報ページ | Request & Approval System',

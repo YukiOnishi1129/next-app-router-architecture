@@ -1,3 +1,5 @@
+'use client'
+
 type EmptyStateProps = {
   title: string
   description?: string
@@ -17,7 +19,9 @@ export function EmptyState({
       {description ? (
         <p className="text-muted-foreground mt-2 text-sm">{description}</p>
       ) : null}
-      {actions ? <div className="mt-4 flex justify-center">{actions}</div> : null}
+      {actions ? (
+        <div className="mt-4 flex justify-center">{actions}</div>
+      ) : null}
     </div>
   )
 }

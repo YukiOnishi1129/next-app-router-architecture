@@ -2,13 +2,19 @@ import { fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { LoginFormContainer } from './LoginFormContainer'
+
 import type { LoginFormPresenterProps } from './useLoginForm'
 
 vi.mock('./LoginFormPresenter', () => ({
   LoginFormPresenter: (props: LoginFormPresenterProps) => (
-    <button data-testid="login-presenter" onClick={() => props.onSubmit({
-      preventDefault: () => undefined,
-    } as unknown as React.FormEvent<HTMLFormElement>)}>
+    <button
+      data-testid="login-presenter"
+      onClick={() =>
+        props.onSubmit({
+          preventDefault: () => undefined,
+        } as unknown as React.FormEvent<HTMLFormElement>)
+      }
+    >
       Presenter
     </button>
   ),

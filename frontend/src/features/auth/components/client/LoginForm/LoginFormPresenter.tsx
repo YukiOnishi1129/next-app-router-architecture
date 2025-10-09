@@ -41,9 +41,7 @@ export function LoginFormPresenter({
           aria-invalid={Boolean(errors.password)}
         />
         {errors.password ? (
-          <p className="text-destructive text-xs">
-            {errors.password.message}
-          </p>
+          <p className="text-destructive text-xs">{errors.password.message}</p>
         ) : null}
       </div>
 

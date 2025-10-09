@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react'
+import type { Meta, StoryObj } from '@storybook/nextjs'
 
 const meta: Meta = {
   title: 'Features/Auth/LoginForm',
@@ -17,8 +17,8 @@ const meta: Meta = {
 - **hooks/useLoginMutation.ts**: サインイン Server Action を呼び出すカスタムフック
 
 ## Testing
-- `LoginForm.test.tsx`: Container の描画テスト
-- `useLoginForm.test.ts`: Hook の振る舞いテスト
+- 'LoginForm.test.tsx': Container の描画テスト
+- 'useLoginForm.test.ts': Hook の振る舞いテスト
         `,
       },
     },
@@ -31,11 +31,9 @@ type Story = StoryObj
 
 export const Documentation: Story = {
   render: () => (
-    <div className="space-y-3 rounded-lg border bg-card p-6 text-sm">
+    <div className="bg-card space-y-3 rounded-lg border p-6 text-sm">
       <h3 className="text-lg font-semibold">LoginForm (Container)</h3>
-      <p>
-        Storybook では Presenter のパターンを確認してください。
-      </p>
+      <p>Storybook では Presenter のパターンを確認してください。</p>
     </div>
   ),
 }

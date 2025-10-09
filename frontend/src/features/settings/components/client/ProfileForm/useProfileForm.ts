@@ -144,7 +144,7 @@ export const useProfileForm = (): UseProfileFormResult => {
       return
     }
     profileQuery.refetch()
-  }, [profileQuery.isLoading, profileQuery.data, profileQuery.refetch])
+  }, [profileQuery])
 
   if (profileQuery.isLoading) {
     return { status: 'loading' }

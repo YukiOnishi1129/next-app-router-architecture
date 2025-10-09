@@ -1,18 +1,20 @@
 'use client'
 
 import { useState } from 'react'
-import { z } from 'zod'
-import { zodResolver } from '@hookform/resolvers/zod'
+
 import { useRouter } from 'next/navigation'
-import { useForm, type FieldErrors, type UseFormRegister } from 'react-hook-form'
+
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useForm } from 'react-hook-form'
+import { z } from 'zod'
 
 import { useLoginMutation } from '@/features/auth/hooks/useLoginMutation'
 
+import type { FieldErrors, UseFormRegister } from 'react-hook-form'
+
 const loginSchema = z.object({
   email: z.string().email('有効なメールアドレスを入力してください'),
-  password: z
-    .string()
-    .min(8, 'パスワードは 8 文字以上で入力してください'),
+  password: z.string().min(8, 'パスワードは 8 文字以上で入力してください'),
 })
 
 export type LoginFormValues = z.infer<typeof loginSchema>

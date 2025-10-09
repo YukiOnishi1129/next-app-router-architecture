@@ -1,6 +1,6 @@
-import type { Meta, StoryObj } from '@storybook/react'
-
 import { SignOutButtonPresenter } from './SignOutButtonPresenter'
+
+import type { Meta, StoryObj } from '@storybook/react'
 
 const meta: Meta<typeof SignOutButtonPresenter> = {
   title: 'Features/Auth/SignOutButton/Presenter',
