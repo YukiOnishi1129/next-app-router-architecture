@@ -7,7 +7,10 @@ type ProfileFormEmptyProps = {
   actionLabel?: string
 }
 
-export function ProfileFormEmpty({ onCreate, actionLabel }: ProfileFormEmptyProps) {
+export function ProfileFormEmpty({
+  onCreate,
+  actionLabel,
+}: ProfileFormEmptyProps) {
   return (
     <EmptyState
       title="プロフィール情報が見つかりません"

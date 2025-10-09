@@ -25,6 +25,8 @@ src/
 - ファイル名・関数名は `use` から始める。
 - フィーチャー固有のフックは `src/features/**/hooks` 配下に置く。
 - プロジェクト全体で再利用するフックは `src/shared/hooks` に置き、依存を最小化する。
+- **1 ファイルにつき 1 つのフックを定義する。** Query 用と Mutation 用など役割が異なるフックはファイルを分ける（例: `useProfileSettingsQuery.ts`, `useUpdateProfileMutation.ts`）。
+- フックを組み合わせる場合は Container や別のカスタムフックで明示的に呼び出す。1 ファイル内で複数のカスタムフックを返すユーティリティ関数の作成は避ける。
 
 ## 基本パターン
 
