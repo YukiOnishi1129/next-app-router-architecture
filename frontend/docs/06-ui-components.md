@@ -116,6 +116,7 @@ export function RequestSummaryCardPresenter({
 ### 追加: Container / Presenter パターン
 
 Client ComponentsはContainer/Presenter/Hookの三層構成を採用します。
+Containerは下位の Presenter や共通 UI コンポーネントを組み合わせるだけにし、HTML や Tailwind クラスを直接記述しないでください。レイアウトやスタイルを伴う UI は Presenter もしくは shared/ui 配下のコンポーネントに切り出します。
 
 ```typescript
 // features/approvals/components/client/ApprovalDecisionForm/ApprovalDecisionFormContainer.tsx

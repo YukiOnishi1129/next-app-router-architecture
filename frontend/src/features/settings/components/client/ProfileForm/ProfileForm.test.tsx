@@ -1,18 +1,18 @@
 import { render, screen, fireEvent } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { ProfileFormContainer } from '../ProfileFormContainer'
+import { ProfileFormContainer } from './ProfileFormContainer'
 
 import type {
   ProfileFormPresenterProps,
   UseProfileFormResult,
-} from '../useProfileForm'
+} from './useProfileForm'
 
 vi.mock('../ProfileFormPresenter', () => ({
   ProfileFormPresenter: () => <div data-testid="profile-form-presenter" />,
 }))
 
-const mockUseProfileForm = vi.fn<[], UseProfileFormResult>()
+const mockUseProfileForm = vi.fn<() => UseProfileFormResult>()
 
 vi.mock('../useProfileForm', () => ({
   useProfileForm: () => mockUseProfileForm(),

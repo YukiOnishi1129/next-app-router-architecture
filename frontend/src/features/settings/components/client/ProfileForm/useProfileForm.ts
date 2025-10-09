@@ -25,11 +25,11 @@ export type ProfileFormPresenterProps = {
   isUpdating: boolean
 }
 
-type ProfileFormLoadingState = {
+export type ProfileFormLoadingState = {
   status: 'loading'
 }
 
-type ProfileFormErrorState = {
+export type ProfileFormErrorState = {
   status: 'error'
   message: string
   retry: () => void

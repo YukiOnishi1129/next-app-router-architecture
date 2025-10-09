@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { UserRole, UserStatus } from '@/external/domain/user/user'
 
-import { useProfileForm } from '../useProfileForm'
+import { useProfileForm } from './useProfileForm'
 
 import type { UserDto } from '@/external/dto/user'
 import type { FormEvent } from 'react'
@@ -87,8 +87,9 @@ describe('useProfileForm', () => {
     expect(result.current.status).toBe('ready')
 
     if (result.current.status === 'ready') {
+      const readyState = result.current
       await act(async () => {
-        await result.current.props.onSubmit({
+        readyState.props.onSubmit({
           preventDefault: () => undefined,
         } as unknown as FormEvent<HTMLFormElement>)
       })
