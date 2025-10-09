@@ -1,5 +1,3 @@
-import 'server-only'
-
 import { Card } from '@/shared/components/ui/card'
 import { RequestStatusBadge } from '@/shared/components/ui/request-status-badge'
 

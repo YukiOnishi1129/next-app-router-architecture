@@ -33,6 +33,12 @@ shared/components/
 └── feedback/                       # トースト・スケルトンなど横断的UI
     ├── ToastProvider.tsx
     └── RequestListSkeleton.tsx
+
+### Server Components と `server-only`
+
+- `features/**/components/server/**` 直下のファイルは **Server Components 専用ディレクトリ** として扱います。
+- これらのコンポーネントでは `import 'server-only'` を記述する必要はありません。Next.js が自動判別し、カスタム ESLint ルールもこのディレクトリを Server 専用として扱います。
+- Server 専用のロジック (認証チェックなど) を外部の `servers/` ユーティリティに切り出す場合は、ユーティリティ側で `import 'server-only'` を宣言してください。
 ```
 
 ## コンポーネント設計原則

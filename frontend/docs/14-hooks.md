@@ -299,6 +299,80 @@ export const useInfiniteThreads = () => {
 
 - `useInfiniteQuery` のページングロジックもフック内で完結させ、UI は `loadMore()` を呼ぶだけで次ページを取得できるようにする。
 
+## Client Component での CRUD ポリシー
+
+クライアントコンポーネントからデータベースに直接アクセスしてはいけません。  
+**必ず TanStack Query を経由して `external/handler/**` の Server Action を呼び出し、その結果をキャッシュに反映します。**
+
+```ts
+// features/settings/queries/keys.ts
+export const settingsKeys = {
+  profile: () => ['settings', 'profile'] as const,
+}
+```
+
+```ts
+// features/settings/hooks/useProfileSettings.ts
+export const useProfileSettings = () => {
+  const queryClient = useQueryClient()
+
+  const profileQuery = useQuery({
+    queryKey: settingsKeys.profile(),
+    queryFn: async () => {
+      const result = await getCurrentUserAction()
+      if (!result.success || !result.user) {
+        throw new Error(result.error ?? 'Failed to load profile')
+      }
+      return result.user
+    },
+    staleTime: 5 * 60 * 1000,
+  })
+
+  const updateMutation = useMutation({
+    mutationFn: async (input: UpdateUserProfileInput) => {
+      const result = await updateUserProfileAction(input)
+      if (!result.success || !result.user) {
+        throw new Error(result.error ?? 'Failed to update profile')
+      }
+      return result.user
+    },
+    onSuccess: (user) => {
+      queryClient.setQueryData(settingsKeys.profile(), user)
+    },
+  })
+
+  return {
+    profile: profileQuery.data,
+    isLoading: profileQuery.isLoading,
+    error: profileQuery.error,
+    refetch: profileQuery.refetch,
+    updateProfile: updateMutation.mutateAsync,
+    isUpdating: updateMutation.isPending,
+    updateError: updateMutation.error,
+  }
+}
+```
+
+```tsx
+// features/settings/components/client/ProfileForm/ProfileForm.tsx
+'use client'
+
+export function ProfileForm() {
+  const {
+    profile,
+    isLoading,
+    updateProfile,
+    isUpdating,
+    error,
+    updateError,
+  } = useProfileSettings()
+
+  // フォームの初期化やエラーメッセージの表示をここで行う
+}
+```
+
+このパターンを全機能で徹底し、Server Action に権限チェックとトランザクションを集約させることで、一貫したデータアクセスとエラーハンドリングを実現します。
+
 ## 高度なユーティリティフック
 
 ### Debounced Search
