@@ -5,6 +5,7 @@ import { useSignOutButton } from './useSignOutButton'
 
 const mockUseLogoutMutation = vi.fn()
 const mockRouterReplace = vi.fn()
+const mockRouterRefresh = vi.fn()
 
 vi.mock('@/features/auth/hooks/useLogoutMutation', () => ({
   useLogoutMutation: () => mockUseLogoutMutation(),
@@ -13,6 +14,7 @@ vi.mock('@/features/auth/hooks/useLogoutMutation', () => ({
 vi.mock('next/navigation', () => ({
   useRouter: () => ({
     replace: mockRouterReplace,
+    refresh: mockRouterRefresh,
   }),
 }))
 
@@ -20,6 +22,7 @@ describe('useSignOutButton', () => {
   beforeEach(() => {
     mockUseLogoutMutation.mockReset()
     mockRouterReplace.mockReset()
+    mockRouterRefresh.mockReset()
   })
 
   it('invokes mutation and redirects on success', () => {
@@ -40,5 +43,6 @@ describe('useSignOutButton', () => {
 
     expect(mutate).toHaveBeenCalled()
     expect(mockRouterReplace).toHaveBeenCalledWith('/login')
+    expect(mockRouterRefresh).toHaveBeenCalled()
   })
 })

@@ -8,13 +8,13 @@ import type {
   UseProfileFormResult,
 } from './useProfileForm'
 
-vi.mock('../ProfileFormPresenter', () => ({
+vi.mock('./ProfileFormPresenter', () => ({
   ProfileFormPresenter: () => <div data-testid="profile-form-presenter" />,
 }))
 
 const mockUseProfileForm = vi.fn<() => UseProfileFormResult>()
 
-vi.mock('../useProfileForm', () => ({
+vi.mock('./useProfileForm', () => ({
   useProfileForm: () => mockUseProfileForm(),
 }))
 

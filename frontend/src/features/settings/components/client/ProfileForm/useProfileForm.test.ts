@@ -1,11 +1,8 @@
 import { act, renderHook } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { UserRole, UserStatus } from '@/external/domain/user/user'
-
 import { useProfileForm } from './useProfileForm'
 
-import type { UserDto } from '@/external/dto/user'
 import type { FormEvent } from 'react'
 
 const mockUseProfileSettingsQuery = vi.fn()
@@ -19,12 +16,12 @@ vi.mock('@/features/settings/hooks/useUpdateProfileMutation', () => ({
   useUpdateProfileMutation: () => mockUseUpdateProfileMutation(),
 }))
 
-const baseProfile: UserDto = {
+const baseProfile = {
   id: 'user_1',
   name: '山田 太郎',
   email: 'user@example.com',
-  status: UserStatus.ACTIVE,
-  roles: [UserRole.MEMBER],
+  status: 'ACTIVE',
+  roles: ['MEMBER'],
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
 }

@@ -3,23 +3,26 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { useSignUpForm } from './useSignUpForm'
 
-const mockUseRegisterMutation = vi.fn()
+const mockUseSignUpMutation = vi.fn()
 const mockRouterReplace = vi.fn()
+const mockRouterRefresh = vi.fn()
 
-vi.mock('@/features/auth/hooks/useRegisterMutation', () => ({
-  useRegisterMutation: () => mockUseRegisterMutation(),
+vi.mock('@/features/auth/hooks/useSignUpMutation', () => ({
+  useSignUpMutation: () => mockUseSignUpMutation(),
 }))
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({
     replace: mockRouterReplace,
+    refresh: mockRouterRefresh,
   }),
 }))
 
 describe('useSignUpForm', () => {
   beforeEach(() => {
-    mockUseRegisterMutation.mockReset()
+    mockUseSignUpMutation.mockReset()
     mockRouterReplace.mockReset()
+    mockRouterRefresh.mockReset()
   })
 
   it('submits values and navigates on success', async () => {
@@ -28,7 +31,7 @@ describe('useSignUpForm', () => {
       redirectUrl: '/requests',
     })
 
-    mockUseRegisterMutation.mockReturnValue({
+    mockUseSignUpMutation.mockReturnValue({
       mutateAsync,
       isPending: false,
     })
@@ -40,11 +43,19 @@ describe('useSignUpForm', () => {
     const passwordField = result.current.register('password')
     const confirmField = result.current.register('confirmPassword')
 
-    act(() => {
-      nameField.onChange({ target: { value: '山田 太郎' } } as never)
-      emailField.onChange({ target: { value: 'user@example.com' } } as never)
-      passwordField.onChange({ target: { value: 'password123' } } as never)
-      confirmField.onChange({ target: { value: 'password123' } } as never)
+    await act(async () => {
+      nameField.onChange({
+        target: { value: '山田 太郎', name: 'name' },
+      } as never)
+      emailField.onChange({
+        target: { value: 'user@example.com', name: 'email' },
+      } as never)
+      passwordField.onChange({
+        target: { value: 'password123', name: 'password' },
+      } as never)
+      confirmField.onChange({
+        target: { value: 'password123', name: 'confirmPassword' },
+      } as never)
     })
 
     await act(async () => {
@@ -60,10 +71,11 @@ describe('useSignUpForm', () => {
       redirectUrl: '/dashboard',
     })
     expect(mockRouterReplace).toHaveBeenCalledWith('/requests')
+    expect(mockRouterRefresh).toHaveBeenCalled()
   })
 
   it('captures server error on failure', async () => {
-    mockUseRegisterMutation.mockReturnValue({
+    mockUseSignUpMutation.mockReturnValue({
       mutateAsync: vi.fn().mockRejectedValue(new Error('Already exists')),
       isPending: false,
     })
@@ -75,15 +87,23 @@ describe('useSignUpForm', () => {
     const passwordField = result.current.register('password')
     const confirmField = result.current.register('confirmPassword')
 
-    act(() => {
-      nameField.onChange({ target: { value: '山田 太郎' } } as never)
-      emailField.onChange({ target: { value: 'user@example.com' } } as never)
-      passwordField.onChange({ target: { value: 'password123' } } as never)
-      confirmField.onChange({ target: { value: 'password123' } } as never)
+    await act(async () => {
+      nameField.onChange({
+        target: { value: '山田 太郎', name: 'name' },
+      } as never)
+      emailField.onChange({
+        target: { value: 'user@example.com', name: 'email' },
+      } as never)
+      passwordField.onChange({
+        target: { value: 'password123', name: 'password' },
+      } as never)
+      confirmField.onChange({
+        target: { value: 'password123', name: 'confirmPassword' },
+      } as never)
     })
 
     await act(async () => {
-      await result.current.onSubmit({
+      result.current.onSubmit({
         preventDefault: () => undefined,
       } as unknown as React.FormEvent<HTMLFormElement>)
     })

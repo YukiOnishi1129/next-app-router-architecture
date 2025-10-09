@@ -5,6 +5,7 @@ import { useLoginForm } from './useLoginForm'
 
 const mockUseLoginMutation = vi.fn()
 const mockRouterReplace = vi.fn()
+const mockRouterRefresh = vi.fn()
 
 vi.mock('@/features/auth/hooks/useLoginMutation', () => ({
   useLoginMutation: () => mockUseLoginMutation(),
@@ -13,6 +14,7 @@ vi.mock('@/features/auth/hooks/useLoginMutation', () => ({
 vi.mock('next/navigation', () => ({
   useRouter: () => ({
     replace: mockRouterReplace,
+    refresh: mockRouterRefresh,
   }),
 }))
 
@@ -20,6 +22,7 @@ describe('useLoginForm', () => {
   beforeEach(() => {
     mockUseLoginMutation.mockReset()
     mockRouterReplace.mockReset()
+    mockRouterRefresh.mockReset()
   })
 
   it('submits credentials and redirects on success', async () => {
@@ -38,9 +41,13 @@ describe('useLoginForm', () => {
     const emailField = result.current.register('email')
     const passwordField = result.current.register('password')
 
-    act(() => {
-      emailField.onChange({ target: { value: 'user@example.com' } } as never)
-      passwordField.onChange({ target: { value: 'password123' } } as never)
+    await act(async () => {
+      emailField.onChange({
+        target: { value: 'user@example.com', name: 'email' },
+      } as never)
+      passwordField.onChange({
+        target: { value: 'password123', name: 'password' },
+      } as never)
     })
 
     await act(async () => {
@@ -55,6 +62,7 @@ describe('useLoginForm', () => {
       redirectUrl: '/dashboard',
     })
     expect(mockRouterReplace).toHaveBeenCalledWith('/requests')
+    expect(mockRouterRefresh).toHaveBeenCalled()
   })
 
   it('sets server error when mutation fails', async () => {
@@ -68,9 +76,13 @@ describe('useLoginForm', () => {
     const emailField = result.current.register('email')
     const passwordField = result.current.register('password')
 
-    act(() => {
-      emailField.onChange({ target: { value: 'user@example.com' } } as never)
-      passwordField.onChange({ target: { value: 'password123' } } as never)
+    await act(async () => {
+      emailField.onChange({
+        target: { value: 'user@example.com', name: 'email' },
+      } as never)
+      passwordField.onChange({
+        target: { value: 'password123', name: 'password' },
+      } as never)
     })
 
     await act(async () => {
@@ -80,5 +92,6 @@ describe('useLoginForm', () => {
     })
 
     expect(result.current.serverError).toBe('Invalid credentials')
+    expect(mockRouterRefresh).not.toHaveBeenCalled()
   })
 })
