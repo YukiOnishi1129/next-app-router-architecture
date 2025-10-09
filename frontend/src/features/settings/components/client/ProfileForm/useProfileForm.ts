@@ -4,7 +4,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { useForm } from 'react-hook-form'
 
-import { useProfileSettings } from '@/features/settings/hooks/useProfileSettings'
+import { useProfileSettingsQuery } from '@/features/settings/hooks/useProfileSettingsQuery'
+import { useUpdateProfileMutation } from '@/features/settings/hooks/useUpdateProfileMutation'
 
 import type { FieldErrors, UseFormRegister } from 'react-hook-form'
 
@@ -46,16 +47,8 @@ export type UseProfileFormResult =
   | ProfileFormReadyState
 
 export const useProfileForm = (): UseProfileFormResult => {
-  const {
-    profile,
-    isLoading,
-    error,
-    refetch,
-    updateProfile,
-    isUpdating,
-    updateError,
-    resetUpdateState,
-  } = useProfileSettings()
+  const profileQuery = useProfileSettingsQuery()
+  const updateProfileMutation = useUpdateProfileMutation()
 
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
@@ -75,81 +68,94 @@ export const useProfileForm = (): UseProfileFormResult => {
   } = form
 
   useEffect(() => {
-    if (profile) {
+    if (profileQuery.data) {
       reset({
-        userId: profile.id,
-        name: profile.name,
-        email: profile.email,
+        userId: profileQuery.data.id,
+        name: profileQuery.data.name,
+        email: profileQuery.data.email,
       })
     }
-  }, [profile, reset])
+  }, [profileQuery.data, reset])
 
   useEffect(() => {
-    if (updateError) {
+    if (updateProfileMutation.error) {
       setSuccessMessage(null)
     }
-  }, [updateError])
+  }, [updateProfileMutation.error])
 
   const handleSubmitForm = handleSubmit(async (values) => {
     setSuccessMessage(null)
     try {
-      const updated = await updateProfile(values)
+      const updatedUser = await updateProfileMutation.mutateAsync(values)
+      if (!updatedUser.success || !updatedUser.user) {
+        return
+      }
       setSuccessMessage('プロフィールを更新しました')
       reset(
         {
-          userId: updated.id,
-          name: updated.name,
-          email: updated.email,
+          userId: updatedUser.user.id,
+          name: updatedUser.user.name,
+          email: updatedUser.user.email,
         },
         { keepDirty: false }
       )
-      resetUpdateState()
+      updateProfileMutation.reset()
     } catch {
       // エラー表示は updateError に委ねる
     }
   })
 
   const canSubmit = useMemo(
-    () => !isLoading && !error && isDirty && !isUpdating,
-    [isLoading, error, isDirty, isUpdating]
+    () =>
+      !profileQuery.isLoading &&
+      !profileQuery.error &&
+      isDirty &&
+      !updateProfileMutation.isPending,
+    [
+      profileQuery.isLoading,
+      profileQuery.error,
+      isDirty,
+      updateProfileMutation.isPending,
+    ]
   )
 
   const handleReset = useCallback(() => {
-    if (!profile) return
+    if (!profileQuery.data) return
     reset(
       {
-        userId: profile.id,
-        name: profile.name,
-        email: profile.email,
+        userId: profileQuery.data.id,
+        name: profileQuery.data.name,
+        email: profileQuery.data.email,
       },
       { keepDirty: false }
     )
     setSuccessMessage(null)
-    resetUpdateState()
-  }, [profile, reset, resetUpdateState])
+    updateProfileMutation.reset()
+  }, [profileQuery.data, reset, updateProfileMutation])
 
   useEffect(() => {
-    if (error) {
-      console.error('プロフィールの取得に失敗しました', error)
+    if (profileQuery.error) {
+      console.error('プロフィールの取得に失敗しました', profileQuery.error)
     }
-  }, [error])
+  }, [profileQuery.error])
 
   useEffect(() => {
-    if (isLoading || profile) {
+    if (profileQuery.isLoading || profileQuery.data) {
       return
     }
-    refetch()
-  }, [isLoading, profile, refetch])
+    profileQuery.refetch()
+  }, [profileQuery.isLoading, profileQuery.data, profileQuery.refetch])
 
-  if (isLoading) {
+  if (profileQuery.isLoading) {
     return { status: 'loading' }
   }
 
-  if (!profile || error) {
+  if (!profileQuery.data || profileQuery.error) {
     return {
       status: 'error',
-      message: error?.message ?? 'プロフィール情報が見つかりません。',
-      retry: refetch,
+      message:
+        profileQuery.error?.message ?? 'プロフィール情報が見つかりません。',
+      retry: profileQuery.refetch,
     }
   }
 
@@ -162,8 +168,8 @@ export const useProfileForm = (): UseProfileFormResult => {
       onSubmit: handleSubmitForm,
       onReset: handleReset,
       successMessage,
-      updateError,
-      isUpdating,
+      updateError: updateProfileMutation.error as Error | null,
+      isUpdating: updateProfileMutation.isPending,
     },
   }
 }

@@ -8,10 +8,15 @@ import { useProfileForm } from './useProfileForm'
 import type { UserDto } from '@/external/dto/user'
 import type { FormEvent } from 'react'
 
-const mockUseProfileSettings = vi.fn()
+const mockUseProfileSettingsQuery = vi.fn()
+const mockUseUpdateProfileMutation = vi.fn()
 
-vi.mock('@/features/settings/hooks/useProfileSettings', () => ({
-  useProfileSettings: () => mockUseProfileSettings(),
+vi.mock('@/features/settings/hooks/useProfileSettingsQuery', () => ({
+  useProfileSettingsQuery: () => mockUseProfileSettingsQuery(),
+}))
+
+vi.mock('@/features/settings/hooks/useUpdateProfileMutation', () => ({
+  useUpdateProfileMutation: () => mockUseUpdateProfileMutation(),
 }))
 
 const baseProfile: UserDto = {
@@ -25,20 +30,24 @@ const baseProfile: UserDto = {
 }
 
 beforeEach(() => {
-  mockUseProfileSettings.mockReset()
+  mockUseProfileSettingsQuery.mockReset()
+  mockUseUpdateProfileMutation.mockReset()
 })
 
 describe('useProfileForm', () => {
   it('returns loading state when query is loading', () => {
-    mockUseProfileSettings.mockReturnValue({
-      profile: undefined,
+    mockUseProfileSettingsQuery.mockReturnValue({
+      data: undefined,
       isLoading: true,
       error: null,
       refetch: vi.fn(),
-      updateProfile: vi.fn(),
-      isUpdating: false,
-      updateError: null,
-      resetUpdateState: vi.fn(),
+    })
+
+    mockUseUpdateProfileMutation.mockReturnValue({
+      mutateAsync: vi.fn(),
+      isPending: false,
+      error: null,
+      reset: vi.fn(),
     })
 
     const { result } = renderHook(() => useProfileForm())
@@ -48,17 +57,19 @@ describe('useProfileForm', () => {
 
   it('returns error state when query fails', () => {
     const refetch = vi.fn()
-    mockUseProfileSettings.mockReturnValue({
-      profile: undefined,
+    mockUseProfileSettingsQuery.mockReturnValue({
+      data: undefined,
       isLoading: false,
       error: new Error('Failed'),
       refetch,
-      updateProfile: vi.fn(),
-      isUpdating: false,
-      updateError: null,
-      resetUpdateState: vi.fn(),
     })
 
+    mockUseUpdateProfileMutation.mockReturnValue({
+      mutateAsync: vi.fn(),
+      isPending: false,
+      error: null,
+      reset: vi.fn(),
+    })
     const { result } = renderHook(() => useProfileForm())
 
     expect(result.current.status).toBe('error')
@@ -68,20 +79,25 @@ describe('useProfileForm', () => {
   })
 
   it('returns ready state when data is loaded', async () => {
-    const updateProfile = vi.fn().mockResolvedValue(baseProfile)
-    const resetUpdateState = vi.fn()
+    const mutateAsync = vi
+      .fn()
+      .mockResolvedValue({ success: true, user: baseProfile })
+    const reset = vi.fn()
+    const refetch = vi.fn()
 
-    mockUseProfileSettings.mockReturnValue({
-      profile: baseProfile,
+    mockUseProfileSettingsQuery.mockReturnValue({
+      data: baseProfile,
       isLoading: false,
       error: null,
-      refetch: vi.fn(),
-      updateProfile,
-      isUpdating: false,
-      updateError: null,
-      resetUpdateState,
+      refetch,
     })
 
+    mockUseUpdateProfileMutation.mockReturnValue({
+      mutateAsync,
+      isPending: false,
+      error: null,
+      reset,
+    })
     const { result } = renderHook(() => useProfileForm())
 
     expect(result.current.status).toBe('ready')
@@ -94,7 +110,7 @@ describe('useProfileForm', () => {
         } as unknown as FormEvent<HTMLFormElement>)
       })
 
-      expect(updateProfile).toHaveBeenCalled()
+      expect(mutateAsync).toHaveBeenCalled()
     }
   })
 })
