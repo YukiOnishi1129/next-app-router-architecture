@@ -19,7 +19,7 @@ type Story = StoryObj
 
 export const Documentation: Story = {
   render: () => (
-    <div className="rounded-lg border bg-card p-6 text-sm">
+    <div className="bg-card rounded-lg border p-6 text-sm">
       <p>Presenter ストーリーで UI バリエーションを確認してください。</p>
     </div>
   ),

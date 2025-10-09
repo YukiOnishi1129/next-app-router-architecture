@@ -1,8 +1,12 @@
-import type { Meta, StoryFn } from '@storybook/react'
 import { useForm } from 'react-hook-form'
 
 import { SignUpFormPresenter } from './SignUpFormPresenter'
-import type { SignUpFormPresenterProps, SignUpFormValues } from './useSignUpForm'
+
+import type {
+  SignUpFormPresenterProps,
+  SignUpFormValues,
+} from './useSignUpForm'
+import type { Meta, StoryFn } from '@storybook/nextjs'
 
 const meta: Meta<typeof SignUpFormPresenter> = {
   title: 'Features/Auth/SignUpForm/Presenter',
