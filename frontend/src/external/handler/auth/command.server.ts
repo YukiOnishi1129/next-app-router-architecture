@@ -4,6 +4,12 @@ import { cookies } from 'next/headers'
 
 import { ZodError } from 'zod'
 
+import {
+  setIdTokenCookieServer,
+  setRefreshTokenCookieServer,
+  deleteAuthCookiesServer,
+} from '@/features/auth/servers/token.server'
+
 import { createSessionSchema, createUserSchema } from '@/external/dto/auth'
 
 import {
@@ -41,23 +47,10 @@ export async function createSessionServer(
 
     await auditService.logUserLogin(user, SERVER_CONTEXT)
 
-    const cookieStore = await cookies()
-
-    cookieStore.set('auth-token', authResult.idToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 24,
-      path: '/',
-    })
-
-    cookieStore.set('user-id', user.getId().getValue(), {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 24,
-      path: '/',
-    })
+    await Promise.all([
+      setRefreshTokenCookieServer(authResult.refreshToken),
+      setIdTokenCookieServer(authResult.idToken),
+    ])
 
     const redirectUrl = validated.redirectUrl as Route | undefined
 
@@ -103,23 +96,10 @@ export async function createUserServer(
 
     await auditService.logUserLogin(user, SERVER_CONTEXT)
 
-    const cookieStore = await cookies()
-
-    cookieStore.set('auth-token', authResult.idToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 24,
-      path: '/',
-    })
-
-    cookieStore.set('user-id', user.getId().getValue(), {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 24,
-      path: '/',
-    })
+    await Promise.all([
+      setRefreshTokenCookieServer(authResult.refreshToken),
+      setIdTokenCookieServer(authResult.idToken),
+    ])
 
     const redirectUrl = validated.redirectUrl as Route | undefined
 
@@ -155,29 +135,39 @@ export async function deleteSessionServer(
 ): Promise<DeleteSessionResponse> {
   try {
     const cookieStore = await cookies()
-    const storedUserId = userId ?? cookieStore.get('user-id')?.value
-    const token = cookieStore.get('auth-token')?.value
+    const token = cookieStore.get('id-token')?.value
 
-    if (!storedUserId || !token) {
+    let user = null
+
+    if (userId) {
+      user = await userManagementService.findUserById(userId)
+    }
+
+    if (!user && token) {
+      const tokenInfo = await authService.verifyToken(token)
+      if (tokenInfo?.email) {
+        user = await userManagementService.findUserByEmail(tokenInfo.email)
+      }
+    }
+
+    if (!user) {
+      cookieStore.delete('id-token')
+      cookieStore.delete('refresh-token')
       return {
         success: false,
         error: 'No active session',
       }
     }
 
-    const user = await userManagementService.findUserById(storedUserId)
-    if (user) {
-      try {
-        await authService.revokeAuthentication()
-      } catch (error) {
-        console.error('Failed to revoke token:', error)
-      }
-
-      await auditService.logUserLogout(user, SERVER_CONTEXT)
+    try {
+      await authService.revokeAuthentication()
+    } catch (error) {
+      console.error('Failed to revoke token:', error)
     }
 
-    cookieStore.delete('auth-token')
-    cookieStore.delete('user-id')
+    await auditService.logUserLogout(user, SERVER_CONTEXT)
+
+    await deleteAuthCookiesServer()
 
     return {
       success: true,

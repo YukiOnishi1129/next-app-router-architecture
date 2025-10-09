@@ -1,32 +1,37 @@
 'use client'
 
 import { useState } from 'react'
-import { z } from 'zod'
-import { zodResolver } from '@hookform/resolvers/zod'
+
 import { useRouter } from 'next/navigation'
-import {
-  useForm,
-  type FieldErrors,
-  type UseFormRegister,
-} from 'react-hook-form'
 
-import { useRegisterMutation } from '@/features/auth/hooks/useRegisterMutation'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useForm } from 'react-hook-form'
+import { z } from 'zod'
 
-const signupSchema = z
+import { useSignUpMutation } from '@/features/auth/hooks/useSignUpMutation'
+
+import type { Route } from 'next'
+import type { FieldErrors, UseFormRegister } from 'react-hook-form'
+
+const signUpSchema = z
   .object({
-    name: z.string().min(1, '氏名を入力してください'),
-    email: z.string().email('有効なメールアドレスを入力してください'),
+    name: z.string().min(1, '名前を入力してください'),
+    email: z.email('有効なメールアドレスを入力してください'),
     password: z
       .string()
-      .min(8, 'パスワードは 8 文字以上で入力してください'),
-    confirmPassword: z.string().min(1, '確認用パスワードを入力してください'),
+      .min(8, 'パスワードは 8 文字以上で入力してください')
+      .regex(
+        /^(?=.*[A-Za-z])(?=.*\d).+$/,
+        '英字と数字をそれぞれ 1 文字以上含めてください'
+      ),
+    confirmPassword: z.string().min(8, '確認用パスワードを入力してください'),
   })
   .refine((values) => values.password === values.confirmPassword, {
-    message: '同じパスワードを入力してください',
+    message: 'パスワードが一致しません',
     path: ['confirmPassword'],
   })
 
-export type SignUpFormValues = z.infer<typeof signupSchema>
+export type SignUpFormValues = z.infer<typeof signUpSchema>
 
 export type SignUpFormPresenterProps = {
   register: UseFormRegister<SignUpFormValues>
@@ -38,11 +43,11 @@ export type SignUpFormPresenterProps = {
 
 export function useSignUpForm(): SignUpFormPresenterProps {
   const router = useRouter()
-  const registerMutation = useRegisterMutation()
   const [serverError, setServerError] = useState<string | null>(null)
+  const signUpMutation = useSignUpMutation()
 
   const form = useForm<SignUpFormValues>({
-    resolver: zodResolver(signupSchema),
+    resolver: zodResolver(signUpSchema),
     defaultValues: {
       name: '',
       email: '',
@@ -57,20 +62,24 @@ export function useSignUpForm(): SignUpFormPresenterProps {
     formState: { errors },
   } = form
 
-  const submitHandler = handleSubmit(async (values) => {
+  const submitHandler = handleSubmit(async ({ name, email, password }) => {
     setServerError(null)
     try {
-      const result = await registerMutation.mutateAsync({
-        name: values.name,
-        email: values.email,
-        password: values.password,
+      const result = await signUpMutation.mutateAsync({
+        name,
+        email,
+        password,
         redirectUrl: '/dashboard',
       })
 
-      router.replace(result.redirectUrl ?? '/dashboard')
+      const destination = (result.redirectUrl ?? '/dashboard') as Route
+      router.replace(destination)
+      router.refresh()
     } catch (error) {
       setServerError(
-        error instanceof Error ? error.message : 'アカウント作成に失敗しました'
+        error instanceof Error
+          ? error.message
+          : 'アカウントの作成に失敗しました'
       )
     }
   })
@@ -78,11 +87,8 @@ export function useSignUpForm(): SignUpFormPresenterProps {
   return {
     register,
     errors,
-    onSubmit: (event) => {
-      event.preventDefault()
-      void submitHandler(event)
-    },
-    isSubmitting: registerMutation.isPending,
+    onSubmit: submitHandler,
+    isSubmitting: signUpMutation.isPending,
     serverError,
   }
 }

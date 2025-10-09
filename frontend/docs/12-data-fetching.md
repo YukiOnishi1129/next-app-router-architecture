@@ -87,7 +87,6 @@ export async function RequestDetailPageTemplate({ requestId, highlightCommentId 
 
 ```typescript
 // app/(authenticated)/requests/[requestId]/page.tsx
-import type { PageProps } from 'next'
 import { RequestDetailPageTemplate } from '@/features/requests/components/server/RequestDetailPageTemplate'
 
 export default async function RequestDetailPage(

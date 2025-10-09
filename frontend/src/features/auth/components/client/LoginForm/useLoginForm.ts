@@ -56,6 +56,7 @@ export function useLoginForm(): LoginFormPresenterProps {
       })
 
       router.replace((result.redirectUrl ?? '/dashboard') as Route)
+      router.refresh()
     } catch (error) {
       setServerError(
         error instanceof Error ? error.message : 'サインインに失敗しました'

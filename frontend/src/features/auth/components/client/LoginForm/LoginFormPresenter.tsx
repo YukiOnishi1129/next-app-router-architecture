@@ -23,6 +23,8 @@ export function LoginFormPresenter({
           type="email"
           {...register('email')}
           aria-invalid={Boolean(errors.email)}
+          autoComplete="email"
+          autoFocus
         />
         {errors.email ? (
           <p className="text-destructive text-xs">{errors.email.message}</p>
@@ -39,6 +41,7 @@ export function LoginFormPresenter({
           type="password"
           {...register('password')}
           aria-invalid={Boolean(errors.password)}
+          autoComplete="current-password"
         />
         {errors.password ? (
           <p className="text-destructive text-xs">{errors.password.message}</p>

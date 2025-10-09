@@ -5,5 +5,6 @@ import { useSignUpForm } from './useSignUpForm'
 
 export function SignUpFormContainer() {
   const state = useSignUpForm()
+
   return <SignUpFormPresenter {...state} />
 }

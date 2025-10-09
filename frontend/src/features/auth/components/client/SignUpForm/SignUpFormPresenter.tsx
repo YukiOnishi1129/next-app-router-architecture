@@ -15,7 +15,7 @@ export function SignUpFormPresenter({
     <form className="space-y-4" onSubmit={onSubmit}>
       <div className="space-y-1 text-left">
         <label className="text-sm font-medium" htmlFor="name">
-          氏名
+          Full name
         </label>
         <input
           id="name"
@@ -23,6 +23,7 @@ export function SignUpFormPresenter({
           type="text"
           {...register('name')}
           aria-invalid={Boolean(errors.name)}
+          autoComplete="name"
         />
         {errors.name ? (
           <p className="text-destructive text-xs">{errors.name.message}</p>
@@ -31,7 +32,7 @@ export function SignUpFormPresenter({
 
       <div className="space-y-1 text-left">
         <label className="text-sm font-medium" htmlFor="email">
-          メールアドレス
+          Work email
         </label>
         <input
           id="email"
@@ -39,6 +40,7 @@ export function SignUpFormPresenter({
           type="email"
           {...register('email')}
           aria-invalid={Boolean(errors.email)}
+          autoComplete="email"
         />
         {errors.email ? (
           <p className="text-destructive text-xs">{errors.email.message}</p>
@@ -47,7 +49,7 @@ export function SignUpFormPresenter({
 
       <div className="space-y-1 text-left">
         <label className="text-sm font-medium" htmlFor="password">
-          パスワード
+          Password
         </label>
         <input
           id="password"
@@ -55,17 +57,16 @@ export function SignUpFormPresenter({
           type="password"
           {...register('password')}
           aria-invalid={Boolean(errors.password)}
+          autoComplete="new-password"
         />
         {errors.password ? (
-          <p className="text-destructive text-xs">
-            {errors.password.message}
-          </p>
+          <p className="text-destructive text-xs">{errors.password.message}</p>
         ) : null}
       </div>
 
       <div className="space-y-1 text-left">
         <label className="text-sm font-medium" htmlFor="confirmPassword">
-          パスワード（確認）
+          Confirm password
         </label>
         <input
           id="confirmPassword"
@@ -73,6 +74,7 @@ export function SignUpFormPresenter({
           type="password"
           {...register('confirmPassword')}
           aria-invalid={Boolean(errors.confirmPassword)}
+          autoComplete="new-password"
         />
         {errors.confirmPassword ? (
           <p className="text-destructive text-xs">
@@ -86,7 +88,7 @@ export function SignUpFormPresenter({
       ) : null}
 
       <Button type="submit" className="w-full" disabled={isSubmitting}>
-        {isSubmitting ? '登録中…' : 'アカウントを作成'}
+        {isSubmitting ? 'Creating account…' : 'Create account'}
       </Button>
     </form>
   )

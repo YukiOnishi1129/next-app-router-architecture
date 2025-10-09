@@ -48,8 +48,8 @@ Key ideas:
 
 | File | Purpose | Notes |
 |------|---------|-------|
-| `page.tsx` | Route entry point (Server Component by default) | Use `PageProps` for typed params/searchParams |
-| `layout.tsx` | Nested layout (Server Component) | Inherit providers/structure。**必ず** `export const metadata` を定義し、ページ固有の `title` と `description` を設定する（SEO とブラウザタイトルの統一のため）。`LayoutProps` はグローバル型として提供されるので `import` は不要。汎用型 (`LayoutProps<'/path'>`) を使い、ルートグループ名（`()`で囲まれた部分）は指定しない。 |
+| `page.tsx` | Route entry point (Server Component by default) | Use `PageProps` for typed params/searchParams. `PageProps` is available globally; you don't need to import it. |
+| `layout.tsx` | Nested layout (Server Component) | Inherit providers/structure。**必ず** `export const metadata` を layout 側で定義し、各セクションの `title` と `description` を設定する（SEO とブラウザタイトルの統一のため）。ページ側で重複して `metadata` を宣言する必要はない。`LayoutProps` もグローバル型として提供されるので `import` は不要。汎用型 (`LayoutProps<'/path'>`) を使い、ルートグループ名（`()`で囲まれた部分）は指定しない。 |
 | `loading.tsx` | Streaming fallback | Server Component |
 | `error.tsx` | Error boundary | Must be Client Component (`'use client'`) |
 | `not-found.tsx` | 404 handling | Optional |
@@ -65,7 +65,6 @@ Key ideas:
 
 ```tsx
 // app/(guest)/layout.tsx
-import type { LayoutProps } from 'next'
 import { GuestLayoutWrapper } from '@/shared/components/layout/server/GuestLayoutWrapper'
 
 export default async function GuestLayout(props: LayoutProps<'/(guest)'>) {
@@ -82,7 +81,6 @@ export default async function GuestLayout(props: LayoutProps<'/(guest)'>) {
 
 ```tsx
 // app/(authenticated)/layout.tsx
-import type { LayoutProps } from 'next'
 import { AuthenticatedLayoutWrapper } from '@/shared/components/layout/server/AuthenticatedLayoutWrapper'
 
 export default async function AuthenticatedLayout(
@@ -109,7 +107,6 @@ Example: request detail page under `(authenticated)/requests/[requestId]`.
 
 ```tsx
 // app/(authenticated)/requests/[requestId]/page.tsx
-import type { PageProps } from 'next'
 import { RequestDetailPageTemplate } from '@/features/requests/components/server/RequestDetailPageTemplate'
 
 export default async function RequestDetailPage(
@@ -131,6 +128,7 @@ Benefits:
 - Full IntelliSense for `requestId` and `highlight`
 - Eliminates manual type definitions
 - Async-friendly with `await props.params`
+- Metadata (title/description) should continue to live in the corresponding `layout.tsx`; pages typically do not export their own `metadata`.
 
 ---
 
@@ -138,7 +136,6 @@ Benefits:
 
 ```tsx
 // app/(authenticated)/requests/layout.tsx
-import type { LayoutProps } from 'next'
 import { RequestsSectionLayout } from '@/features/requests/components/server/RequestsSectionLayout'
 
 export default async function RequestsLayout(
@@ -259,7 +256,7 @@ export async function GET(
 1. Decide which route group it belongs to (`(guest)`, `(authenticated)`, `(neutral)` or nested).  
 2. Create `page.tsx` under the appropriate directory.  
 3. If the route needs a dedicated layout (tabs/sidebar), add `layout.tsx` next to it.  
-4. Use `PageProps` / `LayoutProps` for type-safe params.  
+4. Use `PageProps` / `LayoutProps` for type-safe params (both are globally available types).  
 5. Wire the page to a `PageTemplate` Server Component inside `features/.../components/server`.  
 6. Prefetch data with `HydrationBoundary` where relevant.  
 7. Add loading/error states for slow or failure cases.  

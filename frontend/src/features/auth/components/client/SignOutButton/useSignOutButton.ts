@@ -17,6 +17,10 @@ export function useSignOutButton(): SignOutButtonPresenterProps {
     logoutMutation.mutate(undefined, {
       onSuccess: () => {
         router.replace('/login')
+        router.refresh()
+      },
+      onError: (error) => {
+        console.error('Failed to sign out:', error)
       },
     })
   }

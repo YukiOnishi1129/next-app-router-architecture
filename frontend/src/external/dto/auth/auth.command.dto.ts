@@ -2,17 +2,25 @@ import { z } from 'zod'
 
 import type { Route } from 'next'
 
+const redirectUrlSchema = z
+  .string()
+  .min(1)
+  .refine(
+    (value) => value.startsWith('/') || value.startsWith('http'),
+    'Redirect URL must be an absolute URL or an internal path'
+  )
+
 export const createSessionSchema = z.object({
   email: z.email(),
   password: z.string().min(6),
-  redirectUrl: z.string().url().optional(),
+  redirectUrl: redirectUrlSchema.optional(),
 })
 
 export const createUserSchema = z.object({
   email: z.email(),
   password: z.string().min(6),
   name: z.string().min(1).optional(),
-  redirectUrl: z.string().url().optional(),
+  redirectUrl: redirectUrlSchema.optional(),
 })
 
 export type CreateSessionInput = z.input<typeof createSessionSchema>

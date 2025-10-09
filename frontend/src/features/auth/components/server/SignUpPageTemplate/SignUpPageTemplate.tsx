@@ -1,30 +1,32 @@
 import Link from 'next/link'
 
-import { LoginForm } from '@/features/auth/components/client/LoginForm/LoginForm'
+import { SignUpForm } from '@/features/auth/components/client/SignUpForm/SignUpForm'
 import { redirectIfAuthenticatedServer } from '@/features/auth/servers/redirect.server'
 
-export async function LoginPageTemplate() {
+export async function SignUpPageTemplate() {
   await redirectIfAuthenticatedServer()
 
   return (
     <section className="space-y-6">
       <header className="space-y-2 text-center">
-        <h1 className="text-2xl font-semibold">Sign in</h1>
+        <h1 className="text-2xl font-semibold">
+          Create your workspace account
+        </h1>
         <p className="text-muted-foreground text-sm">
-          Access the request & approval workspace with your organization
-          account.
+          Join your team to submit requests, track approvals, and manage your
+          profile.
         </p>
       </header>
 
-      <LoginForm />
+      <SignUpForm />
 
       <p className="text-muted-foreground text-center text-sm">
-        No account yet?{' '}
+        Already have an account?{' '}
         <Link
-          href="/signup"
+          href="/login"
           className="text-primary font-semibold hover:underline"
         >
-          Create one now
+          Sign in
         </Link>
       </p>
     </section>
