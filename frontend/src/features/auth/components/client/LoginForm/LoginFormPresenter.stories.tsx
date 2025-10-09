@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form'
 import { LoginFormPresenter } from './LoginFormPresenter'
 
 import type { LoginFormPresenterProps, LoginFormValues } from './useLoginForm'
-import type { Meta, StoryFn } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/nextjs'
 
 const meta: Meta<typeof LoginFormPresenter> = {
   title: 'Features/Auth/LoginForm/Presenter',

@@ -9,11 +9,13 @@
 ## 🎯 Storybook の用途
 
 ### 1. Visual Documentation
+
 - コンポーネントの使い方をドキュメント化
 - UI 状態やバリエーションをカタログ化
 - インタラクティブなデモを提供
 
 ### 2. Local Development Environment
+
 - コンポーネントを単体で開発・検証
 - デザインシステムの動作確認
 - UI の手動テスト
@@ -40,7 +42,7 @@ Container Story ではコンポーネント構造や利用方法を Markdown で
 
 ```tsx
 // ThreadTextarea.stories.tsx
-import type { Meta, StoryObj } from '@storybook/react'
+import type { Meta, StoryObj } from '@storybook/nextjs'
 import { ThreadTextarea } from './ThreadTextarea'
 
 const meta = {
@@ -101,7 +103,7 @@ Presenter Story では UI のすべての状態を並べ、コンポーネント
 
 ```tsx
 // ThreadTextareaPresenter.stories.tsx
-import type { Meta, StoryObj } from '@storybook/react'
+import type { Meta, StoryObj } from '@storybook/nextjs'
 import { fn } from '@storybook/test'
 import { ThreadTextareaPresenter } from './ThreadTextareaPresenter'
 
@@ -144,11 +146,13 @@ export const WithContent: Story = {
 ## 🛠️ 実装ガイドライン
 
 ### Container Stories
+
 - Markdown を使って構造や責務を説明
 - 実際のコード例を記載
 - Presenter ストーリーへのリンクを提供
 
 ### Presenter Stories
+
 - 代表的な UI 状態をすべて掲載
 - Storybook Controls でプロパティを操作できるようにする
 - 空文字・エラー・読み込みなど現実的なシナリオを準備
@@ -173,6 +177,7 @@ pnpm build-storybook    # ドキュメントを静的出力
 ```
 
 ### コンポーネント開発手順
+
 1. Presenter Story で UI を定義
 2. Storybook 上で見た目を確認しながら UI を実装
 3. Container Story にアーキテクチャを記述
@@ -185,6 +190,7 @@ pnpm build-storybook    # ドキュメントを静的出力
 - E2E テストは Storybook 上で行いません
 
 テスト戦略は以下の通りです。
+
 - **Unit**: Vitest（Hook・Utility）
 - **Integration**: Vitest（Container Components）
 - **Visual**: Storybook（手動確認）
