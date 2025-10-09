@@ -28,7 +28,7 @@ import type {
 } from '@/external/dto/auth'
 import type { Route } from 'next'
 
-export async function createSessionServer(
+export async function loginCommandServer(
   data: CreateSessionInput
 ): Promise<CreateSessionResponse> {
   try {
@@ -56,6 +56,15 @@ export async function createSessionServer(
 
     return {
       success: true,
+      user: {
+        id: user.getId().getValue(),
+        email: user.getEmail().getValue(),
+        name: user.getName(),
+        roles: user.getRoles(),
+        status: user.getStatus(),
+        createdAt: user.getCreatedAt().toISOString(),
+        updatedAt: user.getUpdatedAt().toISOString(),
+      },
       redirectUrl: redirectUrl || '/dashboard',
     }
   } catch (error) {
@@ -73,7 +82,7 @@ export async function createSessionServer(
   }
 }
 
-export async function createUserServer(
+export async function signUpCommandServer(
   data: CreateUserInput
 ): Promise<CreateUserResponse> {
   try {
@@ -105,6 +114,15 @@ export async function createUserServer(
 
     return {
       success: true,
+      user: {
+        id: user.getId().getValue(),
+        email: user.getEmail().getValue(),
+        name: user.getName(),
+        roles: user.getRoles(),
+        status: user.getStatus(),
+        createdAt: user.getCreatedAt().toISOString(),
+        updatedAt: user.getUpdatedAt().toISOString(),
+      },
       redirectUrl: redirectUrl || '/dashboard',
     }
   } catch (error) {

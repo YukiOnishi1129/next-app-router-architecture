@@ -1,5 +1,6 @@
 import { z } from 'zod'
 
+import type { UserDto } from '../user/user.dto'
 import type { Route } from 'next'
 
 const redirectUrlSchema = z
@@ -29,12 +30,14 @@ export type CreateUserInput = z.input<typeof createUserSchema>
 export type CreateSessionResponse = {
   success: boolean
   error?: string
+  user?: UserDto
   redirectUrl?: Route
 }
 
 export type CreateUserResponse = {
   success: boolean
   error?: string
+  user?: UserDto
   redirectUrl?: Route
 }
 
