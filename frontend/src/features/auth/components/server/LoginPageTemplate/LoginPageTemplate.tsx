@@ -1,4 +1,4 @@
-import { LoginForm } from '@/features/auth/components/client/LoginForm'
+import { LoginForm } from '@/features/auth/components/client/LoginForm/LoginForm'
 import { redirectIfAuthenticatedServer } from '@/features/auth/servers/redirect.server'
 
 export async function LoginPageTemplate() {

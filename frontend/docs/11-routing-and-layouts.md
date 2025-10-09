@@ -49,7 +49,7 @@ Key ideas:
 | File | Purpose | Notes |
 |------|---------|-------|
 | `page.tsx` | Route entry point (Server Component by default) | Use `PageProps` for typed params/searchParams |
-| `layout.tsx` | Nested layout (Server Component) | Inherit providers/structure |
+| `layout.tsx` | Nested layout (Server Component) | Inherit providers/structure。**必ず** `export const metadata` を定義し、ページ固有の `title` と `description` を設定する（SEO とブラウザタイトルの統一のため）。`LayoutProps` はグローバル型として提供されるので `import` は不要。汎用型 (`LayoutProps<'/path'>`) を使い、ルートグループ名（`()`で囲まれた部分）は指定しない。 |
 | `loading.tsx` | Streaming fallback | Server Component |
 | `error.tsx` | Error boundary | Must be Client Component (`'use client'`) |
 | `not-found.tsx` | 404 handling | Optional |
