@@ -34,6 +34,41 @@ export type CreateSessionResponse = {
   redirectUrl?: Route
 }
 
+export const signInCommandSchema = z.object({
+  email: z.email(),
+  password: z.string().min(6),
+  redirectUrl: redirectUrlSchema.optional(),
+})
+
+export type SignInCommandRequest = z.input<typeof signInCommandSchema>
+
+export type SignInCommandResponse = {
+  success: boolean
+  error?: string
+  user?: UserDto
+  idToken?: string
+  refreshToken?: string
+  redirectUrl?: Route
+}
+
+export const signUpCommandSchema = z.object({
+  email: z.email(),
+  password: z.string().min(6),
+  name: z.string().min(1).optional(),
+  redirectUrl: redirectUrlSchema.optional(),
+})
+
+export type SignUpCommandRequest = z.input<typeof signUpCommandSchema>
+
+export type SignUpCommandResponse = {
+  success: boolean
+  error?: string
+  user?: UserDto
+  idToken?: string
+  refreshToken?: string
+  redirectUrl?: Route
+}
+
 export type CreateUserResponse = {
   success: boolean
   error?: string

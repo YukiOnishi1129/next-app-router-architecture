@@ -1,11 +1,10 @@
 export {
-  createSessionSchema,
-  createUserSchema,
-  type CreateSessionInput,
-  type CreateUserInput,
-  type CreateSessionResponse,
-  type CreateUserResponse,
-  type DeleteSessionResponse,
+  signInCommandSchema,
+  signUpCommandSchema,
+  type SignInCommandRequest,
+  type SignInCommandResponse,
+  type SignUpCommandRequest,
+  type SignUpCommandResponse,
 } from './auth.command.dto'
 export {
   getSessionSchema,
