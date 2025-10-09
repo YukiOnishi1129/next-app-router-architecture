@@ -1,5 +1,7 @@
 import { z } from 'zod'
 
+import type { Route } from 'next'
+
 export const createSessionSchema = z.object({
   email: z.email(),
   password: z.string().min(6),
@@ -19,13 +21,13 @@ export type CreateUserInput = z.input<typeof createUserSchema>
 export type CreateSessionResponse = {
   success: boolean
   error?: string
-  redirectUrl?: string
+  redirectUrl?: Route
 }
 
 export type CreateUserResponse = {
   success: boolean
   error?: string
-  redirectUrl?: string
+  redirectUrl?: Route
 }
 
 export type DeleteSessionResponse = {

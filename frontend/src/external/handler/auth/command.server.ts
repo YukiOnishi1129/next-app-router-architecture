@@ -20,6 +20,7 @@ import type {
   CreateUserResponse,
   DeleteSessionResponse,
 } from '@/external/dto/auth'
+import type { Route } from 'next'
 
 export async function createSessionServer(
   data: CreateSessionInput
@@ -58,9 +59,11 @@ export async function createSessionServer(
       path: '/',
     })
 
+    const redirectUrl = validated.redirectUrl as Route | undefined
+
     return {
       success: true,
-      redirectUrl: validated.redirectUrl || '/dashboard',
+      redirectUrl: redirectUrl || '/dashboard',
     }
   } catch (error) {
     if (error instanceof ZodError) {
@@ -118,9 +121,11 @@ export async function createUserServer(
       path: '/',
     })
 
+    const redirectUrl = validated.redirectUrl as Route | undefined
+
     return {
       success: true,
-      redirectUrl: validated.redirectUrl || '/dashboard',
+      redirectUrl: redirectUrl || '/dashboard',
     }
   } catch (error) {
     if (error instanceof ZodError) {

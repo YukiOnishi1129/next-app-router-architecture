@@ -10,10 +10,11 @@ import { z } from 'zod'
 
 import { useLoginMutation } from '@/features/auth/hooks/useLoginMutation'
 
+import type { Route } from 'next'
 import type { FieldErrors, UseFormRegister } from 'react-hook-form'
 
 const loginSchema = z.object({
-  email: z.string().email('有効なメールアドレスを入力してください'),
+  email: z.email('有効なメールアドレスを入力してください'),
   password: z.string().min(8, 'パスワードは 8 文字以上で入力してください'),
 })
 
@@ -54,7 +55,7 @@ export function useLoginForm(): LoginFormPresenterProps {
         redirectUrl: '/dashboard',
       })
 
-      router.replace(result.redirectUrl ?? '/dashboard')
+      router.replace((result.redirectUrl ?? '/dashboard') as Route)
     } catch (error) {
       setServerError(
         error instanceof Error ? error.message : 'サインインに失敗しました'
