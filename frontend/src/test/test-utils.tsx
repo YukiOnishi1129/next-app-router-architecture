@@ -4,12 +4,18 @@ import { render, RenderOptions } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { SessionProvider } from 'next-auth/react'
 
+import type { Session } from 'next-auth'
+
 // Mock session for tests
-const mockSession = {
-  user: {
+const mockSession: Session = {
+  account: {
+    id: '1',
     name: 'Test User',
     email: 'test@example.com',
-    image: '/test-avatar.png',
+    roles: ['ADMIN'],
+    status: 'ACTIVE',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
   },
   expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours from now
 }

@@ -1,4 +1,3 @@
-export type { UserDto } from './user.dto'
 export {
   updateUserRoleSchema,
   updateUserStatusSchema,

@@ -2,7 +2,7 @@ import { z } from 'zod'
 
 import { UserRole, UserStatus } from '@/external/domain/user/user'
 
-import type { UserDto } from './user.dto'
+import type { User } from '@/features/user/types/user'
 
 export const updateUserRoleSchema = z.object({
   userId: z.string(),
@@ -27,5 +27,5 @@ export type UpdateUserProfileInput = z.input<typeof updateUserProfileSchema>
 export type UpdateUserResponse = {
   success: boolean
   error?: string
-  user?: UserDto
+  user?: User
 }

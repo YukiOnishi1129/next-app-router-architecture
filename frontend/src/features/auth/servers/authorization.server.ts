@@ -1,11 +1,17 @@
 import 'server-only'
 
 import { CREDENTIAL_TYPE } from '@/features/auth/constants/credential'
+import {
+  setIdTokenCookieServer,
+  setRefreshTokenCookieServer,
+} from '@/features/auth/servers/token.server'
 
 import {
   loginCommandServer,
   signUpCommandServer,
 } from '@/external/handler/auth/command.server'
+
+import type { User } from 'next-auth'
 
 interface AuthorizeCredentials {
   email?: string
@@ -14,7 +20,9 @@ interface AuthorizeCredentials {
   name?: string
 }
 
-const signUpServer = async (credentials: AuthorizeCredentials) => {
+const signUpServer = async (
+  credentials: AuthorizeCredentials
+): Promise<User> => {
   if (!credentials.email || !credentials.password || !credentials.name) {
     throw new Error('All fields are required for sign-up')
   }
@@ -30,13 +38,38 @@ const signUpServer = async (credentials: AuthorizeCredentials) => {
     if (!res.user) {
       throw new Error('No user data returned')
     }
-    return res.user
+    if (!res.idToken) {
+      throw new Error('No ID token returned')
+    }
+    if (!res.refreshToken) {
+      throw new Error('No refresh token returned')
+    }
+
+    await Promise.all([
+      await setIdTokenCookieServer(res.idToken),
+      await setRefreshTokenCookieServer(res.refreshToken),
+    ])
+
+    return {
+      ...res.user,
+      account: {
+        id: res.user.id,
+        email: res.user.email,
+        name: res.user.name,
+        roles: res.user.roles,
+        status: res.user.status,
+        createdAt: res.user.createdAt,
+        updatedAt: res.user.updatedAt,
+      },
+    }
   } catch (error) {
     throw error
   }
 }
 
-const loginServer = async (credentials: AuthorizeCredentials) => {
+const loginServer = async (
+  credentials: AuthorizeCredentials
+): Promise<User> => {
   if (!credentials.email || !credentials.password) {
     throw new Error('Email and password are required for login')
   }
@@ -52,13 +85,37 @@ const loginServer = async (credentials: AuthorizeCredentials) => {
     if (!res.user) {
       throw new Error('No user data returned')
     }
-    return res.user
+    if (!res.idToken) {
+      throw new Error('No ID token returned')
+    }
+    if (!res.refreshToken) {
+      throw new Error('No refresh token returned')
+    }
+
+    await Promise.all([
+      await setIdTokenCookieServer(res.idToken),
+      await setRefreshTokenCookieServer(res.refreshToken),
+    ])
+    return {
+      ...res.user,
+      account: {
+        id: res.user.id,
+        email: res.user.email,
+        name: res.user.name,
+        roles: res.user.roles,
+        status: res.user.status,
+        createdAt: res.user.createdAt,
+        updatedAt: res.user.updatedAt,
+      },
+    }
   } catch (error) {
     throw error
   }
 }
 
-export async function authorizeServer(credentials: AuthorizeCredentials) {
+export async function authorizeServer(
+  credentials: AuthorizeCredentials
+): Promise<User | null> {
   if (!credentials.email || !credentials.password || !credentials.action) {
     throw new Error('Missing required fields')
   }

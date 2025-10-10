@@ -1,6 +1,4 @@
-import { UserRole, UserStatus } from '@/external/domain/user/user'
-
-export type UserDto = {
+export type User = {
   id: string
   name: string
   email: string
@@ -9,3 +7,7 @@ export type UserDto = {
   createdAt: string
   updatedAt: string
 }
+
+type UserStatus = 'ACTIVE' | 'INACTIVE' | 'SUSPENDED'
+
+type UserRole = 'ADMIN' | 'MEMBER' | 'GUEST'

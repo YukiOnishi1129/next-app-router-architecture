@@ -15,6 +15,7 @@ src/
 │   │   ├── components/
 │   │   │   ├── client/                       # Client Components（Container/Presenter）
 │   │   │   │   └── RequestForm/
+│   │   │   │       ├── index.ts                    #
 │   │   │   │       ├── RequestForm.tsx             # Re-export（Container）
 │   │   │   │       ├── RequestFormContainer.tsx    # 状態オーケストレーション
 │   │   │   │       ├── RequestFormPresenter.tsx    # プレゼンテーション
