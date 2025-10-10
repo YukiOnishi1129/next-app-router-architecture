@@ -41,7 +41,7 @@ const createTestQueryClient = () =>
   })
 
 const AllTheProviders = ({ children }: { children: ReactNode }) => {
-  const queryClientRef = useRef<QueryClient>()
+  const queryClientRef = useRef<QueryClient | null>(null)
   if (!queryClientRef.current) {
     queryClientRef.current = createTestQueryClient()
   }
