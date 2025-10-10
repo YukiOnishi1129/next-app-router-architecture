@@ -1,6 +1,6 @@
 'use client'
 
-import { PasswordInput } from '@/features/account/components'
+import { PasswordInput } from '@/features/account/components/client/PasswordInput'
 
 import { Button } from '@/shared/components/ui/button'
 
