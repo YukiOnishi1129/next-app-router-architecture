@@ -231,9 +231,9 @@ describe('AccountManagementService', () => {
         accountService.hasPermission(memberAccount, 'request.delete')
       ).toBe(false)
       expect(
-        accountService.hasPermission(memberAccount, 'user.view.self')
+        accountService.hasPermission(memberAccount, 'account.view.self')
       ).toBe(true)
-      expect(accountService.hasPermission(memberAccount, 'user.delete')).toBe(
+      expect(accountService.hasPermission(memberAccount, 'account.delete')).toBe(
         false
       )
     })
@@ -253,7 +253,7 @@ describe('AccountManagementService', () => {
       expect(accountService.hasPermission(guestAccount, 'request.create')).toBe(
         false
       )
-      expect(accountService.hasPermission(guestAccount, 'user.view.self')).toBe(
+      expect(accountService.hasPermission(guestAccount, 'account.view.self')).toBe(
         true
       )
     })
