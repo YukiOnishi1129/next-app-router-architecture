@@ -1,5 +1,7 @@
 'use client'
 
+import { PasswordInput } from '@/features/account/components/client/PasswordInput'
+
 import { Button } from '@/shared/components/ui/button'
 
 import type { LoginFormPresenterProps } from './useLoginForm'
@@ -35,13 +37,12 @@ export function LoginFormPresenter({
         <label className="text-sm font-medium" htmlFor="password">
           Password
         </label>
-        <input
+        <PasswordInput
           id="password"
-          className="border-border bg-background focus:ring-primary w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none"
-          type="password"
-          {...register('password')}
-          aria-invalid={Boolean(errors.password)}
           autoComplete="current-password"
+          aria-invalid={Boolean(errors.password)}
+          {...register('password')}
+          hideToggle
         />
         {errors.password ? (
           <p className="text-destructive text-xs">{errors.password.message}</p>

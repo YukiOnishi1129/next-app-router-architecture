@@ -1,5 +1,7 @@
 'use client'
 
+import { PasswordInput } from '@/features/account/components/client/PasswordInput'
+
 import { Button } from '@/shared/components/ui/button'
 
 import type { SignUpFormPresenterProps } from './useSignUpForm'
@@ -51,13 +53,11 @@ export function SignUpFormPresenter({
         <label className="text-sm font-medium" htmlFor="password">
           Password
         </label>
-        <input
+        <PasswordInput
           id="password"
-          className="border-border bg-background focus:ring-primary w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none"
-          type="password"
-          {...register('password')}
-          aria-invalid={Boolean(errors.password)}
           autoComplete="new-password"
+          aria-invalid={Boolean(errors.password)}
+          {...register('password')}
         />
         {errors.password ? (
           <p className="text-destructive text-xs">{errors.password.message}</p>
@@ -68,13 +68,11 @@ export function SignUpFormPresenter({
         <label className="text-sm font-medium" htmlFor="confirmPassword">
           Confirm password
         </label>
-        <input
+        <PasswordInput
           id="confirmPassword"
-          className="border-border bg-background focus:ring-primary w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none"
-          type="password"
-          {...register('confirmPassword')}
-          aria-invalid={Boolean(errors.confirmPassword)}
           autoComplete="new-password"
+          aria-invalid={Boolean(errors.confirmPassword)}
+          {...register('confirmPassword')}
         />
         {errors.confirmPassword ? (
           <p className="text-destructive text-xs">
