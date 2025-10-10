@@ -22,10 +22,12 @@ src/
 │   │   │   │       ├── RequestForm.test.tsx        # Container integration test
 │   │   │   │       ├── useRequestForm.test.ts      # Hook unit test
 │   │   │   │       ├── RequestForm.stories.tsx     # Storybook (container)
-│   │   │   │       └── RequestFormPresenter.stories.tsx # Storybook (presenter)
+│   │   │   │       ├── RequestFormPresenter.stories.tsx # Storybook (presenter)
+│   │   │   │       └── index.ts                        # Local barrel (exports container/presenter/hook)
 │   │   │   └── server/                       # Server Components (page templates)
 │   │   │       └── NewRequestPageTemplate/
-│   │   │           └── NewRequestPageTemplate.tsx
+│   │   │           ├── NewRequestPageTemplate.tsx
+│   │   │           └── index.ts
 │   │   ├── hooks/                            # Client hooks (TanStack Query wrappers)
 │   │   ├── queries/                          # queryKeys and shared query helpers
 │   │   ├── schemas/                          # Zod schemas
@@ -42,10 +44,12 @@ src/
 │       │   │       ├── ProfileForm.test.tsx
 │       │   │       ├── useProfileForm.test.ts
 │       │   │       ├── ProfileForm.stories.tsx
-│       │   │       └── ProfileFormPresenter.stories.tsx
+│       │   │       ├── ProfileFormPresenter.stories.tsx
+│       │   │       └── index.ts
 │       │   └── server/
 │       │       └── ProfilePageTemplate/
-│       │           └── ProfilePageTemplate.tsx
+│       │           ├── ProfilePageTemplate.tsx
+│       │           └── index.ts
 │       ├── hooks/
 │       └── queries/
 ├── shared/                                  # Cross-cutting UI & utilities
@@ -66,10 +70,10 @@ src/
 
 ## Component Directory Guidelines
 
-1. Avoid barrel exports (`index.ts`) directly under `components/`; import concrete files from pages/containers.
-2. Do not add `index.ts` inside `components/client/**`. Export the container (e.g. `RequestForm.tsx`) as the entry point and keep Container/Presenter/Hook/Story/Test co-located.
-3. Likewise skip `index.ts` in `components/server/**`. Each server component (page template, layout wrapper) should be imported explicitly.
-4. Follow the Container/Presenter/Hook/Story/Test pattern. Place stories/tests alongside the component (or in nested `stories/` and `tests/` folders if preferred).
+1. Each component folder (`components/client/Foo/`, `components/server/Bar/`) owns a local `index.ts` that re-exports its container, presenter, hooks, and helper types. Stories/tests may also be re-exported for Storybook convenience.
+2. The feature-level `components/index.ts` should re-export exclusively from these local barrels so consumers can import via `@/features/<feature>/components`.
+3. Follow the Container/Presenter/Hook/Story/Test co-location pattern. Keep stories/tests alongside the component (or under nested `stories/` / `tests/` folders if desired).
+4. Use `"use client"` at the top of every client component entry file and keep server components under `components/server/**` to leverage Next.js automatic boundaries.
 
 ## Additional Notes
 
