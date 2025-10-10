@@ -1,14 +1,15 @@
-import { act, renderHook } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { act, renderHook, waitFor } from '@/test/test-utils'
 
 import { useSignUpForm } from './useSignUpForm'
 
-const mockUseSignUpMutation = vi.fn()
+const mockHandleSignUp = vi.fn()
 const mockRouterReplace = vi.fn()
 const mockRouterRefresh = vi.fn()
 
-vi.mock('@/features/auth/hooks/useSignUpMutation', () => ({
-  useSignUpMutation: () => mockUseSignUpMutation(),
+vi.mock('@/features/auth/hooks/useSignUp', () => ({
+  useSignUp: () => ({ handleSignUp: mockHandleSignUp }),
 }))
 
 vi.mock('next/navigation', () => ({
@@ -20,21 +21,13 @@ vi.mock('next/navigation', () => ({
 
 describe('useSignUpForm', () => {
   beforeEach(() => {
-    mockUseSignUpMutation.mockReset()
+    mockHandleSignUp.mockReset()
     mockRouterReplace.mockReset()
     mockRouterRefresh.mockReset()
   })
 
   it('submits values and navigates on success', async () => {
-    const mutateAsync = vi.fn().mockResolvedValue({
-      success: true,
-      redirectUrl: '/requests',
-    })
-
-    mockUseSignUpMutation.mockReturnValue({
-      mutateAsync,
-      isPending: false,
-    })
+    mockHandleSignUp.mockResolvedValue({ ok: true })
 
     const { result } = renderHook(() => useSignUpForm())
 
@@ -64,21 +57,21 @@ describe('useSignUpForm', () => {
       } as unknown as React.FormEvent<HTMLFormElement>)
     })
 
-    expect(mutateAsync).toHaveBeenCalledWith({
-      name: '山田 太郎',
-      email: 'user@example.com',
-      password: 'password123',
-      redirectUrl: '/dashboard',
-    })
-    expect(mockRouterReplace).toHaveBeenCalledWith('/requests')
-    expect(mockRouterRefresh).toHaveBeenCalled()
+    await waitFor(() =>
+      expect(mockHandleSignUp).toHaveBeenCalledWith({
+        name: '山田 太郎',
+        email: 'user@example.com',
+        password: 'password123',
+      })
+    )
+    await waitFor(() => expect(mockRouterRefresh).toHaveBeenCalled())
+    await waitFor(() =>
+      expect(mockRouterReplace).toHaveBeenCalledWith('/dashboard')
+    )
   })
 
   it('captures server error on failure', async () => {
-    mockUseSignUpMutation.mockReturnValue({
-      mutateAsync: vi.fn().mockRejectedValue(new Error('Already exists')),
-      isPending: false,
-    })
+    mockHandleSignUp.mockRejectedValue(new Error('Already exists'))
 
     const { result } = renderHook(() => useSignUpForm())
 
@@ -103,11 +96,13 @@ describe('useSignUpForm', () => {
     })
 
     await act(async () => {
-      result.current.onSubmit({
+      await result.current.onSubmit({
         preventDefault: () => undefined,
       } as unknown as React.FormEvent<HTMLFormElement>)
     })
 
-    expect(result.current.serverError).toBe('Already exists')
+    await waitFor(() =>
+      expect(result.current.serverError).toBe('Already exists')
+    )
   })
 })

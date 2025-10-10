@@ -1,14 +1,15 @@
-import { act, renderHook } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { act, renderHook, waitFor } from '@/test/test-utils'
 
 import { useLoginForm } from './useLoginForm'
 
-const mockUseLoginMutation = vi.fn()
+const mockHandleSignIn = vi.fn()
 const mockRouterReplace = vi.fn()
 const mockRouterRefresh = vi.fn()
 
-vi.mock('@/features/auth/hooks/useLoginMutation', () => ({
-  useLoginMutation: () => mockUseLoginMutation(),
+vi.mock('@/features/auth/hooks/useSignIn', () => ({
+  useSignIn: () => ({ handleSignIn: mockHandleSignIn }),
 }))
 
 vi.mock('next/navigation', () => ({
@@ -20,21 +21,13 @@ vi.mock('next/navigation', () => ({
 
 describe('useLoginForm', () => {
   beforeEach(() => {
-    mockUseLoginMutation.mockReset()
+    mockHandleSignIn.mockReset()
     mockRouterReplace.mockReset()
     mockRouterRefresh.mockReset()
   })
 
   it('submits credentials and redirects on success', async () => {
-    const mutateAsync = vi.fn().mockResolvedValue({
-      success: true,
-      redirectUrl: '/requests',
-    })
-
-    mockUseLoginMutation.mockReturnValue({
-      mutateAsync,
-      isPending: false,
-    })
+    mockHandleSignIn.mockResolvedValue({ ok: true })
 
     const { result } = renderHook(() => useLoginForm())
 
@@ -56,20 +49,20 @@ describe('useLoginForm', () => {
       } as unknown as React.FormEvent<HTMLFormElement>)
     })
 
-    expect(mutateAsync).toHaveBeenCalledWith({
-      email: 'user@example.com',
-      password: 'password123',
-      redirectUrl: '/dashboard',
-    })
-    expect(mockRouterReplace).toHaveBeenCalledWith('/requests')
-    expect(mockRouterRefresh).toHaveBeenCalled()
+    await waitFor(() =>
+      expect(mockHandleSignIn).toHaveBeenCalledWith(
+        'user@example.com',
+        'password123'
+      )
+    )
+    await waitFor(() => expect(mockRouterRefresh).toHaveBeenCalled())
+    await waitFor(() =>
+      expect(mockRouterReplace).toHaveBeenCalledWith('/dashboard')
+    )
   })
 
   it('sets server error when mutation fails', async () => {
-    mockUseLoginMutation.mockReturnValue({
-      mutateAsync: vi.fn().mockRejectedValue(new Error('Invalid credentials')),
-      isPending: false,
-    })
+    mockHandleSignIn.mockRejectedValue(new Error('Invalid credentials'))
 
     const { result } = renderHook(() => useLoginForm())
 
@@ -91,7 +84,9 @@ describe('useLoginForm', () => {
       } as unknown as React.FormEvent<HTMLFormElement>)
     })
 
-    expect(result.current.serverError).toBe('Invalid credentials')
+    await waitFor(() =>
+      expect(result.current.serverError).toBe('Invalid credentials')
+    )
     expect(mockRouterRefresh).not.toHaveBeenCalled()
   })
 })
