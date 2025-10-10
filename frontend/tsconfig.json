@@ -29,6 +29,6 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     "vitest.config.ts"
-  ],
+, "src/features/auth/components/client/LoginForm"  ],
   "exclude": ["node_modules"]
 }

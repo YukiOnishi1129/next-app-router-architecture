@@ -1,6 +1,6 @@
 import Link from 'next/link'
 
-import { SignUpForm } from '@/features/auth/components/client/SignUpForm/SignUpForm'
+import { SignUpForm } from '@/features/auth/components/client/SignUpForm'
 import { redirectIfAuthenticatedServer } from '@/features/auth/servers/redirect.server'
 
 export async function SignUpPageTemplate() {

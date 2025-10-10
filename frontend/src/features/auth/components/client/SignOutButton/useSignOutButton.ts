@@ -1,8 +1,8 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
+import { useCallback, useTransition } from 'react'
 
-import { useLogoutMutation } from '@/features/auth/hooks/useLogoutMutation'
+import { useSignOut } from '@/features/auth/hooks/useSignOut'
 
 export type SignOutButtonPresenterProps = {
   onSignOut: () => void
@@ -10,23 +10,17 @@ export type SignOutButtonPresenterProps = {
 }
 
 export function useSignOutButton(): SignOutButtonPresenterProps {
-  const router = useRouter()
-  const logoutMutation = useLogoutMutation()
+  const [isPending, startTransition] = useTransition()
+  const { handleSignOut } = useSignOut()
 
-  const handleSignOut = () => {
-    logoutMutation.mutate(undefined, {
-      onSuccess: () => {
-        router.replace('/login')
-        router.refresh()
-      },
-      onError: (error) => {
-        console.error('Failed to sign out:', error)
-      },
+  const handleLogout = useCallback(() => {
+    startTransition(async () => {
+      await handleSignOut()
     })
-  }
+  }, [handleSignOut])
 
   return {
-    onSignOut: handleSignOut,
-    isSigningOut: logoutMutation.isPending,
+    onSignOut: handleLogout,
+    isSigningOut: isPending,
   }
 }
