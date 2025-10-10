@@ -2,6 +2,8 @@ import 'server-only'
 
 import { ZodError } from 'zod'
 
+import { getSessionServer } from '@/features/auth/servers/session.server'
+
 import {
   markNotificationReadSchema,
   markAllNotificationsReadSchema,
@@ -9,7 +11,6 @@ import {
 } from '@/external/dto/notification'
 
 import { notificationService, userManagementService } from './shared'
-import { getSessionServer } from '../auth/query.server'
 
 import type {
   MarkNotificationReadInput,
@@ -25,7 +26,7 @@ export async function markNotificationReadServer(
 ): Promise<NotificationCommandResponse> {
   try {
     const session = await getSessionServer()
-    if (!session.isAuthenticated || !session.user) {
+    if (!session?.account) {
       return { success: false, error: 'Unauthorized' }
     }
 
@@ -33,7 +34,7 @@ export async function markNotificationReadServer(
 
     await notificationService.markAsRead(
       validated.notificationId,
-      session.user.id
+      session.account.id
     )
 
     return { success: true }
@@ -54,13 +55,13 @@ export async function markAllNotificationsReadServer(
 ): Promise<MarkAllNotificationsReadResponse> {
   try {
     const session = await getSessionServer()
-    if (!session.isAuthenticated || !session.user) {
+    if (!session?.account) {
       return { success: false, error: 'Unauthorized' }
     }
 
     const validated = markAllNotificationsReadSchema.parse(data ?? {})
     const count = await notificationService.markAllAsRead(
-      session.user.id,
+      session.account.id,
       validated.before
     )
 
@@ -82,7 +83,7 @@ export async function updateNotificationPreferencesServer(
 ): Promise<UpdateNotificationPreferencesResponse> {
   try {
     const session = await getSessionServer()
-    if (!session.isAuthenticated || !session.user) {
+    if (!session?.account) {
       return { success: false, error: 'Unauthorized' }
     }
 
@@ -109,7 +110,7 @@ export async function updateNotificationPreferencesServer(
     }
 
     const updated = await notificationService.updateUserPreferences(
-      session.user.id,
+      session.account.id,
       {
         emailEnabled: validated.emailNotifications,
         inAppEnabled: validated.inAppNotifications,
@@ -153,12 +154,12 @@ export async function sendTestNotificationServer(
 ): Promise<NotificationCommandResponse> {
   try {
     const session = await getSessionServer()
-    if (!session.isAuthenticated || !session.user) {
+    if (!session?.account) {
       return { success: false, error: 'Unauthorized' }
     }
 
     const currentUser = await userManagementService.findUserById(
-      session.user.id
+      session.account.id
     )
     if (!currentUser || !currentUser.isAdmin()) {
       return { success: false, error: 'Insufficient permissions' }

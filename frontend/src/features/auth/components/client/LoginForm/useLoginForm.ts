@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useTransition, useCallback } from 'react'
 
 import { useRouter } from 'next/navigation'
 
@@ -8,9 +8,8 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 
-import { useLoginMutation } from '@/features/auth/hooks/useLoginMutation'
+import { useSignIn } from '@/features/auth/hooks/useSignIn'
 
-import type { Route } from 'next'
 import type { FieldErrors, UseFormRegister } from 'react-hook-form'
 
 const loginSchema = z.object({
@@ -30,7 +29,8 @@ export type LoginFormPresenterProps = {
 
 export function useLoginForm(): LoginFormPresenterProps {
   const router = useRouter()
-  const loginMutation = useLoginMutation()
+  const [isPending, startTransition] = useTransition()
+  const { handleSignIn } = useSignIn()
   const [serverError, setServerError] = useState<string | null>(null)
 
   const form = useForm<LoginFormValues>({
@@ -47,28 +47,35 @@ export function useLoginForm(): LoginFormPresenterProps {
     formState: { errors },
   } = form
 
-  const submitHandler = handleSubmit(async (values) => {
-    setServerError(null)
-    try {
-      const result = await loginMutation.mutateAsync({
-        ...values,
-        redirectUrl: '/dashboard',
-      })
+  const handleLoginSubmit = useCallback(
+    (data: LoginFormValues) => {
+      startTransition(async () => {
+        setServerError(null)
+        try {
+          const result = await handleSignIn(data.email, data.password)
+          if (!result || result.error) {
+            throw new Error(result?.error ?? 'サインインに失敗しました')
+          }
 
-      router.replace((result.redirectUrl ?? '/dashboard') as Route)
-      router.refresh()
-    } catch (error) {
-      setServerError(
-        error instanceof Error ? error.message : 'サインインに失敗しました'
-      )
-    }
-  })
+          router.refresh()
+          router.replace('/dashboard')
+        } catch (error) {
+          setServerError(
+            error instanceof Error ? error.message : 'サインインに失敗しました'
+          )
+        }
+      })
+    },
+    [handleSignIn, router]
+  )
+
+  const submitHandler = handleSubmit(handleLoginSubmit)
 
   return {
     register,
     errors,
     onSubmit: submitHandler,
-    isSubmitting: loginMutation.isPending,
+    isSubmitting: isPending,
     serverError,
   }
 }

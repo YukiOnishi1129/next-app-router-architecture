@@ -2,7 +2,7 @@ import { z } from 'zod'
 
 import { UserRole, UserStatus } from '@/external/domain/user/user'
 
-import type { UserDto } from './user.dto'
+import type { User } from '@/features/user/types/user'
 
 export const listUsersSchema = z.object({
   status: z.enum(UserStatus).optional(),
@@ -17,7 +17,7 @@ export type ListUsersInput = z.input<typeof listUsersSchema>
 export type ListUsersResponse = {
   success: boolean
   error?: string
-  users?: UserDto[]
+  users?: User[]
   total?: number
   limit?: number
   offset?: number
@@ -26,5 +26,5 @@ export type ListUsersResponse = {
 export type GetUserResponse = {
   success: boolean
   error?: string
-  user?: UserDto
+  user?: User
 }

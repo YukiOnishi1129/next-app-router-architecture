@@ -1,22 +1,58 @@
-import React, { ReactElement } from 'react'
+import React, { ReactElement, ReactNode, useRef } from 'react'
 
-import { render, RenderOptions } from '@testing-library/react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import {
+  render,
+  RenderOptions,
+  renderHook as rtlRenderHook,
+} from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { SessionProvider } from 'next-auth/react'
 
+import type {
+  RenderHookOptions,
+  RenderHookResult,
+} from '@testing-library/react'
+import type { Session } from 'next-auth'
+
 // Mock session for tests
-const mockSession = {
-  user: {
+const mockSession: Session = {
+  account: {
+    id: '1',
     name: 'Test User',
     email: 'test@example.com',
-    image: '/test-avatar.png',
+    roles: ['ADMIN'],
+    status: 'ACTIVE',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
   },
   expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours from now
 }
 
 // Add any providers here that your app needs globally
-const AllTheProviders = ({ children }: { children: React.ReactNode }) => {
-  return <SessionProvider session={mockSession}>{children}</SessionProvider>
+const createTestQueryClient = () =>
+  new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+        refetchOnWindowFocus: false,
+      },
+    },
+  })
+
+const AllTheProviders = ({ children }: { children: ReactNode }) => {
+  const queryClientRef = useRef<QueryClient | null>(null)
+  if (!queryClientRef.current) {
+    queryClientRef.current = createTestQueryClient()
+  }
+
+  return (
+    <SessionProvider session={mockSession}>
+      <QueryClientProvider client={queryClientRef.current}>
+        {children}
+      </QueryClientProvider>
+    </SessionProvider>
+  )
 }
 
 // Custom render function that includes providers
@@ -29,6 +65,12 @@ const customRender = (
 
 // Re-export everything
 export * from '@testing-library/react'
+
+export const renderHook = <TResult, TProps>(
+  callback: (props: TProps) => TResult,
+  options?: Omit<RenderHookOptions<TProps>, 'wrapper'>
+): RenderHookResult<TResult, TProps> =>
+  rtlRenderHook(callback, { wrapper: AllTheProviders, ...options })
 
 // Override render method
 export { customRender as render }

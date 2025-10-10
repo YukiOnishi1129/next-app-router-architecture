@@ -1,5 +1,7 @@
 import CredentialsProvider from 'next-auth/providers/credentials'
 
+import { authorizeServer } from '@/features/auth/servers/authorization.server'
+
 import type { NextAuthOptions } from 'next-auth'
 
 export const authOptions: NextAuthOptions = {
@@ -11,23 +13,15 @@ export const authOptions: NextAuthOptions = {
         email: { label: 'Email', type: 'text', placeholder: 'you@example.com' },
         password: { label: 'Password', type: 'password' },
         action: { label: 'Action', type: 'text' },
-        firstName: { label: 'First Name', type: 'text' },
-        lastName: { label: 'Last Name', type: 'text' },
+        name: { label: 'Name', type: 'text' },
       },
       async authorize(credentials) {
-        if (!credentials) {
-          return null
-        }
-        const { email, password, action, firstName, lastName } = credentials
-        return {
-          id: '1',
-          name: 'Test User',
-          email: email,
-          password: password,
-          action: action,
-          firstName: firstName,
-          lastName: lastName,
-        }
+        return await authorizeServer({
+          email: credentials?.email,
+          password: credentials?.password,
+          action: credentials?.action,
+          name: credentials?.name,
+        })
       },
     }),
   ],
@@ -38,16 +32,14 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.user = user
+        token.account = user.account
       }
       return token
     },
     async session({ session, token }) {
-      console.log('Session callback', { session, token })
-      //   if (token && session.user) {
-      //     session.user.id = token.user.id;
-      //     session.user.email = token.user.email;
-      //     session.user.name = token.user.name;
-      //   }
+      if (token?.account) {
+        session.account = token.account
+      }
       return session
     },
   },

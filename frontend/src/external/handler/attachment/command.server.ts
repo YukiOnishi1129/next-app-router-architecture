@@ -2,13 +2,14 @@ import 'server-only'
 
 import { ZodError } from 'zod'
 
+import { getSessionServer } from '@/features/auth/servers/session.server'
+
 import {
   createAttachmentSchema,
   deleteAttachmentSchema,
 } from '@/external/dto/attachment'
 
 import { attachmentService, mapAttachmentToDto } from './shared'
-import { getSessionServer } from '../auth/query.server'
 
 import type {
   CreateAttachmentInput,
@@ -22,7 +23,7 @@ export async function createAttachmentServer(
 ): Promise<CreateAttachmentResponse> {
   try {
     const session = await getSessionServer()
-    if (!session.isAuthenticated || !session.user) {
+    if (!session?.account) {
       return { success: false, error: 'Unauthorized' }
     }
 
@@ -34,7 +35,7 @@ export async function createAttachmentServer(
       fileSize: validated.fileSize,
       mimeType: validated.mimeType,
       data: validated.data,
-      userId: session.user.id,
+      userId: session.account.id,
       context: {
         ipAddress: 'server',
         userAgent: 'server-command',
@@ -63,7 +64,7 @@ export async function deleteAttachmentServer(
 ): Promise<DeleteAttachmentResponse> {
   try {
     const session = await getSessionServer()
-    if (!session.isAuthenticated || !session.user) {
+    if (!session?.account) {
       return { success: false, error: 'Unauthorized' }
     }
 
@@ -71,7 +72,7 @@ export async function deleteAttachmentServer(
 
     await attachmentService.deleteAttachment({
       attachmentId: validated.attachmentId,
-      userId: session.user.id,
+      userId: session.account.id,
       context: {
         ipAddress: 'server',
         userAgent: 'server-command',

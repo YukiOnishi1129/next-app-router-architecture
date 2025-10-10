@@ -1,16 +1,13 @@
 import 'server-only'
 
-import { cookies } from 'next/headers'
-
 import { ZodError } from 'zod'
 
 import {
   setIdTokenCookieServer,
   setRefreshTokenCookieServer,
-  deleteAuthCookiesServer,
 } from '@/features/auth/servers/token.server'
 
-import { createSessionSchema, createUserSchema } from '@/external/dto/auth'
+import { signInCommandSchema, signUpCommandSchema } from '@/external/dto/auth'
 
 import {
   authService,
@@ -20,19 +17,18 @@ import {
 } from './shared'
 
 import type {
-  CreateSessionInput,
-  CreateSessionResponse,
-  CreateUserInput,
-  CreateUserResponse,
-  DeleteSessionResponse,
+  SignUpCommandResponse,
+  SignInCommandRequest,
+  SignInCommandResponse,
+  SignUpCommandRequest,
 } from '@/external/dto/auth'
 import type { Route } from 'next'
 
-export async function createSessionServer(
-  data: CreateSessionInput
-): Promise<CreateSessionResponse> {
+export async function loginCommandServer(
+  data: SignInCommandRequest
+): Promise<SignInCommandResponse> {
   try {
-    const validated = createSessionSchema.parse(data)
+    const validated = signInCommandSchema.parse(data)
 
     const authResult = await authService.signInWithEmailPassword(
       validated.email,
@@ -56,6 +52,17 @@ export async function createSessionServer(
 
     return {
       success: true,
+      user: {
+        id: user.getId().getValue(),
+        email: user.getEmail().getValue(),
+        name: user.getName(),
+        roles: user.getRoles(),
+        status: user.getStatus(),
+        createdAt: user.getCreatedAt().toISOString(),
+        updatedAt: user.getUpdatedAt().toISOString(),
+      },
+      idToken: authResult.idToken,
+      refreshToken: authResult.refreshToken,
       redirectUrl: redirectUrl || '/dashboard',
     }
   } catch (error) {
@@ -73,11 +80,11 @@ export async function createSessionServer(
   }
 }
 
-export async function createUserServer(
-  data: CreateUserInput
-): Promise<CreateUserResponse> {
+export async function signUpCommandServer(
+  data: SignUpCommandRequest
+): Promise<SignUpCommandResponse> {
   try {
-    const validated = createUserSchema.parse(data)
+    const validated = signUpCommandSchema.parse(data)
 
     const authResult = await authService.signUpWithEmailPassword(
       validated.email,
@@ -105,6 +112,17 @@ export async function createUserServer(
 
     return {
       success: true,
+      user: {
+        id: user.getId().getValue(),
+        email: user.getEmail().getValue(),
+        name: user.getName(),
+        roles: user.getRoles(),
+        status: user.getStatus(),
+        createdAt: user.getCreatedAt().toISOString(),
+        updatedAt: user.getUpdatedAt().toISOString(),
+      },
+      idToken: authResult.idToken,
+      refreshToken: authResult.refreshToken,
       redirectUrl: redirectUrl || '/dashboard',
     }
   } catch (error) {
@@ -118,64 +136,6 @@ export async function createUserServer(
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Sign up failed',
-    }
-  }
-}
-
-export type {
-  CreateSessionInput,
-  CreateUserInput,
-  CreateSessionResponse,
-  CreateUserResponse,
-  DeleteSessionResponse,
-} from '@/external/dto/auth'
-
-export async function deleteSessionServer(
-  userId?: string
-): Promise<DeleteSessionResponse> {
-  try {
-    const cookieStore = await cookies()
-    const token = cookieStore.get('id-token')?.value
-
-    let user = null
-
-    if (userId) {
-      user = await userManagementService.findUserById(userId)
-    }
-
-    if (!user && token) {
-      const tokenInfo = await authService.verifyToken(token)
-      if (tokenInfo?.email) {
-        user = await userManagementService.findUserByEmail(tokenInfo.email)
-      }
-    }
-
-    if (!user) {
-      cookieStore.delete('id-token')
-      cookieStore.delete('refresh-token')
-      return {
-        success: false,
-        error: 'No active session',
-      }
-    }
-
-    try {
-      await authService.revokeAuthentication()
-    } catch (error) {
-      console.error('Failed to revoke token:', error)
-    }
-
-    await auditService.logUserLogout(user, SERVER_CONTEXT)
-
-    await deleteAuthCookiesServer()
-
-    return {
-      success: true,
-    }
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Sign out failed',
     }
   }
 }

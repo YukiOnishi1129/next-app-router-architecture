@@ -1,9 +1,40 @@
 import { cookies } from 'next/headers'
 import 'server-only'
 
-// import { decodeJwt } from 'jose'
+import { decodeJwt } from 'jose'
 
 import { AUTH_COOKIE_NAMES } from '@/features/auth/constants/cookie'
+
+import { refreshIdTokenCommandServer } from '@/external/handler/auth/token.server'
+
+const SKEW = 60 // 60 seconds buffer for clock skew and network latency
+
+export const refreshIdTokenServer = async () => {
+  const idt = await getIdTokenServer()
+  if (idt) {
+    const { exp } = decodeJwt(idt) as { exp?: number }
+    const now = Math.floor(Date.now() / 1000)
+    // Check if token has more than 60 seconds until expiration
+    // This prevents using a token that might expire during processing
+    if (exp && exp > now + SKEW) return idt
+  }
+  const rt = await getRefreshTokenServer()
+  if (!rt) throw new Error('unauthorized')
+
+  const data = await refreshIdTokenCommandServer({ refreshToken: rt })
+
+  if (!data.success || !data.idToken) {
+    throw new Error('unauthorized')
+  }
+
+  await setIdTokenCookieServer(data.idToken)
+
+  if (data.refreshToken) {
+    await setRefreshTokenCookieServer(data.refreshToken)
+  }
+
+  return data.idToken
+}
 
 export const getRefreshTokenServer = async () => {
   const cookieStore = await cookies()
@@ -21,10 +52,10 @@ export const setRefreshTokenCookieServer = async (token: string) => {
   })
 }
 
-// const getIdTokenServer = async () => {
-//   const cookieStore = await cookies()
-//   return cookieStore.get(AUTH_COOKIE_NAMES.ID_TOKEN)?.value
-// }
+const getIdTokenServer = async () => {
+  const cookieStore = await cookies()
+  return cookieStore.get(AUTH_COOKIE_NAMES.ID_TOKEN)?.value
+}
 
 export const setIdTokenCookieServer = async (token: string) => {
   const cookieStore = await cookies()

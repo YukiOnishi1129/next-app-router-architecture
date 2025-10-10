@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useTransition, useCallback } from 'react'
 
 import { useRouter } from 'next/navigation'
 
@@ -8,9 +8,8 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 
-import { useSignUpMutation } from '@/features/auth/hooks/useSignUpMutation'
+import { useSignUp } from '@/features/auth/hooks/useSignUp'
 
-import type { Route } from 'next'
 import type { FieldErrors, UseFormRegister } from 'react-hook-form'
 
 const signUpSchema = z
@@ -43,8 +42,9 @@ export type SignUpFormPresenterProps = {
 
 export function useSignUpForm(): SignUpFormPresenterProps {
   const router = useRouter()
+  const [isPending, startTransition] = useTransition()
   const [serverError, setServerError] = useState<string | null>(null)
-  const signUpMutation = useSignUpMutation()
+  const { handleSignUp } = useSignUp()
 
   const form = useForm<SignUpFormValues>({
     resolver: zodResolver(signUpSchema),
@@ -62,33 +62,41 @@ export function useSignUpForm(): SignUpFormPresenterProps {
     formState: { errors },
   } = form
 
-  const submitHandler = handleSubmit(async ({ name, email, password }) => {
-    setServerError(null)
-    try {
-      const result = await signUpMutation.mutateAsync({
-        name,
-        email,
-        password,
-        redirectUrl: '/dashboard',
-      })
+  const handleSignupSubmit = useCallback(
+    (data: SignUpFormValues) => {
+      startTransition(async () => {
+        setServerError(null)
+        try {
+          const result = await handleSignUp({
+            name: data.name,
+            email: data.email,
+            password: data.password,
+          })
+          if (!result || result.error) {
+            throw new Error(result?.error ?? 'サインアップに失敗しました')
+          }
 
-      const destination = (result.redirectUrl ?? '/dashboard') as Route
-      router.replace(destination)
-      router.refresh()
-    } catch (error) {
-      setServerError(
-        error instanceof Error
-          ? error.message
-          : 'アカウントの作成に失敗しました'
-      )
-    }
-  })
+          router.refresh()
+          router.replace('/dashboard')
+        } catch (error) {
+          setServerError(
+            error instanceof Error
+              ? error.message
+              : 'サインアップに失敗しました'
+          )
+        }
+      })
+    },
+    [handleSignUp, router]
+  )
+
+  const submitHandler = handleSubmit(handleSignupSubmit)
 
   return {
     register,
     errors,
     onSubmit: submitHandler,
-    isSubmitting: signUpMutation.isPending,
+    isSubmitting: isPending,
     serverError,
   }
 }

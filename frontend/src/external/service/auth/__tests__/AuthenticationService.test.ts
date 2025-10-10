@@ -196,6 +196,7 @@ describe('AuthenticationService (Identity Platform)', () => {
       expect(result).toEqual({
         token: 'new-id-token',
         refreshToken: 'new-refresh-token',
+        expiresIn: '3600',
       })
     })
 

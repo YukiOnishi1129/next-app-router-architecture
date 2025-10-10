@@ -1,48 +1,29 @@
-import { act, renderHook } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { act, renderHook, waitFor } from '@/test/test-utils'
 
 import { useSignOutButton } from './useSignOutButton'
 
-const mockUseLogoutMutation = vi.fn()
-const mockRouterReplace = vi.fn()
-const mockRouterRefresh = vi.fn()
+const mockHandleSignOut = vi.fn()
 
-vi.mock('@/features/auth/hooks/useLogoutMutation', () => ({
-  useLogoutMutation: () => mockUseLogoutMutation(),
-}))
-
-vi.mock('next/navigation', () => ({
-  useRouter: () => ({
-    replace: mockRouterReplace,
-    refresh: mockRouterRefresh,
-  }),
+vi.mock('@/features/auth/hooks/useSignOut', () => ({
+  useSignOut: () => ({ handleSignOut: mockHandleSignOut }),
 }))
 
 describe('useSignOutButton', () => {
   beforeEach(() => {
-    mockUseLogoutMutation.mockReset()
-    mockRouterReplace.mockReset()
-    mockRouterRefresh.mockReset()
+    mockHandleSignOut.mockReset()
   })
 
-  it('invokes mutation and redirects on success', () => {
-    const mutate = vi.fn((_, options) => {
-      options?.onSuccess?.({ success: true })
-    })
-
-    mockUseLogoutMutation.mockReturnValue({
-      mutate,
-      isPending: false,
-    })
+  it('invokes sign out handler', async () => {
+    mockHandleSignOut.mockResolvedValue(undefined)
 
     const { result } = renderHook(() => useSignOutButton())
 
-    act(() => {
+    await act(async () => {
       result.current.onSignOut()
     })
 
-    expect(mutate).toHaveBeenCalled()
-    expect(mockRouterReplace).toHaveBeenCalledWith('/login')
-    expect(mockRouterRefresh).toHaveBeenCalled()
+    await waitFor(() => expect(mockHandleSignOut).toHaveBeenCalledTimes(1))
   })
 })

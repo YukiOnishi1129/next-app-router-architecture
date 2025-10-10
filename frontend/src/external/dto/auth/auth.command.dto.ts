@@ -1,5 +1,6 @@
 import { z } from 'zod'
 
+import type { User } from '@/features/user/types/user'
 import type { Route } from 'next'
 
 const redirectUrlSchema = z
@@ -10,35 +11,53 @@ const redirectUrlSchema = z
     'Redirect URL must be an absolute URL or an internal path'
   )
 
-export const createSessionSchema = z.object({
+export const signInCommandSchema = z.object({
   email: z.email(),
   password: z.string().min(6),
   redirectUrl: redirectUrlSchema.optional(),
 })
 
-export const createUserSchema = z.object({
+export type SignInCommandRequest = z.input<typeof signInCommandSchema>
+
+export type SignInCommandResponse = {
+  success: boolean
+  error?: string
+  user?: User
+  idToken?: string
+  refreshToken?: string
+  redirectUrl?: Route
+}
+
+export const signUpCommandSchema = z.object({
   email: z.email(),
   password: z.string().min(6),
   name: z.string().min(1).optional(),
   redirectUrl: redirectUrlSchema.optional(),
 })
 
-export type CreateSessionInput = z.input<typeof createSessionSchema>
-export type CreateUserInput = z.input<typeof createUserSchema>
+export type SignUpCommandRequest = z.input<typeof signUpCommandSchema>
 
-export type CreateSessionResponse = {
+export type SignUpCommandResponse = {
   success: boolean
   error?: string
+  user?: User
+  idToken?: string
+  refreshToken?: string
   redirectUrl?: Route
 }
 
-export type CreateUserResponse = {
-  success: boolean
-  error?: string
-  redirectUrl?: Route
-}
+export const refreshIdTokenCommandSchema = z.object({
+  refreshToken: z.string().min(1, 'Refresh token is required'),
+})
 
-export type DeleteSessionResponse = {
+export type RefreshIdTokenCommandRequest = z.input<
+  typeof refreshIdTokenCommandSchema
+>
+
+export type RefreshIdTokenCommandResponse = {
   success: boolean
   error?: string
+  idToken?: string
+  refreshToken?: string
+  expiresIn?: string
 }

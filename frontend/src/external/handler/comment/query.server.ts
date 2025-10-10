@@ -2,10 +2,11 @@ import 'server-only'
 
 import { z } from 'zod'
 
+import { getSessionServer } from '@/features/auth/servers/session.server'
+
 import { listCommentsSchema } from '@/external/dto/comment'
 
 import { commentService, mapCommentToDto } from './shared'
-import { getSessionServer } from '../auth/query.server'
 
 import type {
   GetCommentThreadResponse,
@@ -18,7 +19,7 @@ export async function listCommentsServer(
 ): Promise<ListCommentsResponse> {
   try {
     const session = await getSessionServer()
-    if (!session.isAuthenticated || !session.user) {
+    if (!session?.account) {
       return { success: false, error: 'Unauthorized' }
     }
 
@@ -26,7 +27,7 @@ export async function listCommentsServer(
 
     const result = await commentService.getComments({
       requestId: validated.requestId,
-      userId: session.user.id,
+      userId: session.account.id,
       limit: validated.limit,
       offset: validated.offset,
     })
@@ -55,13 +56,13 @@ export async function getCommentThreadServer(
 ): Promise<GetCommentThreadResponse> {
   try {
     const session = await getSessionServer()
-    if (!session.isAuthenticated || !session.user) {
+    if (!session?.account) {
       return { success: false, error: 'Unauthorized' }
     }
 
     const result = await commentService.getCommentThread(
       commentId,
-      session.user.id
+      session.account.id
     )
 
     return {

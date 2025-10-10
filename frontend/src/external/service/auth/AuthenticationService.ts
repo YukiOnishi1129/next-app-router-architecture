@@ -138,9 +138,11 @@ export class AuthenticationService {
   /**
    * Refresh authentication token
    */
-  async refreshToken(
-    refreshToken: string
-  ): Promise<{ token: string; refreshToken?: string } | null> {
+  async refreshToken(refreshToken: string): Promise<{
+    token: string
+    refreshToken?: string
+    expiresIn?: string
+  } | null> {
     try {
       const newTokens =
         await this.identityPlatformClient.refreshIdToken(refreshToken)
@@ -148,6 +150,7 @@ export class AuthenticationService {
       return {
         token: newTokens.idToken,
         refreshToken: newTokens.refreshToken,
+        expiresIn: newTokens.expiresIn,
       }
     } catch (error) {
       console.error('Token refresh failed:', error)

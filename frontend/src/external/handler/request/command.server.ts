@@ -2,6 +2,8 @@ import 'server-only'
 
 import { ZodError } from 'zod'
 
+import { getSessionServer } from '@/features/auth/servers/session.server'
+
 import {
   createRequestSchema,
   updateRequestSchema,
@@ -19,7 +21,6 @@ import {
   userManagementService,
   mapRequestToDto,
 } from './shared'
-import { getSessionServer } from '../auth/query.server'
 
 import type {
   CreateRequestInput,
@@ -35,10 +36,10 @@ import type {
 
 async function requireSessionUser() {
   const session = await getSessionServer()
-  if (!session.isAuthenticated || !session.user) {
+  if (!session?.account) {
     throw new Error('Unauthorized')
   }
-  return session.user
+  return session.account
 }
 
 export async function createRequestServer(
