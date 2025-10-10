@@ -45,3 +45,19 @@ export type SignUpCommandResponse = {
   refreshToken?: string
   redirectUrl?: Route
 }
+
+export const refreshIdTokenCommandSchema = z.object({
+  refreshToken: z.string().min(1, 'Refresh token is required'),
+})
+
+export type RefreshIdTokenCommandRequest = z.input<
+  typeof refreshIdTokenCommandSchema
+>
+
+export type RefreshIdTokenCommandResponse = {
+  success: boolean
+  error?: string
+  idToken?: string
+  refreshToken?: string
+  expiresIn?: string
+}
