@@ -9,4 +9,4 @@
 
 ## Status Machine
 draft → submitted → approved | rejected
-(reopenは今回は非対応、将来拡張)
+(Reopen not supported in the current scope; can be added later.)

@@ -1,50 +1,50 @@
 # Documentation Index
 
-このリポジトリは、Next.js App Routerを使用した保守性と拡張性の高いフロントエンドアーキテクチャのベストプラクティスを示すサンプルプロジェクトです。dev.toで公開予定の記事の参考実装となります。
+This repository demonstrates best practices for building a maintainable, scalable Next.js App Router application. It serves as the reference implementation for an upcoming dev.to article.
 
-## プロジェクトの目的
+## Project Goals
 
-- Next.js App Routerの最適な設計方針を実例で示す
-- 保守性と拡張性を重視したフロントエンド設計のベストプラクティスを提供
-- 実践的な技術スタックの組み合わせを提示
+- Showcase production-ready architectural patterns with the App Router
+- Provide maintainable frontend design practices emphasising separation of concerns
+- Highlight a practical stack for real-world teams
 
-## 技術スタック
+## Stack
 
-### フロントエンド
+### Frontend
 - **Next.js 15** (App Router)
 - **TypeScript**
-- **TanStack Query** - データフェッチとキャッシュ管理
-- **React Hook Form + Zod** - フォーム管理とバリデーション
-- **Shadcn UI** - UIコンポーネントライブラリ
+- **TanStack Query** for data fetching and caching
+- **React Hook Form + Zod** for forms and validation
+- **Shadcn UI** component library
 
-### バックエンド / データ層
-- **PostgreSQL** - データベース
-- **Drizzle ORM** - TypeScript向けORM
-- **Server Actions / Server Components** - サーバーサイド処理
+### Back end / Data layer
+- **PostgreSQL**
+- **Drizzle ORM**
+- **Server Components & Server Actions** for server-side execution
 
-### 開発環境
-- **Docker Compose** - PostgreSQLコンテナ管理
-- **pnpm** - パッケージマネージャ
+### Tooling
+- **Docker Compose** for Postgres
+- **pnpm** package manager
 
-## アーキテクチャの特徴
+## Architectural Highlights
 
-1. **External層の分離**: バックエンド専用処理（DB接続、外部API）を`frontend/external`に集約
-2. **型安全性**: End-to-endの型安全性を確保
-3. **キャッシュ戦略**: TanStack Queryによる効率的なデータ管理
-4. **フォーム処理**: React Hook Form + Zodによる堅牢なフォーム実装
-5. **コンポーネント設計**: 再利用可能なUIコンポーネントの構築
+1. **External layer isolation** – server-only code for DB connections, Identity Platform, and third-party APIs lives under `frontend/src/external`.
+2. **Type safety end-to-end** – DTOs + Zod schemas ensure runtime and compile-time safety.
+3. **Cache-aware design** – TanStack Query powers optimistic updates and background refreshes.
+4. **Robust forms** – React Hook Form + Zod provide performant, type-safe form workflows.
+5. **Composable UI** – Container/Presenter pattern keeps components reusable and predictable.
 
-## ドキュメント構成
+## Documents
 
-### システムドキュメント
-- [01 System Overview](./01_system_overview.md)
-- [02 Requirements](./02_requirements.md)
-- [03 Architecture](./03_architecture.md)
-- [04 Data Model](./04_data_model.md)
-- [05 API Contracts](./05_api_contracts.md)
-- [06 Workflows](./06_workflows.md)
-- [07 Non-Functional](./07_nonfunctional.md)
-- [08 Env & Local Setup](./08_env_and_local.md)
+### System documentation
+- [01 System Overview](./01-system-overview.md)
+- [02 Requirements](./02-requirements.md)
+- [03 Architecture](./03-architecture.md)
+- [04 Data Model](./04-data-model.md)
+- [05 API Contracts](./05-api-contracts.md)
+- [06 Workflows](./06-workflows.md)
+- [07 Non-Functional](./07-nonfunctional.md)
+- [08 Environment & Local Setup](./08-env-and-local.md)
 
-### フロントエンド詳細ドキュメント
-フロントエンド固有の設計・実装詳細は[frontend/docs](../frontend/docs/)を参照してください。
+### Frontend documentation
+See [frontend/docs](../frontend/docs/) for feature-level design and implementation guides.

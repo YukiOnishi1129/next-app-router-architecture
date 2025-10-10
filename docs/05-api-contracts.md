@@ -1,8 +1,8 @@
 # API Contracts (BFF)
 
-> MVPではNext.js内Server Actionsで完結。将来、Go BFF/gRPCに置換可能なI/Fを定義。
+> For the MVP we rely on Next.js Server Actions only. Interfaces are designed so a Go BFF/gRPC back end could be swapped in later.
 
-## REST-ish (例)
+## REST-ish (example)
 - GET /api/requests?status=&q=&page=&size=
 - GET /api/requests/:id
 - POST /api/requests

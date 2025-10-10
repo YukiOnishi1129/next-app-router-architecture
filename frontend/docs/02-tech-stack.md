@@ -1,19 +1,19 @@
-# 技術スタック詳細
+# Tech Stack Overview
 
-## フロントエンドフレームワーク
+## Frontend Framework
 
 ### Next.js 15 (App Router)
 
-- **Server Components**: デフォルトでサーバーサイドレンダリング
-- **Server Actions**: フォーム処理とデータ変更
-- **Streaming**: 段階的なページレンダリング
-- **Route Handlers**: APIエンドポイント（必要な場合）
+- **Server Components**: Default to server-side rendering
+- **Server Actions**: Form handling and data mutations
+- **Streaming**: Progressive rendering for faster TTFB
+- **Route Handlers**: Lightweight API endpoints when required
 
-## データフェッチング
+## Data Fetching
 
 ### TanStack Query (React Query)
 
-クライアントサイドのデータフェッチングとキャッシュ管理。
+Client-side caching and request orchestration.
 
 ```typescript
 // features/requests/queries/useRequestList.ts
@@ -26,22 +26,22 @@ export const useRequestList = (rawFilters: unknown) => {
   return useQuery({
     queryKey: ['requests', filters],
     queryFn: () => listRequestsAction(filters),
-    staleTime: 1000 * 60 * 5, // 5分
+    staleTime: 1000 * 60 * 5, // 5 minutes
   })
 }
 ```
 
-### キャッシュ戦略
+### Cache Strategy
 
-- **Stale While Revalidate**: バックグラウンドで最新データを取得
-- **Optimistic Updates**: 楽観的更新でUXを向上
-- **Prefetching**: ページ遷移前のデータプリフェッチ
+- **Stale While Revalidate**: keep data warm while fetching in the background
+- **Optimistic updates** for snappy UX
+- **Prefetch** data ahead of navigation (`prefetchQuery` + `HydrationBoundary`)
 
-## フォーム管理
+## Form Management
 
 ### React Hook Form + Zod
 
-型安全なフォーム実装とバリデーション。
+Type-safe validation and minimal re-rendering.
 
 ```typescript
 // features/requests/schemas/createRequest.ts
@@ -95,13 +95,13 @@ export function RequestFormContainer() {
 }
 ```
 
-## UIコンポーネント
+## UI Components
 
 ### Shadcn UI
 
-- **カスタマイズ可能**: Tailwind CSSベースで柔軟なスタイリング
-- **アクセシビリティ**: Radix UIベースでアクセシブル
-- **型安全**: TypeScriptで完全な型定義
+- **Customisable** thanks to Tailwind
+- **Accessible** out of the box (Radix primitives)
+- **Strongly typed** with TypeScript
 
 ```typescript
 // shared/components/ui/button.tsx
@@ -157,11 +157,11 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 Button.displayName = "Button"
 ```
 
-## データベース
+## Database
 
 ### PostgreSQL + Drizzle ORM
 
-型安全なデータベース操作。
+Type-safe database access with schema-first tables.
 
 ```typescript
 // external/client/db/schema/requests.ts
@@ -190,24 +190,24 @@ export const requests = pgTable('requests', {
 
 // external/client/db/client.ts
 import 'server-only'
-import { drizzle } from 'drizzle-orm/postgres-js'
-import postgres from 'postgres'
+import { drizzle } from 'drizzle-orm/node-postgres'
+import { Pool } from 'pg'
 import * as schema from './schema'
 
-const client = postgres(process.env.DATABASE_URL!)
-export const db = drizzle(client, { schema })
+const pool = new Pool({ connectionString: process.env.DATABASE_URL })
+export const db = drizzle(pool, { schema })
 ```
 
-## 開発ツール
+## Tooling
 
 ### ESLint + Prettier
 
-- **コード品質**: ESLintで一貫性のあるコード
-- **フォーマット**: Prettierで自動整形
-- **VSCode統合**: 保存時に自動修正
+- **Code quality**: ESLint enforces project-wide consistency
+- **Formatting**: Prettier runs on save
+- **VS Code integration**: `eslint` + `prettier` extensions shipped in workspace
 
 ### TypeScript
 
-- **Strict Mode**: 厳格な型チェック
-- **Path Aliases**: クリーンなインポートパス
-- **型推論**: 可能な限り型推論を活用
+- **Strict mode**: maximises compiler safety
+- **Path aliases** (`@/`): clean imports
+- **Inference first**: prefer inferred types, surface explicit ones at module boundaries
