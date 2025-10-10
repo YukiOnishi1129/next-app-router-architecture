@@ -188,17 +188,17 @@ describe('AuthenticationService (Identity Platform)', () => {
         localId: 'user-123',
       })
 
-    const result = await service.refreshToken('old-refresh-token')
+      const result = await service.refreshToken('old-refresh-token')
 
-    expect(mockClient.refreshIdToken).toHaveBeenCalledWith(
-      'old-refresh-token'
-    )
-    expect(result).toEqual({
-      token: 'new-id-token',
-      refreshToken: 'new-refresh-token',
-      expiresIn: '3600',
+      expect(mockClient.refreshIdToken).toHaveBeenCalledWith(
+        'old-refresh-token'
+      )
+      expect(result).toEqual({
+        token: 'new-id-token',
+        refreshToken: 'new-refresh-token',
+        expiresIn: '3600',
+      })
     })
-  })
 
     it('returns null when refresh fails', async () => {
       mockClient.refreshIdToken.mockRejectedValue(
