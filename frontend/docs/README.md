@@ -1,48 +1,39 @@
-# フロントエンド設計ドキュメント
+# Frontend Architecture Docs
 
-このドキュメントでは、Next.js App Routerを使用したフロントエンドアプリケーションの詳細な設計方針と実装ガイドラインを説明します。
+This folder captures detailed design and implementation guidance for the Next.js App Router frontend.
 
-## 目次
+## Table of Contents
 
-1. [ディレクトリ構成](./01-directory-structure.md)
-2. [技術スタック詳細](./02-tech-stack.md)
-3. [External層の設計](./03-external-layer.md)
-4. [状態管理とデータフェッチング](./04-state-management.md)
-5. [フォーム処理](./05-form-handling.md)
-6. [UIコンポーネント設計](./06-ui-components.md)
-7. [型定義とスキーマ](./07-types-and-schemas.md)
-8. [テスト戦略](./08-testing-strategy.md)
-9. [パフォーマンス最適化](./09-performance.md)
-10. [セキュリティ考慮事項](./10-security.md)
+1. [Directory Structure](./01-directory-structure.md)  
+2. [Tech Stack](./02-tech-stack.md)  
+3. [External Layer](./03-external-layer.md)  
+4. [State Management](./04-state-management.md)  
+5. [Form Handling](./05-form-handling.md)  
+6. [UI Components](./06-ui-components.md)  
+7. [Types & Schemas](./07-types-and-schemas.md)  
+8. [Testing Strategy](./08-testing-strategy.md)  
+9. [Performance Playbook](./09-performance.md)  
+10. [Security Considerations](./10-security.md)  
+11. [Routing & Layouts](./11-routing-and-layouts.md)  
+12. [Data Fetching Patterns](./12-data-fetching.md)  
+13. [ESLint & Code Rules](./13-eslint-rules.md)  
+14. [Custom Hooks Guide](./14-hooks.md)  
+15. [Storybook Guide](./15-storybook.md)  
+16. [Auth Refactoring Notes](./16-auth-refactoring.md)  
+17. [Authentication Flow](./17-authentication-flow.md)  
+18. [DDD Domain Analysis](./18-ddd-domain-analysis.md)  
+19. [Domain Model Example](./19-domain-model-example.md)  
+20. [Architecture Deep Dive](./20-architecture-deep-dive.md)  
+21. [Setup Guide](./21-setup-guide.md)
 
-## 設計原則
+## Design Principles
 
-### 1. 関心の分離
+1. **Separation of concerns** – Keep UI, business logic, and data access isolated per layer.
+2. **Type safety** – Rely on TypeScript + Zod for end-to-end safety.
+3. **Reusability** – Container/Presenter split and shared utilities keep components composable.
+4. **Testability** – Hooks and services favour dependency injection/mocking.
+5. **Performance** – Server-first data fetching and measured client hydration.
 
-- ビジネスロジック、UI、データアクセスを明確に分離
-- 各レイヤーの責務を明確化
+## Getting Started
 
-### 2. 型安全性
-
-- TypeScriptによる完全な型定義
-- Zodによるランタイムバリデーション
-- End-to-endの型安全性確保
-
-### 3. 再利用性
-
-- コンポーネントの高い再利用性
-- 共通ロジックの適切な抽象化
-
-### 4. テスタビリティ
-
-- 単体テストしやすい設計
-- モックしやすい依存関係
-
-### 5. パフォーマンス
-
-- 適切なキャッシュ戦略
-- 最適なレンダリング戦略の選択
-
-## クイックスタート
-
-開発を始めるための基本的な手順は[開発環境セットアップガイド](./setup-guide.md)を参照してください。
+Review the [Setup Guide](./21-setup-guide.md) for environment provisioning and developer tooling.

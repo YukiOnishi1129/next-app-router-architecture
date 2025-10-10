@@ -3,9 +3,9 @@ import { GuestLayoutWrapper } from '@/shared/components/layout/server/GuestLayou
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'ゲストエリア | Request & Approval System',
+  title: 'Guest Area | Request & Approval System',
   description:
-    '公開ページにアクセスして、リクエスト管理アプリの概要やログインページへ移動できます。',
+    'Access public pages such as the marketing overview and sign-in.',
 }
 
 export default function GuestLayout(props: LayoutProps<'/'>) {

@@ -28,22 +28,20 @@ describe('ProfileFormContainer', () => {
 
     render(<ProfileFormContainer />)
 
-    expect(
-      screen.getByText('プロフィールを読み込み中です…')
-    ).toBeInTheDocument()
+    expect(screen.getByText('Loading profile information…')).toBeInTheDocument()
   })
 
   it('renders error state and retries on click', () => {
     const retry = vi.fn()
     mockUseProfileForm.mockReturnValue({
       status: 'error',
-      message: '失敗しました',
+      message: 'Something went wrong',
       retry,
     })
 
     render(<ProfileFormContainer />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
 
     expect(retry).toHaveBeenCalledTimes(1)
   })

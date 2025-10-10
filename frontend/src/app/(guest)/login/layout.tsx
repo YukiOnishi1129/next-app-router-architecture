@@ -1,9 +1,8 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'ログイン | Request & Approval System',
-  description:
-    'アカウントにサインインして、リクエストや承認ワークスペースにアクセスします。',
+  title: 'Sign In | Request & Approval System',
+  description: 'Sign in to access the request and approval workspace.',
 }
 
 export default function LoginLayout({ children }: LayoutProps<'/login'>) {

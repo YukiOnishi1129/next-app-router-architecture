@@ -49,7 +49,7 @@ Key ideas:
 | File | Purpose | Notes |
 |------|---------|-------|
 | `page.tsx` | Route entry point (Server Component by default) | Use `PageProps` for typed params/searchParams. `PageProps` is available globally; you don't need to import it. |
-| `layout.tsx` | Nested layout (Server Component) | Inherit providers/structure。**必ず** `export const metadata` を layout 側で定義し、各セクションの `title` と `description` を設定する（SEO とブラウザタイトルの統一のため）。ページ側で重複して `metadata` を宣言する必要はない。`LayoutProps` もグローバル型として提供されるので `import` は不要。汎用型 (`LayoutProps<'/path'>`) を使い、ルートグループ名（`()`で囲まれた部分）は指定しない。 |
+| `layout.tsx` | Nested layout (Server Component) | Inherit providers/structure. Define `export const metadata` on the layout to set section-specific `title`/`description` (keeps SEO and browser titles consistent). Pages should not redeclare metadata. `LayoutProps` is available globally; no import is required. Use `LayoutProps<'/path'>` without including route group names. |
 | `loading.tsx` | Streaming fallback | Server Component |
 | `error.tsx` | Error boundary | Must be Client Component (`'use client'`) |
 | `not-found.tsx` | 404 handling | Optional |
@@ -91,9 +91,9 @@ export default async function AuthenticatedLayout(
 ```
 
 `AuthenticatedLayoutWrapper` responsibilities:
-- Run `requireAuthServer()` (TODO) to enforce sessions
-- Prefetch sidebar counts (pending approvals, drafts) via TanStack Query
-- Render shared chrome (sidebar, header, notifications)
+- Call `requireAuthServer()` to enforce sessions
+- Prefetch shared queries (sidebar counts, notifications) when needed
+- Render the shared chrome (sidebar, header, notifications)
 
 ### Neutral Area `(neutral)`
 

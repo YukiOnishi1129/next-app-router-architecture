@@ -1,8 +1,8 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: '承認キュー | Request & Approval System',
-  description: '担当するリクエストの承認・却下を管理します。',
+  title: 'Approval Queue | Request & Approval System',
+  description: 'Review and approve or reject requests assigned to you.',
 }
 
 export default function ApprovalsLayout({

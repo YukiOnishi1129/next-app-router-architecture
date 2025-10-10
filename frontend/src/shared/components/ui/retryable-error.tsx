@@ -14,7 +14,7 @@ export function RetryableError({
   title,
   description,
   onRetry,
-  retryLabel = '再試行する',
+  retryLabel = 'Retry',
 }: RetryableErrorProps) {
   return (
     <EmptyState

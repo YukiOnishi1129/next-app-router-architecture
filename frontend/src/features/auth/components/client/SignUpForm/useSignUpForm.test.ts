@@ -38,7 +38,7 @@ describe('useSignUpForm', () => {
 
     await act(async () => {
       nameField.onChange({
-        target: { value: '山田 太郎', name: 'name' },
+        target: { value: 'John Doe', name: 'name' },
       } as never)
       emailField.onChange({
         target: { value: 'user@example.com', name: 'email' },
@@ -59,7 +59,7 @@ describe('useSignUpForm', () => {
 
     await waitFor(() =>
       expect(mockHandleSignUp).toHaveBeenCalledWith({
-        name: '山田 太郎',
+        name: 'John Doe',
         email: 'user@example.com',
         password: 'password123',
       })
@@ -82,7 +82,7 @@ describe('useSignUpForm', () => {
 
     await act(async () => {
       nameField.onChange({
-        target: { value: '山田 太郎', name: 'name' },
+        target: { value: 'John Doe', name: 'name' },
       } as never)
       emailField.onChange({
         target: { value: 'user@example.com', name: 'email' },

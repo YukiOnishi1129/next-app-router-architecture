@@ -1,8 +1,8 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'リクエスト詳細 | Request & Approval System',
-  description: '個別のリクエスト内容や履歴、コメントを確認できます。',
+  title: 'Request Detail | Request & Approval System',
+  description: 'Inspect request history, attachments, and comments.',
 }
 
 export default function RequestDetailLayout({

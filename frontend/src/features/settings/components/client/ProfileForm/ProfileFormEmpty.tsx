@@ -13,8 +13,8 @@ export function ProfileFormEmpty({
 }: ProfileFormEmptyProps) {
   return (
     <EmptyState
-      title="プロフィール情報が見つかりません"
-      description="プロフィールを設定して、通知や表示情報を管理しましょう。"
+      title="No profile information found"
+      description="Create your profile to manage notifications and display settings."
       actions={
         onCreate ? (
           <button
@@ -22,7 +22,7 @@ export function ProfileFormEmpty({
             className="text-primary underline"
             onClick={onCreate}
           >
-            {actionLabel ?? 'プロフィールを設定する'}
+            {actionLabel ?? 'Create profile'}
           </button>
         ) : null
       }

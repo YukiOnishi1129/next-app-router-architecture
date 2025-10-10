@@ -9,21 +9,21 @@ const meta: Meta = {
 # ProfileForm
 
 ## Overview
-認証済みユーザーのプロフィール更新フォームです。TanStack Query でプロフィール情報を取得し、Server Action を通じて更新します。
+Profile update form for authenticated users. Fetches profile data via TanStack Query and updates it through a Server Action.
 
 ## Architecture
-- **ProfileForm.tsx**: Container のエントリーポイント（再エクスポート）
-- **ProfileFormContainer.tsx**: フックの結果に応じて Presenter / プレースホルダーを切り替え
-- **useProfileForm.ts**: TanStack Query ラッパーとフォーム送信ロジック
-- **ProfileFormPresenter.tsx**: ピュアな UI レイヤー
-- **tests/**: Container / Hook の Vitest テスト
-- **stories/**: Presenter の UI 状態と本ドキュメント
+- **ProfileForm.tsx**: Container entry point (re-export)
+- **ProfileFormContainer.tsx**: Switches between presenter and placeholders based on hook state
+- **useProfileForm.ts**: TanStack Query wrapper + submit workflow
+- **ProfileFormPresenter.tsx**: Pure UI layer
+- **tests/**: Vitest coverage for container/hook
+- **stories/**: Presenter states and this documentation
 
 ## Usage
 \`\`\`tsx
 import { ProfileForm } from '@/features/settings/components/client/ProfileForm/ProfileForm'
 
-// Server Component から
+// From a server component
 <ProfileForm />
 \`\`\`
 
@@ -44,13 +44,10 @@ export const Documentation: Story = {
     <div className="bg-card space-y-3 rounded-lg border p-6 text-sm">
       <h3 className="text-lg font-semibold">ProfileForm (Container)</h3>
       <p>
-        このストーリーはアーキテクチャと利用方法のドキュメントを目的としており、実際の
-        TanStack Query / Server Action 呼び出しはモックしていません。
+        This story documents the architecture and usage – TanStack Query /
+        Server Action calls are not mocked here.
       </p>
-      <p>
-        UI バリエーションを確認する場合は Presenter
-        ストーリーを参照してください。
-      </p>
+      <p>Refer to the Presenter story for visual variations.</p>
     </div>
   ),
   parameters: {

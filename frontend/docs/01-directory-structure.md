@@ -1,38 +1,37 @@
-# ディレクトリ構成
+# Directory Structure
 
 ```
 src/
 ├── app/                                      # Next.js App Router
-│   ├── layout.tsx                            # ルートレイアウト（Server Component）
-│   ├── page.tsx                              # ルートページ
-│   └── (authenticated)/                      # 認証が必要なセクション
-│       ├── layout.tsx                        # 認証済みレイアウト
+│   ├── layout.tsx                            # Root layout (Server Component)
+│   ├── page.tsx                              # Root page
+│   └── (authenticated)/                      # Authenticated route group
+│       ├── layout.tsx                        # Auth shell
 │       └── dashboard/
-│           └── page.tsx                      # ダッシュボードトップ
-├── features/                                 # 機能毎の独立モジュール
+│           └── page.tsx                      # Dashboard entry
+├── features/                                 # Domain-focused modules
 │   ├── requests/
 │   │   ├── actions/                          # Server Actions (command/query)
 │   │   ├── components/
-│   │   │   ├── client/                       # Client Components（Container/Presenter）
+│   │   │   ├── client/                       # Client components (Container/Presenter)
 │   │   │   │   └── RequestForm/
-│   │   │   │       ├── index.ts                    #
-│   │   │   │       ├── RequestForm.tsx             # Re-export（Container）
-│   │   │   │       ├── RequestFormContainer.tsx    # 状態オーケストレーション
-│   │   │   │       ├── RequestFormPresenter.tsx    # プレゼンテーション
-│   │   │   │       ├── useRequestForm.ts           # ビジネスロジックフック
-│   │   │   │       ├── RequestForm.test.tsx        # コンテナ統合テスト
-│   │   │   │       ├── useRequestForm.test.ts      # フック単体テスト
-│   │   │   │       ├── RequestForm.stories.tsx     # ドキュメント用途（Container）
-│   │   │   │       └── RequestFormPresenter.stories.tsx # UIバリエーション（Presenter）
-│   │   │   └── server/                       # Server Components（Page Template等）
+│   │   │   │       ├── RequestForm.tsx             # Container re-export
+│   │   │   │       ├── RequestFormContainer.tsx    # Orchestrates hooks/state
+│   │   │   │       ├── RequestFormPresenter.tsx    # Presentational component
+│   │   │   │       ├── useRequestForm.ts           # Business logic hook
+│   │   │   │       ├── RequestForm.test.tsx        # Container integration test
+│   │   │   │       ├── useRequestForm.test.ts      # Hook unit test
+│   │   │   │       ├── RequestForm.stories.tsx     # Storybook (container)
+│   │   │   │       └── RequestFormPresenter.stories.tsx # Storybook (presenter)
+│   │   │   └── server/                       # Server Components (page templates)
 │   │   │       └── NewRequestPageTemplate/
 │   │   │           └── NewRequestPageTemplate.tsx
-│   │   ├── hooks/                            # TanStack Query ラッパーなどクライアントフック
-│   │   ├── queries/                          # queryKeys 等の共有定義
-│   │   ├── schemas/                          # zod スキーマ
-│   │   └── types/                            # 型定義
+│   │   ├── hooks/                            # Client hooks (TanStack Query wrappers)
+│   │   ├── queries/                          # queryKeys and shared query helpers
+│   │   ├── schemas/                          # Zod schemas
+│   │   └── types/                            # Type definitions
 │   └── settings/
-│       ├── actions/                            # 機能専用の Server Actions ラッパー
+│       ├── actions/                          # Feature-specific Server Actions
 │       ├── components/
 │       │   ├── client/
 │       │   │   └── ProfileForm/
@@ -49,30 +48,30 @@ src/
 │       │           └── ProfilePageTemplate.tsx
 │       ├── hooks/
 │       └── queries/
-├── shared/                                  # 横断的な UI・ユーティリティ
+├── shared/                                  # Cross-cutting UI & utilities
 │   ├── components/
 │   │   ├── layout/
-│   │   │   ├── client/                       # Client Layout Components
-│   │   │   └── server/                       # Server Layout Wrappers
-│   │   └── ui/                              # Shadcn UIベースの部品
-│   ├── lib/                                  # ヘルパー、ユーティリティ
-│   └── providers/                            # Context Providers
-└── external/                                 # Server 専用の外部連携レイヤー
-    ├── dto/                                  # Zod スキーマ & DTO 定義
-    ├── handler/                              # Command / Query Server Functions & Actions
-    ├── repository/                           # DBアクセス
-    ├── service/                              # ドメインロジック
-    └── client/                               # 外部APIクライアント
+│   │   │   ├── client/                       # Client-side layout components
+│   │   │   └── server/                       # Server-side wrappers
+│   │   └── ui/                              # Shadcn UI primitives
+│   ├── lib/                                  # Utilities
+│   └── providers/                            # Context providers
+└── external/                                 # Server-only integration layer
+    ├── dto/                                  # Zod schemas & DTO definitions
+    ├── handler/                              # Command/query server modules (+ token handlers)
+    ├── repository/                           # Database access
+    ├── service/                              # Domain services
+    └── client/                               # External API clients
 ```
 
-## コンポーネント・ディレクトリのルール
+## Component Directory Guidelines
 
-1. `components/` 直下に `index.ts` を置かない。機能ごとのエクスポートは各 Page や Container から直接参照する。
-2. `components/client/**` 直下に `index.ts` を置かない。Client Component はコンテナ（例: `RequestForm.tsx`）をエントリーポイントとして、Container/Presenter/Hook/Story/Test をディレクトリ内で完結させる。
-3. `components/server/**` 直下にも `index.ts` を置かない。Server Component は Page Template など単一のエクスポートで完結させ、`import` はファイルパス指名で行う。
-4. Container/Presenter/Hook/Story/Test の粒度は上記例を踏襲し、テストと Storybook ファイルは `tests/` と `stories/` フォルダに配置する。
+1. Avoid barrel exports (`index.ts`) directly under `components/`; import concrete files from pages/containers.
+2. Do not add `index.ts` inside `components/client/**`. Export the container (e.g. `RequestForm.tsx`) as the entry point and keep Container/Presenter/Hook/Story/Test co-located.
+3. Likewise skip `index.ts` in `components/server/**`. Each server component (page template, layout wrapper) should be imported explicitly.
+4. Follow the Container/Presenter/Hook/Story/Test pattern. Place stories/tests alongside the component (or in nested `stories/` and `tests/` folders if preferred).
 
-## その他
+## Additional Notes
 
-- Server Component で `import 'server-only'` を宣言するのは `features/**/servers/**` や `external/**` のユーティリティだけ。`components/server/**` のコンポーネントは配置場所で server 専用と判断されるため不要。
-- Client Component からの CRUD は TanStack Query 経由で `external/handler/**` の Server Action を呼び出す。直接 DB へアクセスしない。
+- Only declare `import 'server-only'` in modules under `features/**/servers/**` or `external/**`. Components under `components/server/**` are server-only by location.
+- Client components perform mutations via TanStack Query hooks that call `external/handler/**` Server Actions. Never access the database directly from the client.

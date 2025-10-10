@@ -90,7 +90,7 @@ export const useProfileForm = (): UseProfileFormResult => {
       if (!updatedUser.success || !updatedUser.user) {
         return
       }
-      setSuccessMessage('プロフィールを更新しました')
+      setSuccessMessage('Profile updated successfully.')
       reset(
         {
           userId: updatedUser.user.id,
@@ -101,7 +101,7 @@ export const useProfileForm = (): UseProfileFormResult => {
       )
       updateProfileMutation.reset()
     } catch {
-      // エラー表示は updateError に委ねる
+      // Surface errors through updateError
     }
   })
 
@@ -135,7 +135,7 @@ export const useProfileForm = (): UseProfileFormResult => {
 
   useEffect(() => {
     if (profileQuery.error) {
-      console.error('プロフィールの取得に失敗しました', profileQuery.error)
+      console.error('Failed to load profile', profileQuery.error)
     }
   }, [profileQuery.error])
 
@@ -154,7 +154,7 @@ export const useProfileForm = (): UseProfileFormResult => {
     return {
       status: 'error',
       message:
-        profileQuery.error?.message ?? 'プロフィール情報が見つかりません。',
+        profileQuery.error?.message ?? 'Profile information is unavailable.',
       retry: profileQuery.refetch,
     }
   }

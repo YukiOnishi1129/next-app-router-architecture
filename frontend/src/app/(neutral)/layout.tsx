@@ -3,8 +3,9 @@ import { NeutralLayoutWrapper } from '@/shared/components/layout/server/NeutralL
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: '情報ページ | Request & Approval System',
-  description: '利用規約やパスワードリセットなど、共通情報ページを提供します。',
+  title: 'Information Pages | Request & Approval System',
+  description:
+    'Shared informational pages such as terms of service and password reset.',
 }
 
 export default function NeutralLayout(props: LayoutProps<'/'>) {

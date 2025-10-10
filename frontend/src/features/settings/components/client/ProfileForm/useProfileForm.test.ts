@@ -18,7 +18,7 @@ vi.mock('@/features/settings/hooks/useUpdateProfileMutation', () => ({
 
 const baseProfile = {
   id: 'user_1',
-  name: '山田 太郎',
+  name: 'John Doe',
   email: 'user@example.com',
   status: 'ACTIVE',
   roles: ['MEMBER'],

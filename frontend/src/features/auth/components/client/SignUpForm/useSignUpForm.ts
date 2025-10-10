@@ -14,19 +14,19 @@ import type { FieldErrors, UseFormRegister } from 'react-hook-form'
 
 const signUpSchema = z
   .object({
-    name: z.string().min(1, '名前を入力してください'),
-    email: z.email('有効なメールアドレスを入力してください'),
+    name: z.string().min(1, 'Please enter your name.'),
+    email: z.email('Please enter a valid email address.'),
     password: z
       .string()
-      .min(8, 'パスワードは 8 文字以上で入力してください')
+      .min(8, 'Password must be at least 8 characters long.')
       .regex(
         /^(?=.*[A-Za-z])(?=.*\d).+$/,
-        '英字と数字をそれぞれ 1 文字以上含めてください'
+        'Password must contain at least one letter and one number.'
       ),
-    confirmPassword: z.string().min(8, '確認用パスワードを入力してください'),
+    confirmPassword: z.string().min(8, 'Please confirm your password.'),
   })
   .refine((values) => values.password === values.confirmPassword, {
-    message: 'パスワードが一致しません',
+    message: 'Passwords do not match.',
     path: ['confirmPassword'],
   })
 
@@ -73,16 +73,14 @@ export function useSignUpForm(): SignUpFormPresenterProps {
             password: data.password,
           })
           if (!result || result.error) {
-            throw new Error(result?.error ?? 'サインアップに失敗しました')
+            throw new Error(result?.error ?? 'Failed to sign up')
           }
 
           router.refresh()
           router.replace('/dashboard')
         } catch (error) {
           setServerError(
-            error instanceof Error
-              ? error.message
-              : 'サインアップに失敗しました'
+            error instanceof Error ? error.message : 'Failed to sign up'
           )
         }
       })
