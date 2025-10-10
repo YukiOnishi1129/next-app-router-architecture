@@ -2,10 +2,11 @@ import 'server-only'
 
 import { ZodError } from 'zod'
 
+import { getSessionServer } from '@/features/auth/servers/session.server'
+
 import { listAttachmentsSchema } from '@/external/dto/attachment'
 
 import { attachmentService, mapAttachmentToDto } from './shared'
-import { getSessionServer } from '../auth/query.server'
 
 import type {
   ListAttachmentsInput,
@@ -18,7 +19,7 @@ export async function listAttachmentsServer(
 ): Promise<ListAttachmentsResponse> {
   try {
     const session = await getSessionServer()
-    if (!session.isAuthenticated || !session.user) {
+    if (!session?.account) {
       return { success: false, error: 'Unauthorized' }
     }
 
@@ -26,7 +27,7 @@ export async function listAttachmentsServer(
 
     const attachments = await attachmentService.getAttachments({
       requestId: validated.requestId,
-      userId: session.user.id,
+      userId: session.account.id,
     })
 
     return {
@@ -52,13 +53,13 @@ export async function getAttachmentContentServer(
 ): Promise<GetAttachmentContentResponse> {
   try {
     const session = await getSessionServer()
-    if (!session.isAuthenticated || !session.user) {
+    if (!session?.account) {
       return { success: false, error: 'Unauthorized' }
     }
 
     const { data, attachment } = await attachmentService.downloadAttachment({
       attachmentId,
-      userId: session.user.id,
+      userId: session.account.id,
       context: {
         ipAddress: 'server',
         userAgent: 'server-query',

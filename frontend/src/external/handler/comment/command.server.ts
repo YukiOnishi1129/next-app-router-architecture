@@ -2,8 +2,9 @@ import 'server-only'
 
 import { z } from 'zod'
 
+import { getSessionServer } from '@/features/auth/servers/session.server'
+
 import { commentService, mapCommentToDto } from './shared'
-import { getSessionServer } from '../auth/query.server'
 
 import type { CommentDto } from './shared'
 
@@ -44,7 +45,7 @@ export async function createCommentServer(
 ): Promise<CreateCommentResponse> {
   try {
     const session = await getSessionServer()
-    if (!session.isAuthenticated || !session.user) {
+    if (!session?.account) {
       return { success: false, error: 'Unauthorized' }
     }
 
@@ -53,7 +54,7 @@ export async function createCommentServer(
     const comment = await commentService.addComment({
       requestId: validated.requestId,
       content: validated.content,
-      authorId: session.user.id,
+      authorId: session.account.id,
       parentId: validated.parentId,
       context: {
         ipAddress: 'server',
@@ -83,7 +84,7 @@ export async function updateCommentServer(
 ): Promise<UpdateCommentResponse> {
   try {
     const session = await getSessionServer()
-    if (!session.isAuthenticated || !session.user) {
+    if (!session?.account) {
       return { success: false, error: 'Unauthorized' }
     }
 
@@ -92,7 +93,7 @@ export async function updateCommentServer(
     const comment = await commentService.updateComment({
       commentId: validated.commentId,
       content: validated.content,
-      userId: session.user.id,
+      userId: session.account.id,
       context: {
         ipAddress: 'server',
         userAgent: 'server-command',
@@ -121,7 +122,7 @@ export async function deleteCommentServer(
 ): Promise<DeleteCommentResponse> {
   try {
     const session = await getSessionServer()
-    if (!session.isAuthenticated || !session.user) {
+    if (!session?.account) {
       return { success: false, error: 'Unauthorized' }
     }
 
@@ -129,7 +130,7 @@ export async function deleteCommentServer(
 
     await commentService.deleteComment({
       commentId: validated.commentId,
-      userId: session.user.id,
+      userId: session.account.id,
       context: {
         ipAddress: 'server',
         userAgent: 'server-command',

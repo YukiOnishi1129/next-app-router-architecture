@@ -2,6 +2,8 @@ import 'server-only'
 
 import { ZodError } from 'zod'
 
+import { getSessionServer } from '@/features/auth/servers/session.server'
+
 import {
   updateUserRoleSchema,
   updateUserStatusSchema,
@@ -15,7 +17,6 @@ import {
   AuditEventType,
   mapUserToDto,
 } from './shared'
-import { getSessionServer } from '../auth/query.server'
 
 import type {
   UpdateUserRoleInput,
@@ -37,14 +38,14 @@ export async function updateUserRoleServer(
 ): Promise<UpdateUserResponse> {
   try {
     const session = await getSessionServer()
-    if (!session.isAuthenticated || !session.user) {
+    if (!session?.account) {
       return { success: false, error: 'Unauthorized' }
     }
 
     const validated = updateUserRoleSchema.parse(data)
-    // const currentUser = await ensureAdmin(session.user.id)
+    // const currentUser = await ensureAdmin(session.account.id)
 
-    if (validated.userId === session.user.id) {
+    if (validated.userId === session.account.id) {
       return { success: false, error: 'Cannot change your own role' }
     }
 
@@ -65,7 +66,7 @@ export async function updateUserRoleServer(
       action: 'user.role.update',
       entityType: 'USER',
       entityId: validated.userId,
-      userId: session.user.id,
+      userId: session.account.id,
       metadata: {
         previousRoles,
         newRoles: updatedUser.getRoles(),
@@ -95,14 +96,14 @@ export async function updateUserStatusServer(
 ): Promise<UpdateUserResponse> {
   try {
     const session = await getSessionServer()
-    if (!session.isAuthenticated || !session.user) {
+    if (!session?.account) {
       return { success: false, error: 'Unauthorized' }
     }
 
     const validated = updateUserStatusSchema.parse(data)
-    await ensureAdmin(session.user.id)
+    await ensureAdmin(session.account.id)
 
-    if (validated.userId === session.user.id) {
+    if (validated.userId === session.account.id) {
       return { success: false, error: 'Cannot change your own status' }
     }
 
@@ -123,7 +124,7 @@ export async function updateUserStatusServer(
       action: 'user.status.change',
       entityType: 'USER',
       entityId: validated.userId,
-      userId: session.user.id,
+      userId: session.account.id,
       metadata: {
         previousStatus,
         newStatus: validated.status,
@@ -153,21 +154,21 @@ export async function updateUserProfileServer(
 ): Promise<UpdateUserResponse> {
   try {
     const session = await getSessionServer()
-    if (!session.isAuthenticated || !session.user) {
+    if (!session?.account) {
       return { success: false, error: 'Unauthorized' }
     }
 
     const validated = updateUserProfileSchema.parse(data)
 
     const currentUser = await userManagementService.findUserById(
-      session.user.id
+      session.account.id
     )
     if (!currentUser) {
       return { success: false, error: 'Current user not found' }
     }
 
     const isAdmin = currentUser.isAdmin()
-    const isSelfUpdate = validated.userId === session.user.id
+    const isSelfUpdate = validated.userId === session.account.id
 
     if (!isSelfUpdate && !isAdmin) {
       return { success: false, error: 'Insufficient permissions' }
@@ -190,7 +191,7 @@ export async function updateUserProfileServer(
       action: 'user.profile.update',
       entityType: 'USER',
       entityId: validated.userId,
-      userId: session.user.id,
+      userId: session.account.id,
       metadata: {
         updatedFields: [
           targetUser.getName() !== validated.name ? 'name' : undefined,

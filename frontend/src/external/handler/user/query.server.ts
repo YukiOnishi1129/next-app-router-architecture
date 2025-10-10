@@ -2,10 +2,11 @@ import 'server-only'
 
 import { ZodError } from 'zod'
 
+import { getSessionServer } from '@/features/auth/servers/session.server'
+
 import { listUsersSchema } from '@/external/dto/user'
 
 import { userManagementService, mapUserToDto } from './shared'
-import { getSessionServer } from '../auth/query.server'
 
 import type {
   ListUsersInput,
@@ -18,14 +19,14 @@ export async function listUsersServer(
 ): Promise<ListUsersResponse> {
   try {
     const session = await getSessionServer()
-    if (!session.isAuthenticated || !session.user) {
+    if (!session?.account) {
       return { success: false, error: 'Unauthorized' }
     }
 
     const validated = listUsersSchema.parse(data ?? {})
 
     const currentUser = await userManagementService.findUserById(
-      session.user.id
+      session.account.id
     )
     if (!currentUser || !currentUser.isAdmin()) {
       return { success: false, error: 'Insufficient permissions' }
@@ -55,19 +56,19 @@ export async function listUsersServer(
 export async function getUserServer(userId: string): Promise<GetUserResponse> {
   try {
     const session = await getSessionServer()
-    if (!session.isAuthenticated || !session.user) {
+    if (!session?.account) {
       return { success: false, error: 'Unauthorized' }
     }
 
     const currentUser = await userManagementService.findUserById(
-      session.user.id
+      session.account.id
     )
     if (!currentUser) {
       return { success: false, error: 'Current user not found' }
     }
 
     const isAdmin = currentUser.isAdmin()
-    const isSelfView = userId === session.user.id
+    const isSelfView = userId === session.account.id
 
     if (!isSelfView && !isAdmin) {
       return { success: false, error: 'Insufficient permissions' }
@@ -92,11 +93,11 @@ export async function getUserServer(userId: string): Promise<GetUserResponse> {
 
 export async function getCurrentUserServer(): Promise<GetUserResponse> {
   const session = await getSessionServer()
-  if (!session.isAuthenticated || !session.user) {
+  if (!session?.account) {
     return { success: false, error: 'Unauthorized' }
   }
 
-  return getUserServer(session.user.id)
+  return getUserServer(session.account.id)
 }
 
 export type {

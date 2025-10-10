@@ -2,27 +2,28 @@ import 'server-only'
 
 import { redirect } from 'next/navigation'
 
-import { getSessionServer } from './session.server'
+import { getSessionServer } from '@/features/auth/servers/session.server'
+import { refreshIdTokenServer } from '@/features/auth/servers/token.server'
 
-import type { GetSessionResponse } from '@/external/dto/auth'
-import type { Route } from 'next'
-
-export async function requireAuthServer(
-  options: { redirectTo?: Route } = {}
-): Promise<GetSessionResponse> {
-  const session = await getSessionServer()
-  if (!session) {
-    redirect(options.redirectTo ?? '/login')
+const isAuthenticatedServer = async (): Promise<boolean> => {
+  try {
+    const session = await getSessionServer()
+    if (!session?.user) return false
+    await refreshIdTokenServer()
+    return true
+  } catch {
+    return false
   }
-  return session
 }
 
-export async function redirectIfAuthenticatedServer(
-  options: { redirectTo?: Route } = {}
-): Promise<GetSessionResponse | null> {
-  const session = await getSessionServer()
-  if (session) {
-    redirect(options.redirectTo ?? '/requests')
+export async function requireAuthServer() {
+  if (!(await isAuthenticatedServer())) {
+    redirect('/login')
   }
-  return session
+}
+
+export async function redirectIfAuthenticatedServer() {
+  if (await isAuthenticatedServer()) {
+    redirect('/dashboard')
+  }
 }

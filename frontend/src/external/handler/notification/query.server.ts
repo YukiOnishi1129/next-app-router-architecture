@@ -2,6 +2,8 @@ import 'server-only'
 
 import { ZodError } from 'zod'
 
+import { getSessionServer } from '@/features/auth/servers/session.server'
+
 import { listNotificationsSchema } from '@/external/dto/notification'
 
 import {
@@ -9,7 +11,6 @@ import {
   userManagementService,
   mapNotificationToDto,
 } from './shared'
-import { getSessionServer } from '../auth/query.server'
 
 import type {
   ListNotificationsInput,
@@ -22,14 +23,14 @@ export async function listNotificationsServer(
 ): Promise<ListNotificationsResponse> {
   try {
     const session = await getSessionServer()
-    if (!session.isAuthenticated || !session.user) {
+    if (!session?.account) {
       return { success: false, error: 'Unauthorized' }
     }
 
     const validated = listNotificationsSchema.parse(data ?? {})
 
     const result = await notificationService.getUserNotifications(
-      session.user.id,
+      session.account.id,
       {
         unreadOnly: validated.unreadOnly,
         limit: validated.limit,
@@ -60,17 +61,17 @@ export async function listNotificationsServer(
 export async function getNotificationPreferencesServer(): Promise<GetNotificationPreferencesResponse> {
   try {
     const session = await getSessionServer()
-    if (!session.isAuthenticated || !session.user) {
+    if (!session?.account) {
       return { success: false, error: 'Unauthorized' }
     }
 
-    const user = await userManagementService.findUserById(session.user.id)
+    const user = await userManagementService.findUserById(session.account.id)
     if (!user) {
       return { success: false, error: 'User not found' }
     }
 
     const preferences = await notificationService.getUserPreferences(
-      session.user.id
+      session.account.id
     )
     const typeSet = new Set(preferences.types)
 
