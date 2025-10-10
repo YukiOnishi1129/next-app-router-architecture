@@ -19,7 +19,7 @@ if (!process.env.DATABASE_URL) {
 try {
   console.log(`Generating migration: ${migrationName}`)
   execSync(
-    `npx drizzle-kit generate:pg --config=drizzle.config.cjs --name ${migrationName}`,
+    `npx drizzle-kit generate --config=drizzle.config.cjs --name=${migrationName}`,
     {
       stdio: 'inherit',
     }

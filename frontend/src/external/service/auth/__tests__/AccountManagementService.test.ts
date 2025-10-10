@@ -233,9 +233,9 @@ describe('AccountManagementService', () => {
       expect(
         accountService.hasPermission(memberAccount, 'account.view.self')
       ).toBe(true)
-      expect(accountService.hasPermission(memberAccount, 'account.delete')).toBe(
-        false
-      )
+      expect(
+        accountService.hasPermission(memberAccount, 'account.delete')
+      ).toBe(false)
     })
 
     it('should check permissions for guest', () => {
@@ -253,9 +253,9 @@ describe('AccountManagementService', () => {
       expect(accountService.hasPermission(guestAccount, 'request.create')).toBe(
         false
       )
-      expect(accountService.hasPermission(guestAccount, 'account.view.self')).toBe(
-        true
-      )
+      expect(
+        accountService.hasPermission(guestAccount, 'account.view.self')
+      ).toBe(true)
     })
   })
 })
