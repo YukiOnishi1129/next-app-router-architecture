@@ -1,5 +1,7 @@
 import { RequestStatusBadge } from '@/shared/components/ui/request-status-badge'
 
+import { RequestStatus } from '@/external/domain/request/request-status'
+
 const MOCK_APPROVALS = [
   {
     id: 'approval-001',
@@ -39,7 +41,7 @@ export async function PendingApprovalsPageTemplate() {
                   {new Date(item.submittedAt).toLocaleDateString()}
                 </p>
               </div>
-              <RequestStatusBadge status="submitted" />
+              <RequestStatusBadge status={RequestStatus.SUBMITTED} />
             </div>
           </article>
         ))}

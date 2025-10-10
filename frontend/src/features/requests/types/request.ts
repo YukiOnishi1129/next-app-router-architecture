@@ -1,9 +1,15 @@
-export type RequestStatus = 'draft' | 'submitted' | 'approved' | 'rejected'
+import {
+  RequestPriority,
+  RequestStatus,
+  RequestType,
+} from '@/external/domain/request/request-status'
 
 export interface RequestSummary {
   id: string
   title: string
   status: RequestStatus
-  submittedAt: string
-  amount?: number
+  type: RequestType
+  priority: RequestPriority
+  createdAt: string
+  submittedAt: string | null
 }

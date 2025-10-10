@@ -1,6 +1,6 @@
 import { RequestStatusBadge } from '@/shared/components/ui/request-status-badge'
 
-import type { RequestStatus } from '@/features/requests/types'
+import { RequestStatus } from '@/external/domain/request/request-status'
 
 type RequestDetailPageTemplateProps = {
   requestId: string
@@ -8,10 +8,12 @@ type RequestDetailPageTemplateProps = {
 }
 
 const statusOrder: RequestStatus[] = [
-  'draft',
-  'submitted',
-  'approved',
-  'rejected',
+  RequestStatus.DRAFT,
+  RequestStatus.SUBMITTED,
+  RequestStatus.IN_REVIEW,
+  RequestStatus.APPROVED,
+  RequestStatus.REJECTED,
+  RequestStatus.CANCELLED,
 ]
 
 export async function RequestDetailPageTemplate({
@@ -27,7 +29,7 @@ export async function RequestDetailPageTemplate({
             Request ID: <span className="font-mono">{requestId}</span>
           </p>
         </div>
-        <RequestStatusBadge status="submitted" />
+        <RequestStatusBadge status={RequestStatus.SUBMITTED} />
       </header>
 
       <article className="space-y-4">

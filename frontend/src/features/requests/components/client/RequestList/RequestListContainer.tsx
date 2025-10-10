@@ -10,7 +10,16 @@ type RequestListContainerProps = {
 }
 
 export function RequestListContainer({ filters }: RequestListContainerProps) {
-  const { data, isLoading } = useRequestList({ filters })
+  const { summaries, isLoading, isRefetching, errorMessage } = useRequestList({
+    filters,
+  })
 
-  return <RequestListPresenter requests={data} isLoading={isLoading} />
+  return (
+    <RequestListPresenter
+      requests={summaries}
+      isLoading={isLoading}
+      isRefetching={isRefetching}
+      errorMessage={errorMessage}
+    />
+  )
 }

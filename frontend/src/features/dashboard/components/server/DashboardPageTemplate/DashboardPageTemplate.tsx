@@ -1,11 +1,13 @@
 import { Card } from '@/shared/components/ui/card'
 import { RequestStatusBadge } from '@/shared/components/ui/request-status-badge'
 
+import { RequestStatus } from '@/external/domain/request/request-status'
+
 export async function DashboardPageTemplate() {
   const stats = [
-    { label: 'Draft requests', value: 3, status: 'draft' as const },
-    { label: 'Submitted', value: 5, status: 'submitted' as const },
-    { label: 'Approved', value: 12, status: 'approved' as const },
+    { label: 'Draft requests', value: 3, status: RequestStatus.DRAFT },
+    { label: 'Submitted', value: 5, status: RequestStatus.SUBMITTED },
+    { label: 'Approved', value: 12, status: RequestStatus.APPROVED },
   ]
 
   return (
