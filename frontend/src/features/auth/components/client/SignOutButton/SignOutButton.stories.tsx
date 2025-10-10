@@ -6,10 +6,10 @@ const meta: Meta = {
     docs: {
       description: {
         component: `
-Container コンポーネントは SignOut 用の Mutation Hook を呼び出し、Presenter に状態を渡す薄いラッパーです。
-- **SignOutButtonContainer.tsx**: Hook 呼び出しと Presenter の結線
-- **useSignOutButton.ts**: サインアウト処理（TanStack Mutation + Router 連携）
-- **SignOutButtonPresenter.tsx**: UI ボタン
+The container invokes the sign-out mutation hook and passes state into the presenter.
+- **SignOutButtonContainer.tsx**: Connects hook results with the presenter
+- **useSignOutButton.ts**: Sign-out workflow (TanStack Mutation + router)
+- **SignOutButtonPresenter.tsx**: Button UI
         `,
       },
     },
@@ -23,7 +23,7 @@ type Story = StoryObj
 export const Documentation: Story = {
   render: () => (
     <div className="bg-card rounded-lg border p-6 text-sm">
-      <p>Presenter ストーリーで UI 状態を確認してください。</p>
+      <p>See the presenter story for visual states.</p>
     </div>
   ),
 }

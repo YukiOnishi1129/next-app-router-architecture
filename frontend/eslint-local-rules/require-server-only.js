@@ -20,15 +20,15 @@ module.exports = {
 
         // Check if file matches the patterns that require server-only
         const requiresServerOnly =
-          // features/xxx/servers/直下のxxx.tsファイル
+          // features/<feature>/servers/<name>.ts
           /\/features\/[^/]+\/servers\/[^/]+\.ts$/.test(filename) ||
-          // shared/servers/直下のxxx.tsファイル
+          // shared/servers/<name>.ts
           /\/shared\/servers\/[^/]+\.ts$/.test(filename) ||
-          // external/handlers/xxx/xxx.query.ts
+          // external/handlers/<domain>/<name>.query.ts
           /\/external\/handlers\/[^/]+\/[^/]+\.query\.ts$/.test(filename) ||
-          // external/handlers/xxx/xxx.command.ts
+          // external/handlers/<domain>/<name>.command.ts
           /\/external\/handlers\/[^/]+\/[^/]+\.command\.ts$/.test(filename) ||
-          // external/services/xxx/xxx.service.ts
+          // external/services/<domain>/<name>.service.ts
           /\/external\/services\/[^/]+\/[^/]+\.service\.ts$/.test(filename)
 
         if (!requiresServerOnly) {

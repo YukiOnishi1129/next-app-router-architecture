@@ -18,8 +18,7 @@ const meta: Meta<typeof ProfileFormPresenter> = {
     docs: {
       description: {
         component:
-          'ProfileFormPresenter は純粋な UI コンポーネントで、フォームの描画とエラーメッセージ表示のみを担当します。' +
-          '\nContainer/Hook 層から渡された props をそのまま描画するため、Story では props を差し替えることで UI 状態を確認できます。',
+          'ProfileFormPresenter is a pure UI component responsible for rendering the form and error messages.\nUse stories to inject props from containers/hooks and preview visual states.',
       },
     },
   },
@@ -31,7 +30,7 @@ const Template: StoryFn<typeof ProfileFormPresenter> = (overrides) => {
   const form = useForm<ProfileFormValues>({
     defaultValues: {
       userId: 'user_1',
-      name: '山田 太郎',
+      name: 'John Doe',
       email: 'user@example.com',
     },
   })
@@ -56,14 +55,14 @@ Default.storyName = 'Default state'
 export const Success = Template.bind({})
 Success.storyName = 'Success message'
 Success.args = {
-  successMessage: 'プロフィールを更新しました',
+  successMessage: 'Profile updated successfully.',
 }
 
 export const ErrorState = Template.bind({})
 ErrorState.storyName = 'Update error'
 ErrorState.args = {
   canSubmit: false,
-  updateError: new Error('更新に失敗しました'),
+  updateError: new Error('Failed to update profile'),
 }
 
 export const Updating = Template.bind({})
@@ -85,11 +84,11 @@ export const ValidationErrors: StoryFn<typeof ProfileFormPresenter> = () => {
   useEffect(() => {
     form.setError('name', {
       type: 'required',
-      message: '氏名を入力してください',
+      message: 'Please enter your name.',
     })
     form.setError('email', {
       type: 'required',
-      message: 'メールアドレスを入力してください',
+      message: 'Please enter your email address.',
     })
   }, [form])
 

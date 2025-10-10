@@ -1,8 +1,8 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'パスワードリセット | Request & Approval System',
-  description: 'パスワードリセット手続きを行います。',
+  title: 'Password Reset | Request & Approval System',
+  description: 'Start the password reset flow for your account.',
 }
 
 export default function PasswordResetLayout({

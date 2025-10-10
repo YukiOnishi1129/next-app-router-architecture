@@ -13,8 +13,8 @@ import { useSignIn } from '@/features/auth/hooks/useSignIn'
 import type { FieldErrors, UseFormRegister } from 'react-hook-form'
 
 const loginSchema = z.object({
-  email: z.email('有効なメールアドレスを入力してください'),
-  password: z.string().min(8, 'パスワードは 8 文字以上で入力してください'),
+  email: z.email('Please enter a valid email address.'),
+  password: z.string().min(8, 'Password must be at least 8 characters long.'),
 })
 
 export type LoginFormValues = z.infer<typeof loginSchema>
@@ -54,14 +54,14 @@ export function useLoginForm(): LoginFormPresenterProps {
         try {
           const result = await handleSignIn(data.email, data.password)
           if (!result || result.error) {
-            throw new Error(result?.error ?? 'サインインに失敗しました')
+            throw new Error(result?.error ?? 'Failed to sign in')
           }
 
           router.refresh()
           router.replace('/dashboard')
         } catch (error) {
           setServerError(
-            error instanceof Error ? error.message : 'サインインに失敗しました'
+            error instanceof Error ? error.message : 'Failed to sign in'
           )
         }
       })

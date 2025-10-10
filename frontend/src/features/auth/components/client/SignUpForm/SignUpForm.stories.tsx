@@ -6,7 +6,7 @@ const meta: Meta = {
     docs: {
       description: {
         component: `
-Container コンポーネントはフックと Presenter を結線する薄いラッパーです。UI 状態は Presenter ストーリーで確認してください。
+The container wires hooks and the presenter together. Refer to the presenter story to preview UI states.
         `,
       },
     },
@@ -20,7 +20,7 @@ type Story = StoryObj
 export const Documentation: Story = {
   render: () => (
     <div className="bg-card rounded-lg border p-6 text-sm">
-      <p>Presenter ストーリーで UI バリエーションを確認してください。</p>
+      <p>Check the presenter story to explore visual variations.</p>
     </div>
   ),
 }

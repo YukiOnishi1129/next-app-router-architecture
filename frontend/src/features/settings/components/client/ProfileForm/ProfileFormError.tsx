@@ -9,10 +9,10 @@ type ProfileFormErrorProps = Omit<ProfileFormErrorState, 'status'>
 export function ProfileFormError({ message, retry }: ProfileFormErrorProps) {
   return (
     <RetryableError
-      title="プロフィールの取得に失敗しました"
+      title="Failed to load profile"
       description={message}
       onRetry={retry}
-      retryLabel="もう一度読み込む"
+      retryLabel="Try again"
     />
   )
 }

@@ -21,7 +21,7 @@ export default meta
 const Template: StoryFn<typeof SignUpFormPresenter> = (overrides) => {
   const form = useForm<SignUpFormValues>({
     defaultValues: {
-      name: '山田 太郎',
+      name: 'John Doe',
       email: 'user@example.com',
       password: 'password123',
       confirmPassword: 'password123',
@@ -43,7 +43,7 @@ export const Default = Template.bind({})
 
 export const WithServerError = Template.bind({})
 WithServerError.args = {
-  serverError: 'このメールアドレスは既に登録されています',
+  serverError: 'This email address is already registered.',
 }
 
 export const Submitting = Template.bind({})

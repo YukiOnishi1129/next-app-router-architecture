@@ -1,8 +1,8 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: '利用規約 | Request & Approval System',
-  description: 'サービス利用規約を確認できます。',
+  title: 'Terms of Service | Request & Approval System',
+  description: 'Review the service terms and policies.',
 }
 
 export default function TermsLayout({ children }: LayoutProps<'/terms'>) {

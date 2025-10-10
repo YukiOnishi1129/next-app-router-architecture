@@ -1,9 +1,8 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'プロフィール設定 | Request & Approval System',
-  description:
-    'ユーザー情報、メールアドレスなどプロフィール設定を編集できます。',
+  title: 'Profile Settings | Request & Approval System',
+  description: 'Update your account information and profile preferences.',
 }
 
 export default function SettingsProfileLayout({

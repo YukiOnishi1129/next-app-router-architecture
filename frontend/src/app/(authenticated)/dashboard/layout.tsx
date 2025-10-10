@@ -1,8 +1,8 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'ダッシュボード | Request & Approval System',
-  description: 'リクエスト・承認状況のスナップショットを表示します。',
+  title: 'Dashboard | Request & Approval System',
+  description: 'View a snapshot of request and approval activity.',
 }
 
 export default function DashboardLayout({

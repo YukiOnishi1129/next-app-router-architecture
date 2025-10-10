@@ -1,8 +1,8 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'リクエスト作成 | Request & Approval System',
-  description: '新しいリクエストを作成して承認フローに回します。',
+  title: 'Create Request | Request & Approval System',
+  description: 'Draft a new request and submit it for approval.',
 }
 
 export default function NewRequestLayout({
