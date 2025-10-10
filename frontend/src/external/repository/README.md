@@ -8,9 +8,9 @@ The repository layer implements the repository interfaces defined in the domain 
 
 ## Repositories
 
-### UserRepository
+### AccountRepository
 
-- Implements `UserRepository` interface from domain
+- Implements `AccountRepository` interface from domain
 - Handles user persistence and retrieval
 - Supports finding users by email and IDs
 
@@ -59,10 +59,10 @@ The repository layer implements the repository interfaces defined in the domain 
 ## Usage Example
 
 ```typescript
-import { UserRepository } from "@/external/repository";
+import { AccountRepository } from "@/external/repository";
 import { Email } from "@/external/domain";
 
-const userRepository = new UserRepository();
+const userRepository = new AccountRepository();
 
 // Find user by email
 const user = await userRepository.findByEmail(new Email("user@example.com"));

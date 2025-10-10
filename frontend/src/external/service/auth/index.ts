@@ -6,10 +6,10 @@
  */
 
 export { AuthenticationService } from './AuthenticationService'
-export { UserManagementService } from './UserManagementService'
+export { AccountManagementService } from './AccountManagementService'
 export type { AuthToken } from './AuthenticationService'
 export type {
-  UserProfile,
-  CreateUserData,
-  UpdateUserData,
-} from './UserManagementService'
+  AccountProfile,
+  CreateAccountData,
+  UpdateAccountData,
+} from './AccountManagementService'

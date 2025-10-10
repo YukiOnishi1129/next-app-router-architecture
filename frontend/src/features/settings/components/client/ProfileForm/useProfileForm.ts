@@ -10,7 +10,7 @@ import { useUpdateProfileMutation } from '@/features/settings/hooks/useUpdatePro
 import type { FieldErrors, UseFormRegister } from 'react-hook-form'
 
 export type ProfileFormValues = {
-  userId: string
+  accountId: string
   name: string
   email: string
 }
@@ -54,7 +54,7 @@ export const useProfileForm = (): UseProfileFormResult => {
 
   const form = useForm<ProfileFormValues>({
     defaultValues: {
-      userId: '',
+      accountId: '',
       name: '',
       email: '',
     },
@@ -70,7 +70,7 @@ export const useProfileForm = (): UseProfileFormResult => {
   useEffect(() => {
     if (profileQuery.data) {
       reset({
-        userId: profileQuery.data.id,
+        accountId: profileQuery.data.id,
         name: profileQuery.data.name,
         email: profileQuery.data.email,
       })
@@ -86,16 +86,16 @@ export const useProfileForm = (): UseProfileFormResult => {
   const handleSubmitForm = handleSubmit(async (values) => {
     setSuccessMessage(null)
     try {
-      const updatedUser = await updateProfileMutation.mutateAsync(values)
-      if (!updatedUser.success || !updatedUser.user) {
+      const updatedAccount = await updateProfileMutation.mutateAsync(values)
+      if (!updatedAccount.success || !updatedAccount.account) {
         return
       }
       setSuccessMessage('Profile updated successfully.')
       reset(
         {
-          userId: updatedUser.user.id,
-          name: updatedUser.user.name,
-          email: updatedUser.user.email,
+          accountId: updatedAccount.account.id,
+          name: updatedAccount.account.name,
+          email: updatedAccount.account.email,
         },
         { keepDirty: false }
       )
@@ -123,7 +123,7 @@ export const useProfileForm = (): UseProfileFormResult => {
     if (!profileQuery.data) return
     reset(
       {
-        userId: profileQuery.data.id,
+        accountId: profileQuery.data.id,
         name: profileQuery.data.name,
         email: profileQuery.data.email,
       },

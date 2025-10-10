@@ -18,7 +18,7 @@ import {
 import {
   workflowService,
   approvalService,
-  userManagementService,
+  accountManagementService,
   mapRequestToDto,
 } from './shared'
 
@@ -34,7 +34,7 @@ import type {
   RequestCommandResponse,
 } from '@/external/dto/request'
 
-async function requireSessionUser() {
+async function requireSessionAccount() {
   const session = await getSessionServer()
   if (!session?.account) {
     throw new Error('Unauthorized')
@@ -46,12 +46,14 @@ export async function createRequestServer(
   data: CreateRequestInput
 ): Promise<RequestCommandResponse> {
   try {
-    const currentUser = await requireSessionUser()
+    const currentAccount = await requireSessionAccount()
     const validated = createRequestSchema.parse(data)
 
-    const user = await userManagementService.findUserById(currentUser.id)
+    const user = await accountManagementService.findAccountById(
+      currentAccount.id
+    )
     if (!user) {
-      return { success: false, error: 'User not found' }
+      return { success: false, error: 'Account not found' }
     }
 
     const request = await workflowService.createRequest(user, {
@@ -82,12 +84,14 @@ export async function updateRequestServer(
   data: UpdateRequestInput
 ): Promise<RequestCommandResponse> {
   try {
-    const currentUser = await requireSessionUser()
+    const currentAccount = await requireSessionAccount()
     const validated = updateRequestSchema.parse(data)
 
-    const user = await userManagementService.findUserById(currentUser.id)
+    const user = await accountManagementService.findAccountById(
+      currentAccount.id
+    )
     if (!user) {
-      return { success: false, error: 'User not found' }
+      return { success: false, error: 'Account not found' }
     }
 
     const request = await workflowService.updateRequest(
@@ -121,12 +125,14 @@ export async function submitRequestServer(
   data: SubmitRequestInput
 ): Promise<RequestCommandResponse> {
   try {
-    const currentUser = await requireSessionUser()
+    const currentAccount = await requireSessionAccount()
     const validated = submitRequestSchema.parse(data)
 
-    const user = await userManagementService.findUserById(currentUser.id)
+    const user = await accountManagementService.findAccountById(
+      currentAccount.id
+    )
     if (!user) {
-      return { success: false, error: 'User not found' }
+      return { success: false, error: 'Account not found' }
     }
 
     const request = await workflowService.submitRequest(
@@ -154,12 +160,14 @@ export async function reviewRequestServer(
   data: ReviewRequestInput
 ): Promise<RequestCommandResponse> {
   try {
-    const currentUser = await requireSessionUser()
+    const currentAccount = await requireSessionAccount()
     const validated = reviewRequestSchema.parse(data)
 
-    const reviewer = await userManagementService.findUserById(currentUser.id)
+    const reviewer = await accountManagementService.findAccountById(
+      currentAccount.id
+    )
     if (!reviewer) {
-      return { success: false, error: 'User not found' }
+      return { success: false, error: 'Account not found' }
     }
 
     const request = await approvalService.startReview(
@@ -186,12 +194,14 @@ export async function approveRequestServer(
   data: ApproveRequestInput
 ): Promise<RequestCommandResponse> {
   try {
-    const currentUser = await requireSessionUser()
+    const currentAccount = await requireSessionAccount()
     const validated = approveRequestSchema.parse(data)
 
-    const approver = await userManagementService.findUserById(currentUser.id)
+    const approver = await accountManagementService.findAccountById(
+      currentAccount.id
+    )
     if (!approver) {
-      return { success: false, error: 'User not found' }
+      return { success: false, error: 'Account not found' }
     }
 
     const request = await approvalService.approveRequest(
@@ -220,12 +230,14 @@ export async function rejectRequestServer(
   data: RejectRequestInput
 ): Promise<RequestCommandResponse> {
   try {
-    const currentUser = await requireSessionUser()
+    const currentAccount = await requireSessionAccount()
     const validated = rejectRequestSchema.parse(data)
 
-    const reviewer = await userManagementService.findUserById(currentUser.id)
+    const reviewer = await accountManagementService.findAccountById(
+      currentAccount.id
+    )
     if (!reviewer) {
-      return { success: false, error: 'User not found' }
+      return { success: false, error: 'Account not found' }
     }
 
     const request = await approvalService.rejectRequest(
@@ -254,12 +266,14 @@ export async function cancelRequestServer(
   data: CancelRequestInput
 ): Promise<RequestCommandResponse> {
   try {
-    const currentUser = await requireSessionUser()
+    const currentAccount = await requireSessionAccount()
     const validated = cancelRequestSchema.parse(data)
 
-    const user = await userManagementService.findUserById(currentUser.id)
+    const user = await accountManagementService.findAccountById(
+      currentAccount.id
+    )
     if (!user) {
-      return { success: false, error: 'User not found' }
+      return { success: false, error: 'Account not found' }
     }
 
     const request = await workflowService.cancelRequest(
@@ -288,12 +302,14 @@ export async function assignRequestServer(
   data: AssignRequestInput
 ): Promise<RequestCommandResponse> {
   try {
-    const currentUser = await requireSessionUser()
+    const currentAccount = await requireSessionAccount()
     const validated = assignRequestSchema.parse(data)
 
-    const actor = await userManagementService.findUserById(currentUser.id)
+    const actor = await accountManagementService.findAccountById(
+      currentAccount.id
+    )
     if (!actor) {
-      return { success: false, error: 'User not found' }
+      return { success: false, error: 'Account not found' }
     }
 
     const request = await workflowService.assignRequest(

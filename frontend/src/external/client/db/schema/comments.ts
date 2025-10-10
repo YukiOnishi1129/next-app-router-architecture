@@ -1,7 +1,7 @@
 import { pgTable, text, timestamp, boolean } from 'drizzle-orm/pg-core'
 
+import { accounts } from './accounts'
 import { requests } from './requests'
-import { users } from './users'
 
 export const comments = pgTable('comments', {
   id: text('id').primaryKey(),
@@ -11,7 +11,7 @@ export const comments = pgTable('comments', {
     .references(() => requests.id),
   authorId: text('author_id')
     .notNull()
-    .references(() => users.id),
+    .references(() => accounts.id),
   createdAt: timestamp('created_at', { withTimezone: true })
     .notNull()
     .defaultNow(),

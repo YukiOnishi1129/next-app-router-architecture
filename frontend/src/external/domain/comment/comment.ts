@@ -1,5 +1,5 @@
+import { AccountId } from '../account'
 import { RequestId } from '../request'
-import { UserId } from '../user'
 import { CommentId } from './comment-id'
 
 /**
@@ -47,7 +47,7 @@ export class Comment {
     private readonly id: CommentId,
     private readonly requestId: RequestId,
     private content: CommentContent,
-    private readonly authorId: UserId,
+    private readonly authorId: AccountId,
     private readonly createdAt: Date,
     private updatedAt: Date,
     private edited: boolean,
@@ -65,7 +65,7 @@ export class Comment {
       CommentId.generate(),
       RequestId.create(params.requestId),
       new CommentContent(params.content),
-      UserId.create(params.authorId),
+      AccountId.create(params.authorId),
       now,
       now,
       false,
@@ -89,7 +89,7 @@ export class Comment {
       CommentId.create(params.id),
       RequestId.create(params.requestId),
       new CommentContent(params.content),
-      UserId.create(params.authorId),
+      AccountId.create(params.authorId),
       params.createdAt,
       params.updatedAt,
       params.edited,
@@ -110,7 +110,7 @@ export class Comment {
     return this.content
   }
 
-  getAuthorId(): UserId {
+  getAuthorId(): AccountId {
     return this.authorId
   }
 
@@ -134,12 +134,12 @@ export class Comment {
     return this.deletedAt ? new Date(this.deletedAt) : null
   }
 
-  canEdit(userId: string): boolean {
-    return !this.deleted && this.authorId.getValue() === userId
+  canEdit(accountId: string): boolean {
+    return !this.deleted && this.authorId.getValue() === accountId
   }
 
-  canDelete(userId: string, isAdmin: boolean): boolean {
-    return !this.deleted && (this.authorId.getValue() === userId || isAdmin)
+  canDelete(accountId: string, isAdmin: boolean): boolean {
+    return !this.deleted && (this.authorId.getValue() === accountId || isAdmin)
   }
 
   edit(newContent: string, editorId: string): void {

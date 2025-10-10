@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 export const getSessionSchema = z.object({
-  userId: z.string().optional(),
+  accountId: z.string().optional(),
 })
 
 export type GetSessionInput = z.input<typeof getSessionSchema>

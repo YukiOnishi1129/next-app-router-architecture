@@ -8,7 +8,7 @@ The authentication service has been refactored to achieve proper separation of c
 ### Before
 - Single `AuthenticationService` that mixed:
   - External API calls (Firebase SDK)
-  - Database operations (UserRepository)
+  - Database operations (AccountRepository)
   - Authentication logic
 - Firebase SDK dependency
 
@@ -23,8 +23,8 @@ The authentication service has been refactored to achieve proper separation of c
   - Delegates to GCP client for external calls
   - No database operations
 
-- **UserManagementService** (`/src/external/service/auth/UserManagementService.ts`)
-  - User database operations only
+- **AccountManagementService** (`/src/external/service/auth/AccountManagementService.ts`)
+  - Account database operations only
   - No external API calls
   - Permission management
 
@@ -38,7 +38,7 @@ The authentication service has been refactored to achieve proper separation of c
 ### Created
 1. `/src/external/client/gcp/identity-platform.ts` - Google Identity Platform REST API client
 2. `/src/external/service/auth/AuthenticationService.ts` - Pure authentication service
-3. `/src/external/service/auth/UserManagementService.ts` - User management service
+3. `/src/external/service/auth/AccountManagementService.ts` - Account management service
 4. `/src/external/service/auth/index.ts` - Service exports
 5. `/src/external/service/auth/README.md` - Architecture documentation
 6. `/src/external/service/auth/__tests__/` - Example test files

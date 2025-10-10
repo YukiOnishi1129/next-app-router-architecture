@@ -2,7 +2,7 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 
-import { updateUserProfileAction } from '@/external/handler/user/command.action'
+import { updateAccountProfileAction } from '@/external/handler/account/command.action'
 
 import { settingsKeys } from '../queries/keys'
 
@@ -10,10 +10,10 @@ export const useUpdateProfileMutation = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: updateUserProfileAction,
+    mutationFn: updateAccountProfileAction,
     onSuccess: (response) => {
-      if (response.success && response.user) {
-        queryClient.setQueryData(settingsKeys.profile(), response.user)
+      if (response.success && response.account) {
+        queryClient.setQueryData(settingsKeys.profile(), response.account)
       }
     },
   })

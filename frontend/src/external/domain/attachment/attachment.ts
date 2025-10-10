@@ -1,5 +1,5 @@
+import { AccountId } from '../account'
 import { RequestId } from '../request'
-import { UserId } from '../user'
 import { AttachmentId } from './attachment-id'
 
 /**
@@ -59,11 +59,11 @@ export class Attachment {
     private readonly mimeType: string,
     private readonly size: FileSize,
     private readonly storageKey: string,
-    private readonly uploadedById: UserId,
+    private readonly uploadedById: AccountId,
     private readonly uploadedAt: Date,
     private deleted: boolean,
     private deletedAt: Date | null,
-    private deletedById: UserId | null
+    private deletedById: AccountId | null
   ) {}
 
   static create(params: {
@@ -81,7 +81,7 @@ export class Attachment {
       params.mimeType,
       new FileSize(params.sizeInBytes),
       params.storageKey,
-      UserId.create(params.uploadedById),
+      AccountId.create(params.uploadedById),
       new Date(),
       false,
       null,
@@ -109,11 +109,11 @@ export class Attachment {
       params.mimeType,
       new FileSize(params.sizeInBytes),
       params.storageKey,
-      UserId.create(params.uploadedById),
+      AccountId.create(params.uploadedById),
       params.uploadedAt,
       params.deleted,
       params.deletedAt,
-      params.deletedById ? UserId.create(params.deletedById) : null
+      params.deletedById ? AccountId.create(params.deletedById) : null
     )
   }
 
@@ -141,7 +141,7 @@ export class Attachment {
     return this.storageKey
   }
 
-  getUploadedById(): UserId {
+  getUploadedById(): AccountId {
     return this.uploadedById
   }
 
@@ -157,7 +157,7 @@ export class Attachment {
     return this.deletedAt ? new Date(this.deletedAt) : null
   }
 
-  getDeletedById(): UserId | null {
+  getDeletedById(): AccountId | null {
     return this.deletedById
   }
 
@@ -187,7 +187,7 @@ export class Attachment {
     }
     this.deleted = true
     this.deletedAt = new Date()
-    this.deletedById = UserId.create(deletedById)
+    this.deletedById = AccountId.create(deletedById)
   }
 
   toJSON() {

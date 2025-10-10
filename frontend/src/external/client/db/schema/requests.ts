@@ -1,6 +1,6 @@
 import { pgTable, text, timestamp, pgEnum } from 'drizzle-orm/pg-core'
 
-import { users } from './users'
+import { accounts } from './accounts'
 
 // Define enums for request properties
 export const requestTypeEnum = pgEnum('request_type', [
@@ -33,8 +33,8 @@ export const requests = pgTable('requests', {
   status: requestStatusEnum('status').notNull().default('DRAFT'),
   requesterId: text('requester_id')
     .notNull()
-    .references(() => users.id),
-  assigneeId: text('assignee_id').references(() => users.id),
+    .references(() => accounts.id),
+  assigneeId: text('assignee_id').references(() => accounts.id),
   attachmentIds: text('attachment_ids').array().notNull().default([]),
   createdAt: timestamp('created_at', { withTimezone: true })
     .notNull()
@@ -44,7 +44,7 @@ export const requests = pgTable('requests', {
     .defaultNow(),
   submittedAt: timestamp('submitted_at', { withTimezone: true }),
   reviewedAt: timestamp('reviewed_at', { withTimezone: true }),
-  reviewerId: text('reviewer_id').references(() => users.id),
+  reviewerId: text('reviewer_id').references(() => accounts.id),
 })
 
 export type Request = typeof requests.$inferSelect

@@ -1,6 +1,6 @@
 import { pgTable, text, timestamp, boolean, pgEnum } from 'drizzle-orm/pg-core'
 
-import { users } from './users'
+import { accounts } from './accounts'
 
 // Define enum for notification types
 export const notificationTypeEnum = pgEnum('notification_type', [
@@ -21,7 +21,7 @@ export const notifications = pgTable('notifications', {
   message: text('message').notNull(),
   recipientId: text('recipient_id')
     .notNull()
-    .references(() => users.id),
+    .references(() => accounts.id),
   relatedEntityType: text('related_entity_type'),
   relatedEntityId: text('related_entity_id'),
   isRead: boolean('is_read').notNull().default(false),

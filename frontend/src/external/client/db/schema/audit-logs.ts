@@ -1,6 +1,6 @@
 import { pgTable, text, timestamp, jsonb, pgEnum } from 'drizzle-orm/pg-core'
 
-import { users } from './users'
+import { accounts } from './accounts'
 
 // Define enum for audit action types
 export const auditActionEnum = pgEnum('audit_action', [
@@ -21,9 +21,9 @@ export const auditLogs = pgTable('audit_logs', {
   action: auditActionEnum('action').notNull(),
   changes: jsonb('changes'),
   metadata: jsonb('metadata'),
-  userId: text('user_id')
+  actorId: text('actor_id')
     .notNull()
-    .references(() => users.id),
+    .references(() => accounts.id),
   createdAt: timestamp('created_at', { withTimezone: true })
     .notNull()
     .defaultNow(),

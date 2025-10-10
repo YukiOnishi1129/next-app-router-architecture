@@ -8,12 +8,12 @@ const createIdentityPlatformClientMock = () => ({
   signUpWithEmailPassword: vi.fn(),
   signInWithEmailPassword: vi.fn(),
   sendEmailVerification: vi.fn(),
-  getUserInfo: vi.fn(),
+  getAccountInfo: vi.fn(),
   verifyIdToken: vi.fn(),
   refreshIdToken: vi.fn(),
   sendPasswordResetEmail: vi.fn(),
-  updateUserProfile: vi.fn(),
-  deleteUserAccount: vi.fn(),
+  updateAccountProfile: vi.fn(),
+  deleteAccountAccount: vi.fn(),
 })
 
 type IdentityPlatformClientMock = ReturnType<
@@ -71,14 +71,14 @@ describe('AuthenticationService (Identity Platform)', () => {
         expiresIn: '3600',
         localId: 'user-123',
         email: 'test@example.com',
-        displayName: 'Test User',
+        displayName: 'Test Account',
         registered: true,
       })
 
-      mockClient.getUserInfo.mockResolvedValue({
+      mockClient.getAccountInfo.mockResolvedValue({
         localId: 'user-123',
         email: 'test@example.com',
-        displayName: 'Test User',
+        displayName: 'Test Account',
         emailVerified: false,
         createdAt: '1234567890',
         lastLoginAt: '1234567890',
@@ -89,15 +89,15 @@ describe('AuthenticationService (Identity Platform)', () => {
       const result = await service.signUpWithEmailPassword(
         'test@example.com',
         'password',
-        'Test User'
+        'Test Account'
       )
 
       expect(mockClient.signUpWithEmailPassword).toHaveBeenCalledWith({
         email: 'test@example.com',
         password: 'password',
-        displayName: 'Test User',
+        displayName: 'Test Account',
       })
-      expect(mockClient.getUserInfo).toHaveBeenCalledWith('id-token')
+      expect(mockClient.getAccountInfo).toHaveBeenCalledWith('id-token')
       expect(mockClient.sendEmailVerification).toHaveBeenCalledWith('id-token')
 
       expect(result).toMatchObject({
@@ -106,7 +106,7 @@ describe('AuthenticationService (Identity Platform)', () => {
         userInfo: {
           id: 'user-123',
           email: 'test@example.com',
-          name: 'Test User',
+          name: 'Test Account',
           emailVerified: false,
         },
       })
@@ -122,14 +122,14 @@ describe('AuthenticationService (Identity Platform)', () => {
         expiresIn: '3600',
         localId: 'user-123',
         email: 'test@example.com',
-        displayName: 'Test User',
+        displayName: 'Test Account',
         registered: true,
       })
 
-      mockClient.getUserInfo.mockResolvedValue({
+      mockClient.getAccountInfo.mockResolvedValue({
         localId: 'user-123',
         email: 'test@example.com',
-        displayName: 'Test User',
+        displayName: 'Test Account',
         emailVerified: true,
         createdAt: '1234567890',
         lastLoginAt: '1234567890',
@@ -144,7 +144,7 @@ describe('AuthenticationService (Identity Platform)', () => {
         email: 'test@example.com',
         password: 'password',
       })
-      expect(mockClient.getUserInfo).toHaveBeenCalledWith('id-token')
+      expect(mockClient.getAccountInfo).toHaveBeenCalledWith('id-token')
       expect(result.userInfo.emailVerified).toBe(true)
       expect(result.expiresAt.getTime()).toBeGreaterThan(Date.now())
     })
@@ -153,7 +153,7 @@ describe('AuthenticationService (Identity Platform)', () => {
   describe('verifyToken', () => {
     it('returns user info when token is valid', async () => {
       mockClient.verifyIdToken.mockResolvedValue(true)
-      mockClient.getUserInfo.mockResolvedValue({
+      mockClient.getAccountInfo.mockResolvedValue({
         localId: 'user-123',
         email: 'test@example.com',
         emailVerified: true,
@@ -164,7 +164,7 @@ describe('AuthenticationService (Identity Platform)', () => {
       const result = await service.verifyToken('valid-token')
 
       expect(mockClient.verifyIdToken).toHaveBeenCalledWith('valid-token')
-      expect(mockClient.getUserInfo).toHaveBeenCalledWith('valid-token')
+      expect(mockClient.getAccountInfo).toHaveBeenCalledWith('valid-token')
       expect(result?.email).toBe('test@example.com')
     })
 
@@ -174,7 +174,7 @@ describe('AuthenticationService (Identity Platform)', () => {
       const result = await service.verifyToken('invalid-token')
 
       expect(mockClient.verifyIdToken).toHaveBeenCalledWith('invalid-token')
-      expect(mockClient.getUserInfo).not.toHaveBeenCalled()
+      expect(mockClient.getAccountInfo).not.toHaveBeenCalled()
       expect(result).toBeNull()
     })
   })

@@ -3,14 +3,14 @@ import {
   AttachmentId,
   Request,
   RequestId,
-  User,
-  UserId,
+  Account,
+  AccountId,
   AuditEventType,
 } from '@/external/domain'
 import {
   AttachmentRepository,
   RequestRepository,
-  UserRepository,
+  AccountRepository,
 } from '@/external/repository'
 
 import { AuditService, AuditContext } from '../audit/AuditService'
@@ -21,24 +21,24 @@ type UploadAttachmentParams = {
   fileSize: number
   mimeType: string
   data: string
-  userId: string
+  accountId: string
   context?: AuditContext
 }
 
 type DeleteAttachmentParams = {
   attachmentId: string
-  userId: string
+  accountId: string
   context?: AuditContext
 }
 
 type GetAttachmentsParams = {
   requestId: string
-  userId: string
+  accountId: string
 }
 
 type DownloadAttachmentParams = {
   attachmentId: string
-  userId: string
+  accountId: string
   context?: AuditContext
 }
 
@@ -58,13 +58,13 @@ export class AttachmentService {
 
   private readonly attachmentRepository: AttachmentRepository
   private readonly requestRepository: RequestRepository
-  private readonly userRepository: UserRepository
+  private readonly userRepository: AccountRepository
   private readonly auditService: AuditService
 
   constructor(
     attachmentRepository = new AttachmentRepository(),
     requestRepository = new RequestRepository(),
-    userRepository = new UserRepository(),
+    userRepository = new AccountRepository(),
     auditService = new AuditService()
   ) {
     this.attachmentRepository = attachmentRepository
@@ -74,7 +74,8 @@ export class AttachmentService {
   }
 
   async uploadAttachment(params: UploadAttachmentParams): Promise<Attachment> {
-    const { requestId, fileName, fileSize, mimeType, userId, context } = params
+    const { requestId, fileName, fileSize, mimeType, accountId, context } =
+      params
 
     if (
       !AttachmentService.ALLOWED_MIME_TYPES.includes(
@@ -85,8 +86,8 @@ export class AttachmentService {
     }
 
     const request = await this.getRequestOrThrow(requestId)
-    const user = await this.getUserOrThrow(userId)
-    this.ensureCanModifyAttachments(request, user, userId, true)
+    const account = await this.getAccountOrThrow(accountId)
+    this.ensureCanModifyAttachments(request, account, accountId, true)
 
     const attachment = Attachment.create({
       requestId,
@@ -94,7 +95,7 @@ export class AttachmentService {
       mimeType,
       sizeInBytes: fileSize,
       storageKey: this.buildStorageKey(requestId, fileName),
-      uploadedById: userId,
+      uploadedById: accountId,
     })
 
     await this.attachmentRepository.save(attachment)
@@ -106,7 +107,7 @@ export class AttachmentService {
         action: 'attachment.upload',
         entityType: 'ATTACHMENT',
         entityId: attachment.getId().getValue(),
-        userId,
+        accountId,
         eventType: AuditEventType.REQUEST_UPDATED,
         metadata: {
           requestId,
@@ -122,32 +123,32 @@ export class AttachmentService {
   }
 
   async deleteAttachment(params: DeleteAttachmentParams): Promise<void> {
-    const { attachmentId, userId, context } = params
+    const { attachmentId, accountId, context } = params
 
     const attachment = await this.getAttachmentOrThrow(attachmentId)
     const request = await this.getRequestOrThrow(
       attachment.getRequestId().getValue()
     )
-    const user = await this.getUserOrThrow(userId)
-    this.ensureCanModifyAttachments(request, user, userId, false, attachment)
+    const user = await this.getAccountOrThrow(accountId)
+    this.ensureCanModifyAttachments(request, user, accountId, false, attachment)
 
     request.removeAttachment(attachmentId)
     await this.requestRepository.save(request)
 
-    attachment.delete(userId)
+    attachment.delete(accountId)
     await Promise.all([
       this.attachmentRepository.save(attachment),
       this.auditService.logAction({
         action: 'attachment.delete',
         entityType: 'ATTACHMENT',
         entityId: attachmentId,
-        userId,
+        accountId,
         eventType: AuditEventType.REQUEST_UPDATED,
         metadata: {
           requestId: attachment.getRequestId().getValue(),
           fileName: attachment.getFileName(),
           deletedByAdmin:
-            attachment.getUploadedById().getValue() !== userId &&
+            attachment.getUploadedById().getValue() !== accountId &&
             user.isAdmin(),
         },
         context,
@@ -156,10 +157,10 @@ export class AttachmentService {
   }
 
   async getAttachments(params: GetAttachmentsParams): Promise<Attachment[]> {
-    const { requestId, userId } = params
+    const { requestId, accountId } = params
     const request = await this.getRequestOrThrow(requestId)
-    const user = await this.getUserOrThrow(userId)
-    this.ensureCanViewAttachments(request, user, userId)
+    const user = await this.getAccountOrThrow(accountId)
+    this.ensureCanViewAttachments(request, user, accountId)
 
     return this.attachmentRepository.findByRequestId(
       RequestId.create(requestId)
@@ -169,14 +170,14 @@ export class AttachmentService {
   async downloadAttachment(
     params: DownloadAttachmentParams
   ): Promise<{ data: string; attachment: Attachment }> {
-    const { attachmentId, userId, context } = params
+    const { attachmentId, accountId, context } = params
 
     const attachment = await this.getAttachmentOrThrow(attachmentId)
     const request = await this.getRequestOrThrow(
       attachment.getRequestId().getValue()
     )
-    const user = await this.getUserOrThrow(userId)
-    this.ensureCanViewAttachments(request, user, userId)
+    const user = await this.getAccountOrThrow(accountId)
+    this.ensureCanViewAttachments(request, user, accountId)
 
     const mockData = 'SGVsbG8gV29ybGQh'
 
@@ -184,7 +185,7 @@ export class AttachmentService {
       action: 'attachment.download',
       entityType: 'ATTACHMENT',
       entityId: attachmentId,
-      userId,
+      accountId: accountId,
       eventType: AuditEventType.SYSTEM_ERROR,
       metadata: {
         requestId: attachment.getRequestId().getValue(),
@@ -209,10 +210,10 @@ export class AttachmentService {
     return request
   }
 
-  private async getUserOrThrow(userId: string): Promise<User> {
-    const user = await this.userRepository.findById(UserId.create(userId))
+  private async getAccountOrThrow(accountId: string): Promise<Account> {
+    const user = await this.userRepository.findById(AccountId.create(accountId))
     if (!user) {
-      throw new Error('User not found')
+      throw new Error('Account not found')
     }
     return user
   }
@@ -231,18 +232,18 @@ export class AttachmentService {
 
   private ensureCanModifyAttachments(
     request: Request,
-    user: User,
-    userId: string,
+    account: Account,
+    accountId: string,
     isUpload: boolean,
     attachment?: Attachment
   ): void {
-    if (!this.canAccessRequest(request, user, userId)) {
+    if (!this.canAccessRequest(request, account, accountId)) {
       throw new Error('Unauthorized')
     }
 
     if (!isUpload && attachment) {
-      const isUploader = attachment.getUploadedById().getValue() === userId
-      if (!isUploader && !user.isAdmin()) {
+      const isUploader = attachment.getUploadedById().getValue() === accountId
+      if (!isUploader && !account.isAdmin()) {
         throw new Error('Unauthorized')
       }
     }
@@ -250,22 +251,22 @@ export class AttachmentService {
 
   private ensureCanViewAttachments(
     request: Request,
-    user: User,
-    userId: string
+    account: Account,
+    accountId: string
   ): void {
-    if (!this.canAccessRequest(request, user, userId)) {
+    if (!this.canAccessRequest(request, account, accountId)) {
       throw new Error('Unauthorized')
     }
   }
 
   private canAccessRequest(
     request: Request,
-    user: User,
-    userId: string
+    account: Account,
+    accountId: string
   ): boolean {
-    const isRequester = request.getRequesterId().getValue() === userId
-    const isAssignee = request.getAssigneeId()?.getValue() === userId
-    const isAdmin = user.isAdmin()
+    const isRequester = request.getRequesterId().getValue() === accountId
+    const isAssignee = request.getAssigneeId()?.getValue() === accountId
+    const isAdmin = account.isAdmin()
     return isRequester || isAssignee || isAdmin
   }
 

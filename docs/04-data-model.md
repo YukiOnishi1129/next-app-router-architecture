@@ -1,7 +1,7 @@
 # Data Model
 
 ## Entities
-- User(id, name, role: requester|approver|admin, createdAt, updatedAt)
+- Account(id, name, role: requester|approver|admin, createdAt, updatedAt)
 - Request(id, type, title, amount?, reason, status, createdBy, approverId?, createdAt, updatedAt)
 - Attachment(id, requestId, url, filename, createdAt)
 - Comment(id, requestId, userId, body, createdAt)

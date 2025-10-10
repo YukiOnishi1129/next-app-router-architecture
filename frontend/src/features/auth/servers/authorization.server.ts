@@ -35,8 +35,8 @@ const signUpServer = async (
     if (!res.success) {
       throw new Error(res.error || 'Sign-up failed')
     }
-    if (!res.user) {
-      throw new Error('No user data returned')
+    if (!res.account) {
+      throw new Error('No account data returned')
     }
     if (!res.idToken) {
       throw new Error('No ID token returned')
@@ -51,15 +51,15 @@ const signUpServer = async (
     ])
 
     return {
-      ...res.user,
+      ...res.account,
       account: {
-        id: res.user.id,
-        email: res.user.email,
-        name: res.user.name,
-        roles: res.user.roles,
-        status: res.user.status,
-        createdAt: res.user.createdAt,
-        updatedAt: res.user.updatedAt,
+        id: res.account.id,
+        email: res.account.email,
+        name: res.account.name,
+        roles: res.account.roles,
+        status: res.account.status,
+        createdAt: res.account.createdAt,
+        updatedAt: res.account.updatedAt,
       },
     }
   } catch (error) {
@@ -82,8 +82,8 @@ const loginServer = async (
     if (!res.success) {
       throw new Error(res.error || 'Login failed')
     }
-    if (!res.user) {
-      throw new Error('No user data returned')
+    if (!res.account) {
+      throw new Error('No account data returned')
     }
     if (!res.idToken) {
       throw new Error('No ID token returned')
@@ -97,15 +97,15 @@ const loginServer = async (
       await setRefreshTokenCookieServer(res.refreshToken),
     ])
     return {
-      ...res.user,
+      ...res.account,
       account: {
-        id: res.user.id,
-        email: res.user.email,
-        name: res.user.name,
-        roles: res.user.roles,
-        status: res.user.status,
-        createdAt: res.user.createdAt,
-        updatedAt: res.user.updatedAt,
+        id: res.account.id,
+        email: res.account.email,
+        name: res.account.name,
+        roles: res.account.roles,
+        status: res.account.status,
+        createdAt: res.account.createdAt,
+        updatedAt: res.account.updatedAt,
       },
     }
   } catch (error) {

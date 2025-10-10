@@ -7,7 +7,7 @@ import {
   Notification,
   NotificationId,
   NotificationType,
-  UserId,
+  AccountId,
 } from '@/external/domain'
 
 export class NotificationRepository implements INotificationRepository {
@@ -43,7 +43,7 @@ export class NotificationRepository implements INotificationRepository {
   }
 
   async findByRecipientId(
-    recipientId: UserId,
+    recipientId: AccountId,
     limit?: number,
     offset?: number
   ): Promise<Notification[]> {
@@ -58,7 +58,9 @@ export class NotificationRepository implements INotificationRepository {
     return result.map((row) => this.mapToDomainEntity(row))
   }
 
-  async findUnreadByRecipientId(recipientId: UserId): Promise<Notification[]> {
+  async findUnreadByRecipientId(
+    recipientId: AccountId
+  ): Promise<Notification[]> {
     const result = await db
       .select()
       .from(notifications)
@@ -73,7 +75,7 @@ export class NotificationRepository implements INotificationRepository {
     return result.map((row) => this.mapToDomainEntity(row))
   }
 
-  async countUnreadByRecipientId(recipientId: UserId): Promise<number> {
+  async countUnreadByRecipientId(recipientId: AccountId): Promise<number> {
     const result = await db
       .select({ value: count() })
       .from(notifications)
@@ -87,7 +89,7 @@ export class NotificationRepository implements INotificationRepository {
     return result[0]?.value || 0
   }
 
-  async markAllAsReadForRecipient(recipientId: UserId): Promise<void> {
+  async markAllAsReadForRecipient(recipientId: AccountId): Promise<void> {
     await db
       .update(notifications)
       .set({
@@ -104,7 +106,7 @@ export class NotificationRepository implements INotificationRepository {
 
   async findByTypeAndRecipientId(
     type: NotificationType,
-    recipientId: UserId,
+    recipientId: AccountId,
     limit?: number
   ): Promise<Notification[]> {
     const baseQuery = db

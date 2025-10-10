@@ -1,4 +1,4 @@
-import { UserId } from '../user'
+import { AccountId } from '../account'
 import { NotificationId } from './notification-id'
 
 /**
@@ -24,7 +24,7 @@ export class Notification {
     private readonly type: NotificationType,
     private readonly title: string,
     private readonly message: string,
-    private readonly recipientId: UserId,
+    private readonly recipientId: AccountId,
     private readonly relatedEntityType: string | null,
     private readonly relatedEntityId: string | null,
     private isRead: boolean,
@@ -45,7 +45,7 @@ export class Notification {
       params.type,
       params.title,
       params.message,
-      UserId.create(params.recipientId),
+      AccountId.create(params.recipientId),
       params.relatedEntityType || null,
       params.relatedEntityId || null,
       false,
@@ -71,7 +71,7 @@ export class Notification {
       params.type,
       params.title,
       params.message,
-      UserId.create(params.recipientId),
+      AccountId.create(params.recipientId),
       params.relatedEntityType,
       params.relatedEntityId,
       params.isRead,
@@ -96,7 +96,7 @@ export class Notification {
     return this.message
   }
 
-  getRecipientId(): UserId {
+  getRecipientId(): AccountId {
     return this.recipientId
   }
 

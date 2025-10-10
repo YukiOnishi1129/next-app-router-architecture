@@ -1,7 +1,7 @@
 import { Notification, NotificationType } from './notification'
 import { NotificationId } from './notification-id'
+import { AccountId } from '../account'
 import { Repository } from '../shared/repository'
-import { UserId } from '../user'
 
 /**
  * Notification repository interface
@@ -9,16 +9,16 @@ import { UserId } from '../user'
 export interface NotificationRepository
   extends Repository<Notification, NotificationId> {
   findByRecipientId(
-    recipientId: UserId,
+    recipientId: AccountId,
     limit?: number,
     offset?: number
   ): Promise<Notification[]>
-  findUnreadByRecipientId(recipientId: UserId): Promise<Notification[]>
-  countUnreadByRecipientId(recipientId: UserId): Promise<number>
-  markAllAsReadForRecipient(recipientId: UserId): Promise<void>
+  findUnreadByRecipientId(recipientId: AccountId): Promise<Notification[]>
+  countUnreadByRecipientId(recipientId: AccountId): Promise<number>
+  markAllAsReadForRecipient(recipientId: AccountId): Promise<void>
   findByTypeAndRecipientId(
     type: NotificationType,
-    recipientId: UserId,
+    recipientId: AccountId,
     limit?: number
   ): Promise<Notification[]>
 }

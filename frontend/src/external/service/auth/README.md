@@ -24,7 +24,7 @@ The authentication system is split into distinct services, each with a single re
   - Token verification and refresh
   - Authentication revocation
 
-### 3. UserManagementService (`UserManagementService.ts`)
+### 3. AccountManagementService (`AccountManagementService.ts`)
 - Handles all user database operations
 - No external API calls
 - Responsibilities:
@@ -43,14 +43,14 @@ The authentication system is split into distinct services, each with a single re
 1. **Sign In Flow**:
    ```
    Handler -> AuthenticationService -> Google Identity Platform Client -> Google APIs
-           -> UserManagementService -> UserRepository -> Database
+           -> AccountManagementService -> AccountRepository -> Database
            -> AuditService -> AuditLogRepository -> Database
    ```
 
 2. **Session Management**:
    ```
    Handler -> AuthenticationService (verify token)
-           -> UserManagementService (get user data)
+           -> AccountManagementService (get user data)
    ```
 
 ## Environment Variables

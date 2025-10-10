@@ -1,5 +1,4 @@
-import { DomainEvent } from '../shared/events'
-import { UserId } from '../user'
+import { AccountId } from '../account'
 import {
   RequestCreatedEvent,
   RequestSubmittedEvent,
@@ -8,6 +7,7 @@ import {
 } from './events'
 import { RequestId } from './request-id'
 import { RequestStatus, RequestPriority, RequestType } from './request-status'
+import { DomainEvent } from '../shared/events'
 
 /**
  * Request entity - represents a user request
@@ -23,13 +23,13 @@ export class Request {
     private type: RequestType,
     private priority: RequestPriority,
     private status: RequestStatus,
-    private readonly requesterId: UserId,
-    private assigneeId: UserId | null,
+    private readonly requesterId: AccountId,
+    private assigneeId: AccountId | null,
     private readonly createdAt: Date,
     private updatedAt: Date,
     private submittedAt: Date | null,
     private reviewedAt: Date | null,
-    private reviewerId: UserId | null
+    private reviewerId: AccountId | null
   ) {}
 
   static create(params: {
@@ -48,8 +48,8 @@ export class Request {
       params.type,
       params.priority,
       RequestStatus.DRAFT,
-      UserId.create(params.requesterId),
-      params.assigneeId ? UserId.create(params.assigneeId) : null,
+      AccountId.create(params.requesterId),
+      params.assigneeId ? AccountId.create(params.assigneeId) : null,
       now,
       now,
       null,
@@ -94,13 +94,13 @@ export class Request {
       params.type,
       params.priority,
       params.status,
-      UserId.create(params.requesterId),
-      params.assigneeId ? UserId.create(params.assigneeId) : null,
+      AccountId.create(params.requesterId),
+      params.assigneeId ? AccountId.create(params.assigneeId) : null,
       params.createdAt,
       params.updatedAt,
       params.submittedAt,
       params.reviewedAt,
-      params.reviewerId ? UserId.create(params.reviewerId) : null
+      params.reviewerId ? AccountId.create(params.reviewerId) : null
     )
     request.attachmentIds = [...params.attachmentIds]
     return request
@@ -130,11 +130,11 @@ export class Request {
     return this.status
   }
 
-  getRequesterId(): UserId {
+  getRequesterId(): AccountId {
     return this.requesterId
   }
 
-  getAssigneeId(): UserId | null {
+  getAssigneeId(): AccountId | null {
     return this.assigneeId
   }
 
@@ -158,7 +158,7 @@ export class Request {
     return this.reviewedAt ? new Date(this.reviewedAt) : null
   }
 
-  getReviewerId(): UserId | null {
+  getReviewerId(): AccountId | null {
     return this.reviewerId
   }
 
@@ -241,7 +241,7 @@ export class Request {
       throw new Error('Request must be submitted before review')
     }
     this.status = RequestStatus.IN_REVIEW
-    this.reviewerId = UserId.create(reviewerId)
+    this.reviewerId = AccountId.create(reviewerId)
     this.updatedAt = new Date()
   }
 
@@ -250,7 +250,7 @@ export class Request {
       throw new Error('Request must be in review before approval')
     }
     this.status = RequestStatus.APPROVED
-    this.reviewerId = UserId.create(reviewerId)
+    this.reviewerId = AccountId.create(reviewerId)
     this.reviewedAt = new Date()
     this.updatedAt = new Date()
 
@@ -270,7 +270,7 @@ export class Request {
       throw new Error('Request must be in review before rejection')
     }
     this.status = RequestStatus.REJECTED
-    this.reviewerId = UserId.create(reviewerId)
+    this.reviewerId = AccountId.create(reviewerId)
     this.reviewedAt = new Date()
     this.updatedAt = new Date()
 
@@ -295,7 +295,7 @@ export class Request {
   }
 
   assignTo(assigneeId: string): void {
-    this.assigneeId = UserId.create(assigneeId)
+    this.assigneeId = AccountId.create(assigneeId)
     this.updatedAt = new Date()
   }
 

@@ -7,7 +7,7 @@ import {
   AuditLog,
   AuditLogId,
   AuditEventType,
-  UserId,
+  AccountId,
   AuditLogFilter,
   AuditAction,
 } from '@/external/domain'
@@ -58,7 +58,7 @@ export class AuditLogRepository implements IAuditLogRepository {
         : undefined,
       filter.entityId ? eq(auditLogs.entityId, filter.entityId) : undefined,
       filter.actorId
-        ? eq(auditLogs.userId, filter.actorId.getValue())
+        ? eq(auditLogs.actorId, filter.actorId.getValue())
         : undefined,
       filter.startDate ? gte(auditLogs.createdAt, filter.startDate) : undefined,
       filter.endDate ? lte(auditLogs.createdAt, filter.endDate) : undefined
@@ -94,14 +94,14 @@ export class AuditLogRepository implements IAuditLogRepository {
   }
 
   async findByActorId(
-    actorId: UserId,
+    actorId: AccountId,
     limit?: number,
     offset?: number
   ): Promise<AuditLog[]> {
     const baseQuery = db
       .select()
       .from(auditLogs)
-      .where(eq(auditLogs.userId, actorId.getValue()))
+      .where(eq(auditLogs.actorId, actorId.getValue()))
       .orderBy(desc(auditLogs.createdAt))
       .$dynamic()
 
@@ -122,11 +122,11 @@ export class AuditLogRepository implements IAuditLogRepository {
         eventType: entity.getEventType(),
         description: entity.getDescription(),
         ipAddress: context.getIpAddress(),
-        userAgent: context.getUserAgent(),
+        userAgent: context.getAccountAgent(),
         sessionId: context.getSessionId(),
         ...context.getMetadata(),
       },
-      userId: entity.getActorId()?.getValue() || 'system',
+      actorId: entity.getActorId()?.getValue() || 'system',
       createdAt: entity.getCreatedAt(),
     }
 
@@ -155,7 +155,7 @@ export class AuditLogRepository implements IAuditLogRepository {
       eventType: metadata.eventType ?? this.mapActionToEventType(row.action),
       entityType: row.entityType,
       entityId: row.entityId,
-      actorId: row.userId === 'system' ? null : row.userId,
+      actorId: row.actorId === 'system' ? null : row.actorId,
       description: metadata.description ?? '',
       changes: row.changes as Record<
         string,
@@ -173,15 +173,15 @@ export class AuditLogRepository implements IAuditLogRepository {
 
   private mapEventTypeToAction(eventType: AuditEventType): AuditAction {
     switch (eventType) {
-      case AuditEventType.USER_CREATED:
+      case AuditEventType.ACCOUNT_CREATED:
       case AuditEventType.REQUEST_CREATED:
       case AuditEventType.ATTACHMENT_UPLOADED:
       case AuditEventType.COMMENT_CREATED:
         return 'CREATE'
-      case AuditEventType.USER_UPDATED:
-      case AuditEventType.USER_STATUS_CHANGED:
-      case AuditEventType.USER_ROLE_ASSIGNED:
-      case AuditEventType.USER_ROLE_REMOVED:
+      case AuditEventType.ACCOUNT_UPDATED:
+      case AuditEventType.ACCOUNT_STATUS_CHANGED:
+      case AuditEventType.ACCOUNT_ROLE_ASSIGNED:
+      case AuditEventType.ACCOUNT_ROLE_REMOVED:
       case AuditEventType.REQUEST_UPDATED:
       case AuditEventType.REQUEST_ASSIGNED:
       case AuditEventType.REQUEST_STATUS_CHANGED:

@@ -6,7 +6,7 @@ import {
   RequestRepository as IRequestRepository,
   Request,
   RequestId,
-  UserId,
+  AccountId,
   RequestStatus,
   RequestType,
   RequestPriority,
@@ -57,7 +57,7 @@ export class RequestRepository implements IRequestRepository {
   }
 
   async findByRequesterId(
-    requesterId: UserId,
+    requesterId: AccountId,
     limit?: number,
     offset?: number
   ): Promise<Request[]> {
@@ -73,7 +73,7 @@ export class RequestRepository implements IRequestRepository {
   }
 
   async findByAssigneeId(
-    assigneeId: UserId,
+    assigneeId: AccountId,
     limit?: number,
     offset?: number
   ): Promise<Request[]> {

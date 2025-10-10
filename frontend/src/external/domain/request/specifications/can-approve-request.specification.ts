@@ -1,24 +1,24 @@
+import { Account, AccountRole } from '../../account'
 import { Specification } from '../../shared/specification'
-import { User, UserRole } from '../../user'
 import { Request } from '../request'
 
 /**
- * Specification to check if a user can approve a request
+ * Specification to check if an account can approve a request
  */
 export class CanApproveRequestSpecification extends Specification<{
   request: Request
-  user: User
+  account: Account
 }> {
-  isSatisfiedBy(candidate: { request: Request; user: User }): boolean {
-    const { request, user } = candidate
+  isSatisfiedBy(candidate: { request: Request; account: Account }): boolean {
+    const { request, account } = candidate
 
-    // User must be active
-    if (!user.isActive()) {
+    // Account must be active
+    if (!account.isActive()) {
       return false
     }
 
-    // User must have admin role
-    if (!user.hasRole(UserRole.ADMIN)) {
+    // Account must have admin role
+    if (!account.hasRole(AccountRole.ADMIN)) {
       return false
     }
 
@@ -27,8 +27,8 @@ export class CanApproveRequestSpecification extends Specification<{
       return false
     }
 
-    // User cannot approve their own request
-    if (request.getRequesterId().equals(user.getId())) {
+    // Account cannot approve their own request
+    if (request.getRequesterId().equals(account.getId())) {
       return false
     }
 

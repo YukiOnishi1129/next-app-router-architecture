@@ -1,6 +1,6 @@
 export type NotificationDto = {
   id: string
-  userId: string
+  accountId: string
   type: string
   title: string
   message: string
