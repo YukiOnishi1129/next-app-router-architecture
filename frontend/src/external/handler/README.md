@@ -5,6 +5,7 @@ This directory contains Server Actions that provide the interface between the fr
 ## Overview
 
 The handler layer is responsible for:
+
 - Input validation using Zod schemas
 - Authentication and authorization checks
 - Calling appropriate services from the service layer
@@ -17,7 +18,7 @@ The handler layer is responsible for:
 handler/
 ├── auth.ts         # Authentication handlers
 ├── request.ts      # Request management handlers
-├── user.ts         # User management handlers
+├── account.ts      # Account management handlers
 ├── comment.ts      # Comment handlers
 ├── attachment.ts   # File attachment handlers
 ├── notification.ts # Notification handlers
@@ -27,12 +28,14 @@ handler/
 ## Handler Categories
 
 ### Authentication (`auth.ts`)
+
 - `signIn` - Sign in with OAuth providers (Google)
 - `signOut` - Sign out current user
 - `getSession` - Get current user session
 - `checkPermission` - Check if user has specific permission
 
 ### Request Management (`request.ts`)
+
 - `createRequest` - Create a new request
 - `updateRequest` - Update existing request
 - `submitRequest` - Submit request for approval
@@ -46,14 +49,16 @@ handler/
 - `getAllRequests` - Get all requests (admin only)
 
 ### User Management (`user.ts`)
+
 - `getUsers` - Get users with filtering (admin only)
 - `getUserById` - Get specific user details
 - `getMyProfile` - Get current user profile
-- `updateUserRole` - Update user role (admin only)
-- `updateUserStatus` - Update user status (admin only)
-- `updateUserProfile` - Update user profile
+- `updateAccountRole` - Update user role (admin only)
+- `updateAccountStatus` - Update user status (admin only)
+- `updateAccountProfile` - Update user profile
 
 ### Comments (`comment.ts`)
+
 - `addComment` - Add comment to request
 - `updateComment` - Update existing comment
 - `deleteComment` - Delete comment
@@ -61,12 +66,14 @@ handler/
 - `getCommentThread` - Get comment with replies
 
 ### Attachments (`attachment.ts`)
+
 - `uploadAttachment` - Upload file to request
 - `deleteAttachment` - Delete attachment
 - `getAttachments` - Get request attachments
 - `downloadAttachment` - Download attachment file
 
 ### Notifications (`notification.ts`)
+
 - `getNotifications` - Get user notifications
 - `markNotificationAsRead` - Mark as read
 - `markAllNotificationsAsRead` - Mark all as read
@@ -131,6 +138,7 @@ type Response = {
 ## Testing
 
 When testing handlers:
+
 1. Mock the service layer dependencies
 2. Test validation logic
 3. Test authorization checks

@@ -1,7 +1,7 @@
 import { pgTable, text, timestamp, integer, boolean } from 'drizzle-orm/pg-core'
 
+import { accounts } from './accounts'
 import { requests } from './requests'
-import { users } from './users'
 
 export const attachments = pgTable('attachments', {
   id: text('id').primaryKey(),
@@ -14,13 +14,13 @@ export const attachments = pgTable('attachments', {
   storageKey: text('storage_key').notNull(),
   uploadedById: text('uploaded_by_id')
     .notNull()
-    .references(() => users.id),
+    .references(() => accounts.id),
   uploadedAt: timestamp('uploaded_at', { withTimezone: true })
     .notNull()
     .defaultNow(),
   deleted: boolean('deleted').notNull().default(false),
   deletedAt: timestamp('deleted_at', { withTimezone: true }),
-  deletedById: text('deleted_by_id').references(() => users.id),
+  deletedById: text('deleted_by_id').references(() => accounts.id),
 })
 
 export type Attachment = typeof attachments.$inferSelect

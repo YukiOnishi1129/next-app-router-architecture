@@ -27,7 +27,7 @@ export async function listCommentsServer(
 
     const result = await commentService.getComments({
       requestId: validated.requestId,
-      userId: session.account.id,
+      accountId: session.account.id,
       limit: validated.limit,
       offset: validated.offset,
     })

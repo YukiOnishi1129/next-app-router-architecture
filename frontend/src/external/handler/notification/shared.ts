@@ -1,11 +1,11 @@
 import { Notification } from '@/external/domain/notification/notification'
-import { UserManagementService } from '@/external/service/auth/UserManagementService'
+import { AccountManagementService } from '@/external/service/auth/AccountManagementService'
 import { NotificationService } from '@/external/service/notification/NotificationService'
 
 import type { NotificationDto } from '@/external/dto/notification'
 
 export const notificationService = new NotificationService()
-export const userManagementService = new UserManagementService()
+export const accountManagementService = new AccountManagementService()
 
 export type { NotificationDto } from '@/external/dto/notification'
 
@@ -15,7 +15,7 @@ export function mapNotificationToDto(
   const json = notification.toJSON()
   return {
     id: json.id,
-    userId: json.recipientId,
+    accountId: json.recipientId,
     type: json.type,
     title: json.title,
     message: json.message,

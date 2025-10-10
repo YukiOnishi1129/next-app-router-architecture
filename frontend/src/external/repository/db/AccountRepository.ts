@@ -1,27 +1,27 @@
 import { eq, inArray } from 'drizzle-orm'
 
 import { db } from '@/external/client/db/client'
-import { users } from '@/external/client/db/schema'
+import { accounts } from '@/external/client/db/schema'
 import {
-  UserRepository as IUserRepository,
-  User,
-  UserId,
+  AccountRepository as IAccountRepository,
+  Account,
+  AccountId,
   Email,
-  UserStatus,
-  UserRole,
+  AccountStatus,
+  AccountRole,
 } from '@/external/domain'
 
-export class UserRepository implements IUserRepository {
-  async findAll(): Promise<User[]> {
-    const result = await db.select().from(users)
+export class AccountRepository implements IAccountRepository {
+  async findAll(): Promise<Account[]> {
+    const result = await db.select().from(accounts)
     return result.map((row) => this.mapToDomainEntity(row))
   }
 
-  async findById(id: UserId): Promise<User | null> {
+  async findById(id: AccountId): Promise<Account | null> {
     const result = await db
       .select()
-      .from(users)
-      .where(eq(users.id, id.getValue()))
+      .from(accounts)
+      .where(eq(accounts.id, id.getValue()))
       .limit(1)
 
     if (result.length === 0) {
@@ -31,11 +31,11 @@ export class UserRepository implements IUserRepository {
     return this.mapToDomainEntity(result[0])
   }
 
-  async findByEmail(email: Email): Promise<User | null> {
+  async findByEmail(email: Email): Promise<Account | null> {
     const result = await db
       .select()
-      .from(users)
-      .where(eq(users.email, email.getValue()))
+      .from(accounts)
+      .where(eq(accounts.email, email.getValue()))
       .limit(1)
 
     if (result.length === 0) {
@@ -45,7 +45,7 @@ export class UserRepository implements IUserRepository {
     return this.mapToDomainEntity(result[0])
   }
 
-  async findByIds(ids: UserId[]): Promise<User[]> {
+  async findByIds(ids: AccountId[]): Promise<Account[]> {
     if (ids.length === 0) {
       return []
     }
@@ -53,23 +53,23 @@ export class UserRepository implements IUserRepository {
     const idValues = ids.map((id) => id.getValue())
     const result = await db
       .select()
-      .from(users)
-      .where(inArray(users.id, idValues))
+      .from(accounts)
+      .where(inArray(accounts.id, idValues))
 
     return result.map((row) => this.mapToDomainEntity(row))
   }
 
   async existsByEmail(email: Email): Promise<boolean> {
     const result = await db
-      .select({ count: users.id })
-      .from(users)
-      .where(eq(users.email, email.getValue()))
+      .select({ count: accounts.id })
+      .from(accounts)
+      .where(eq(accounts.email, email.getValue()))
       .limit(1)
 
     return result.length > 0
   }
 
-  async save(entity: User): Promise<void> {
+  async save(entity: Account): Promise<void> {
     const data = {
       id: entity.getId().getValue(),
       name: entity.getName(),
@@ -81,10 +81,10 @@ export class UserRepository implements IUserRepository {
     }
 
     await db
-      .insert(users)
+      .insert(accounts)
       .values(data)
       .onConflictDoUpdate({
-        target: users.id,
+        target: accounts.id,
         set: {
           name: data.name,
           email: data.email,
@@ -95,17 +95,17 @@ export class UserRepository implements IUserRepository {
       })
   }
 
-  async delete(id: UserId): Promise<void> {
-    await db.delete(users).where(eq(users.id, id.getValue()))
+  async delete(id: AccountId): Promise<void> {
+    await db.delete(accounts).where(eq(accounts.id, id.getValue()))
   }
 
-  private mapToDomainEntity(row: typeof users.$inferSelect): User {
-    return User.restore({
+  private mapToDomainEntity(row: typeof accounts.$inferSelect): Account {
+    return Account.restore({
       id: row.id,
       name: row.name,
       email: row.email,
-      status: row.status as UserStatus,
-      roles: row.roles as UserRole[],
+      status: row.status as AccountStatus,
+      roles: row.roles as AccountRole[],
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     })

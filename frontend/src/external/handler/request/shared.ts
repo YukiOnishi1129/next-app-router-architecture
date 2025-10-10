@@ -1,7 +1,7 @@
 import { Request } from '@/external/domain'
 import { RequestRepository } from '@/external/repository'
 import { AuditService } from '@/external/service/audit/AuditService'
-import { UserManagementService } from '@/external/service/auth/UserManagementService'
+import { AccountManagementService } from '@/external/service/auth/AccountManagementService'
 import { NotificationService } from '@/external/service/notification/NotificationService'
 import { RequestApprovalService } from '@/external/service/request/RequestApprovalService'
 import { RequestWorkflowService } from '@/external/service/request/RequestWorkflowService'
@@ -21,7 +21,7 @@ export const approvalService = new RequestApprovalService(
   auditService
 )
 
-export const userManagementService = new UserManagementService()
+export const accountManagementService = new AccountManagementService()
 export const requestRepository = new RequestRepository()
 
 export type { RequestDto } from '@/external/dto/request'

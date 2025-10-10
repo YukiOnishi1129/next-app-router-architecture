@@ -3,13 +3,13 @@ import {
   CommentId,
   Request,
   RequestId,
-  User,
-  UserId,
+  Account,
+  AccountId,
 } from '@/external/domain'
 import {
   CommentRepository,
   RequestRepository,
-  UserRepository,
+  AccountRepository,
 } from '@/external/repository'
 
 import { AuditService } from '../audit/AuditService'
@@ -28,19 +28,19 @@ interface CommentContext {
 interface UpdateCommentContext {
   commentId: string
   content: string
-  userId: string
+  accountId: string
   context?: AuditContext
 }
 
 interface DeleteCommentContext {
   commentId: string
-  userId: string
+  accountId: string
   context?: AuditContext
 }
 
 interface GetCommentsContext {
   requestId: string
-  userId: string
+  accountId: string
   limit?: number
   offset?: number
 }
@@ -48,7 +48,7 @@ interface GetCommentsContext {
 export class CommentService {
   private commentRepository: CommentRepository
   private requestRepository: RequestRepository
-  private userRepository: UserRepository
+  private userRepository: AccountRepository
 
   constructor(
     private notificationService: NotificationService = new NotificationService(),
@@ -56,7 +56,7 @@ export class CommentService {
   ) {
     this.commentRepository = new CommentRepository()
     this.requestRepository = new RequestRepository()
-    this.userRepository = new UserRepository()
+    this.userRepository = new AccountRepository()
   }
 
   /**
@@ -66,7 +66,7 @@ export class CommentService {
     const { requestId, content, authorId, parentId, context } = params
     const [request, author] = await Promise.all([
       this.findRequest(requestId),
-      this.findUser(authorId),
+      this.findAccount(authorId),
     ])
 
     this.ensureCanCollaborate(request, author)
@@ -97,7 +97,7 @@ export class CommentService {
         action: 'comment.create',
         entityType: 'COMMENT',
         entityId: comment.getId().getValue(),
-        userId: authorId,
+        accountId: authorId,
         metadata: {
           requestId,
           parentId,
@@ -119,21 +119,21 @@ export class CommentService {
    * Update existing comment content
    */
   async updateComment(params: UpdateCommentContext): Promise<Comment> {
-    const { commentId, content, userId, context } = params
+    const { commentId, content, accountId, context } = params
     const comment = await this.findComment(commentId)
 
-    if (!comment.canEdit(userId)) {
+    if (!comment.canEdit(accountId)) {
       throw new Error('Only the author can update this comment')
     }
 
-    comment.edit(content, userId)
+    comment.edit(content, accountId)
     await Promise.all([
       this.commentRepository.save(comment),
       this.auditService.logAction({
         action: 'comment.update',
         entityType: 'COMMENT',
         entityId: comment.getId().getValue(),
-        userId,
+        accountId,
         metadata: {
           requestId: comment.getRequestId().getValue(),
         },
@@ -148,28 +148,28 @@ export class CommentService {
    * Delete comment (author or admin)
    */
   async deleteComment(params: DeleteCommentContext): Promise<void> {
-    const { commentId, userId, context } = params
-    const [comment, user] = await Promise.all([
+    const { commentId, accountId, context } = params
+    const [comment, account] = await Promise.all([
       this.findComment(commentId),
-      this.findUser(userId),
+      this.findAccount(accountId),
     ])
 
-    if (!comment.canDelete(userId, user.isAdmin())) {
+    if (!comment.canDelete(accountId, account.isAdmin())) {
       throw new Error('Only the author or an admin can delete this comment')
     }
 
-    comment.delete(userId, user.isAdmin())
+    comment.delete(accountId, account.isAdmin())
     await Promise.all([
       this.commentRepository.save(comment),
       this.auditService.logAction({
         action: 'comment.delete',
         entityType: 'COMMENT',
         entityId: comment.getId().getValue(),
-        userId,
+        accountId,
         metadata: {
           requestId: comment.getRequestId().getValue(),
           deletedByAdmin:
-            user.isAdmin() && comment.getAuthorId().getValue() !== userId,
+            account.isAdmin() && comment.getAuthorId().getValue() !== accountId,
         },
         context,
       }),
@@ -185,13 +185,13 @@ export class CommentService {
     limit: number
     offset: number
   }> {
-    const { requestId, userId, limit, offset } = params
-    const [request, user] = await Promise.all([
+    const { requestId, accountId, limit, offset } = params
+    const [request, account] = await Promise.all([
       this.findRequest(requestId),
-      this.findUser(userId),
+      this.findAccount(accountId),
     ])
 
-    this.ensureCanView(request, user)
+    this.ensureCanView(request, account)
 
     const [comments, total] = await Promise.all([
       this.commentRepository.findByRequestId(
@@ -216,17 +216,17 @@ export class CommentService {
    */
   async getCommentThread(
     commentId: string,
-    userId: string
+    accountId: string
   ): Promise<{
     comments: Comment[]
   }> {
     const comment = await this.findComment(commentId)
-    const [request, user] = await Promise.all([
+    const [request, account] = await Promise.all([
       this.findRequest(comment.getRequestId().getValue()),
-      this.findUser(userId),
+      this.findAccount(accountId),
     ])
 
-    this.ensureCanView(request, user)
+    this.ensureCanView(request, account)
 
     return {
       comments: [comment],
@@ -253,35 +253,37 @@ export class CommentService {
     return comment
   }
 
-  private async findUser(userId: string): Promise<User> {
-    const user = await this.userRepository.findById(UserId.create(userId))
-    if (!user) {
-      throw new Error('User not found')
+  private async findAccount(accountId: string): Promise<Account> {
+    const account = await this.userRepository.findById(
+      AccountId.create(accountId)
+    )
+    if (!account) {
+      throw new Error('Account not found')
     }
-    return user
+    return account
   }
 
-  private ensureCanCollaborate(request: Request, user: User): void {
-    if (request.getRequesterId().getValue() === user.getId().getValue()) {
+  private ensureCanCollaborate(request: Request, account: Account): void {
+    if (request.getRequesterId().getValue() === account.getId().getValue()) {
       return
     }
-    if (request.getAssigneeId()?.getValue() === user.getId().getValue()) {
+    if (request.getAssigneeId()?.getValue() === account.getId().getValue()) {
       return
     }
-    if (user.isAdmin()) {
+    if (account.isAdmin()) {
       return
     }
     throw new Error('Unauthorized')
   }
 
-  private ensureCanView(request: Request, user: User): void {
-    if (request.getRequesterId().getValue() === user.getId().getValue()) {
+  private ensureCanView(request: Request, account: Account): void {
+    if (request.getRequesterId().getValue() === account.getId().getValue()) {
       return
     }
-    if (request.getAssigneeId()?.getValue() === user.getId().getValue()) {
+    if (request.getAssigneeId()?.getValue() === account.getId().getValue()) {
       return
     }
-    if (user.isAdmin()) {
+    if (account.isAdmin()) {
       return
     }
     throw new Error('Unauthorized')

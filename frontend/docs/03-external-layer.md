@@ -87,7 +87,7 @@ export async function loginCommandServer(
 
     return {
       success: true,
-      user: userManagementService.toUserProfile(user),
+      user: userManagementService.toAccountProfile(user),
       idToken: authResult.idToken,
       refreshToken: authResult.refreshToken,
       redirectUrl: validated.redirectUrl ?? '/dashboard',

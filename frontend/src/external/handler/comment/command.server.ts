@@ -93,7 +93,7 @@ export async function updateCommentServer(
     const comment = await commentService.updateComment({
       commentId: validated.commentId,
       content: validated.content,
-      userId: session.account.id,
+      accountId: session.account.id,
       context: {
         ipAddress: 'server',
         userAgent: 'server-command',
@@ -130,7 +130,7 @@ export async function deleteCommentServer(
 
     await commentService.deleteComment({
       commentId: validated.commentId,
-      userId: session.account.id,
+      accountId: session.account.id,
       context: {
         ipAddress: 'server',
         userAgent: 'server-command',

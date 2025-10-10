@@ -21,7 +21,7 @@ export interface IdToken {
   registered?: boolean
 }
 
-export interface UserInfo {
+export interface AccountInfo {
   localId: string
   email: string
   displayName?: string
@@ -29,7 +29,7 @@ export interface UserInfo {
   emailVerified: boolean
   createdAt: string
   lastLoginAt: string
-  providerUserInfo?: Array<{
+  providerAccountInfo?: Array<{
     providerId: string
     displayName?: string
     photoUrl?: string
@@ -178,13 +178,13 @@ export class IdentityPlatformClient {
   /**
    * Update user profile
    */
-  async updateUserProfile(
+  async updateAccountProfile(
     idToken: string,
     updates: {
       displayName?: string
       photoUrl?: string
     }
-  ): Promise<UserInfo> {
+  ): Promise<AccountInfo> {
     const response = await fetch(
       `${this.baseUrl}/accounts:update?key=${this.config.apiKey}`,
       {
@@ -208,13 +208,13 @@ export class IdentityPlatformClient {
     }
 
     // Return updated user info
-    return this.getUserInfo(idToken)
+    return this.getAccountInfo(idToken)
   }
 
   /**
    * Delete user account
    */
-  async deleteUserAccount(idToken: string): Promise<void> {
+  async deleteAccountAccount(idToken: string): Promise<void> {
     const response = await fetch(
       `${this.baseUrl}/accounts:delete?key=${this.config.apiKey}`,
       {
@@ -239,7 +239,7 @@ export class IdentityPlatformClient {
   /**
    * Get user information by ID token
    */
-  async getUserInfo(idToken: string): Promise<UserInfo> {
+  async getAccountInfo(idToken: string): Promise<AccountInfo> {
     const response = await fetch(
       `${this.baseUrl}/accounts:lookup?key=${this.config.apiKey}`,
       {
@@ -303,7 +303,7 @@ export class IdentityPlatformClient {
    */
   async verifyIdToken(idToken: string): Promise<boolean> {
     try {
-      const userInfo = await this.getUserInfo(idToken)
+      const userInfo = await this.getAccountInfo(idToken)
       return !!userInfo
     } catch {
       return false

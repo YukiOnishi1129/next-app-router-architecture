@@ -35,7 +35,7 @@ export async function createAttachmentServer(
       fileSize: validated.fileSize,
       mimeType: validated.mimeType,
       data: validated.data,
-      userId: session.account.id,
+      accountId: session.account.id,
       context: {
         ipAddress: 'server',
         userAgent: 'server-command',
@@ -72,7 +72,7 @@ export async function deleteAttachmentServer(
 
     await attachmentService.deleteAttachment({
       attachmentId: validated.attachmentId,
-      userId: session.account.id,
+      accountId: session.account.id,
       context: {
         ipAddress: 'server',
         userAgent: 'server-command',

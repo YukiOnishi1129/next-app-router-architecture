@@ -1,6 +1,6 @@
 import {
-  User,
-  UserId,
+  Account,
+  AccountId,
   Request,
   AuditLog,
   AuditEventType,
@@ -48,7 +48,7 @@ export class AuditService {
    */
   async logRequestUpdated(
     requestId: string,
-    updater: User,
+    updater: Account,
     changes: Record<string, any>, // eslint-disable-line @typescript-eslint/no-explicit-any
     context?: AuditContext
   ): Promise<void> {
@@ -74,7 +74,7 @@ export class AuditService {
    */
   async logRequestCancelled(
     requestId: string,
-    canceller: User,
+    canceller: Account,
     reason: string,
     context?: AuditContext
   ): Promise<void> {
@@ -102,7 +102,7 @@ export class AuditService {
       action,
       entityType,
       entityId,
-      userId,
+      accountId,
       metadata,
       eventType,
       description,
@@ -113,7 +113,7 @@ export class AuditService {
       eventType: eventType ?? AuditEventType.SYSTEM_ERROR,
       entityType,
       entityId,
-      actorId: userId,
+      actorId: accountId,
       description: description ?? action,
       context: {
         ipAddress: context?.ipAddress,
@@ -133,7 +133,7 @@ export class AuditService {
    */
   async logApprovalAction(
     requestId: string,
-    approver: User,
+    approver: Account,
     action: ApprovalAction,
     comment?: string,
     context?: AuditContext
@@ -162,13 +162,16 @@ export class AuditService {
   /**
    * Log user login
    */
-  async logUserLogin(user: User, context?: AuditContext): Promise<void> {
+  async logAccountLogin(
+    account: Account,
+    context?: AuditContext
+  ): Promise<void> {
     const auditLog = AuditLog.create({
       eventType: AuditEventType.SYSTEM_LOGIN,
       entityType: 'USER',
-      entityId: user.getId().getValue(),
-      actorId: user.getId().getValue(),
-      description: `User ${user.getName()} logged in`,
+      entityId: account.getId().getValue(),
+      actorId: account.getId().getValue(),
+      description: `Account ${account.getName()} logged in`,
       context: {
         ipAddress: context?.ipAddress,
         userAgent: context?.userAgent,
@@ -184,13 +187,16 @@ export class AuditService {
   /**
    * Log user logout
    */
-  async logUserLogout(user: User, context?: AuditContext): Promise<void> {
+  async logAccountLogout(
+    account: Account,
+    context?: AuditContext
+  ): Promise<void> {
     const auditLog = AuditLog.create({
       eventType: AuditEventType.SYSTEM_LOGOUT,
       entityType: 'USER',
-      entityId: user.getId().getValue(),
-      actorId: user.getId().getValue(),
-      description: `User ${user.getName()} logged out`,
+      entityId: account.getId().getValue(),
+      actorId: account.getId().getValue(),
+      description: `Account ${account.getName()} logged out`,
       context: {
         ipAddress: context?.ipAddress,
         userAgent: context?.userAgent,
@@ -207,7 +213,7 @@ export class AuditService {
    * Log data export
    */
   async logDataExport(
-    user: User,
+    account: Account,
     exportType: string,
     filters: Record<string, unknown>,
     context?: AuditContext
@@ -216,8 +222,8 @@ export class AuditService {
       eventType: AuditEventType.SYSTEM_ERROR, // Using SYSTEM_ERROR as there's no EXPORT event type
       entityType: 'SYSTEM',
       entityId: `export_${exportType}`,
-      actorId: user.getId().getValue(),
-      description: `Data export performed by ${user.getName()}`,
+      actorId: account.getId().getValue(),
+      description: `Data export performed by ${account.getName()}`,
       context: {
         ipAddress: context?.ipAddress,
         userAgent: context?.userAgent,
@@ -245,8 +251,8 @@ export class AuditService {
   /**
    * Get audit logs for a user
    */
-  async getAuditLogsForUser(
-    userId: string,
+  async getAuditLogsForAccount(
+    accountId: string,
     startDate?: Date,
     endDate?: Date,
     limit?: number
@@ -256,7 +262,7 @@ export class AuditService {
     if (startDate || endDate) {
       return this.auditLogRepository.findByFilter(
         {
-          actorId: UserId.create(userId),
+          actorId: AccountId.create(accountId),
           startDate,
           endDate,
         },
@@ -264,7 +270,10 @@ export class AuditService {
       )
     }
 
-    return this.auditLogRepository.findByActorId(UserId.create(userId), limit)
+    return this.auditLogRepository.findByActorId(
+      AccountId.create(accountId),
+      limit
+    )
   }
 
   /**
@@ -355,7 +364,7 @@ export interface AuditActionParams {
   action: string
   entityType: string
   entityId: string
-  userId: string
+  accountId: string
   metadata?: Record<string, unknown>
   eventType?: AuditEventType
   description?: string

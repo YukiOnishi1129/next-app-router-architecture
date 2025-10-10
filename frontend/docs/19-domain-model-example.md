@@ -4,23 +4,23 @@ This document provides an illustrative implementation of the request domain, com
 
 ---
 
-## User Domain
+## Account Domain
 
 ```ts
-// external/domain/user/types.ts
-export type UserRole = 'ADMIN' | 'MEMBER' | 'GUEST'
+// external/domain/account/types.ts
+export type AccountRole = 'ADMIN' | 'MEMBER' | 'GUEST'
 
-export interface UserData {
+export interface AccountData {
   id: string
   name: string
   email: string
-  role: UserRole
+  role: AccountRole
   createdAt: Date
   updatedAt: Date
 }
 
-export class User {
-  constructor(private data: UserData) {}
+export class Account {
+  constructor(private data: AccountData) {}
 
   canApprove(): boolean {
     return this.data.role === 'ADMIN' || this.data.role === 'MEMBER'
@@ -88,7 +88,7 @@ export class RequestService {
     const request = await this.repository.findById(requestId)
     if (!request) throw new Error('Request not found')
 
-    const events = request.approve(UserId.create(approverId), comment)
+    const events = request.approve(AccountId.create(approverId), comment)
     await this.repository.save(request)
 
     await this.auditService.logRequestApproved(request, approverId, comment)

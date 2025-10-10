@@ -8,7 +8,7 @@ import { listNotificationsSchema } from '@/external/dto/notification'
 
 import {
   notificationService,
-  userManagementService,
+  accountManagementService,
   mapNotificationToDto,
 } from './shared'
 
@@ -29,7 +29,7 @@ export async function listNotificationsServer(
 
     const validated = listNotificationsSchema.parse(data ?? {})
 
-    const result = await notificationService.getUserNotifications(
+    const result = await notificationService.getAccountNotifications(
       session.account.id,
       {
         unreadOnly: validated.unreadOnly,
@@ -65,12 +65,14 @@ export async function getNotificationPreferencesServer(): Promise<GetNotificatio
       return { success: false, error: 'Unauthorized' }
     }
 
-    const user = await userManagementService.findUserById(session.account.id)
+    const user = await accountManagementService.findAccountById(
+      session.account.id
+    )
     if (!user) {
-      return { success: false, error: 'User not found' }
+      return { success: false, error: 'Account not found' }
     }
 
-    const preferences = await notificationService.getUserPreferences(
+    const preferences = await notificationService.getAccountPreferences(
       session.account.id
     )
     const typeSet = new Set(preferences.types)

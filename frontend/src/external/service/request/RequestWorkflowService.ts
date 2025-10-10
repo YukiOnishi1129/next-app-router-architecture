@@ -5,8 +5,8 @@ import {
   RequestStatus,
   RequestPriority,
   RequestType,
-  User,
-  UserId,
+  Account,
+  AccountId,
 } from '@/external/domain'
 import { RequestRepository } from '@/external/repository'
 
@@ -43,7 +43,7 @@ export class RequestWorkflowService {
    * Create a new request
    */
   async createRequest(
-    requester: User,
+    requester: Account,
     data: CreateRequestDto
   ): Promise<Request> {
     // Validate request data
@@ -89,7 +89,7 @@ export class RequestWorkflowService {
     offset?: number
   ): Promise<Request[]> {
     return this.requestRepository.findByRequesterId(
-      UserId.create(requesterId),
+      AccountId.create(requesterId),
       limit,
       offset
     )
@@ -104,7 +104,7 @@ export class RequestWorkflowService {
     offset?: number
   ): Promise<Request[]> {
     return this.requestRepository.findByAssigneeId(
-      UserId.create(assigneeId),
+      AccountId.create(assigneeId),
       limit,
       offset
     )
@@ -122,7 +122,7 @@ export class RequestWorkflowService {
    */
   async updateRequest(
     requestId: string,
-    updater: User,
+    updater: Account,
     data: UpdateRequestDto
   ): Promise<Request> {
     const request = await this.requestRepository.findById(
@@ -174,7 +174,7 @@ export class RequestWorkflowService {
    */
   async cancelRequest(
     requestId: string,
-    canceller: User,
+    canceller: Account,
     reason: string
   ): Promise<Request> {
     const request = await this.requestRepository.findById(
@@ -209,11 +209,11 @@ export class RequestWorkflowService {
    */
   async assignRequest(
     requestId: string,
-    actor: User,
+    actor: Account,
     assigneeId: string
   ): Promise<Request> {
     if (!actor.isAdmin()) {
-      throw new Error('User does not have permission to assign requests')
+      throw new Error('Account does not have permission to assign requests')
     }
 
     const request = await this.requestRepository.findById(
@@ -232,7 +232,7 @@ export class RequestWorkflowService {
         action: 'request.assign',
         entityType: 'REQUEST',
         entityId: requestId,
-        userId: actor.getId().getValue(),
+        accountId: actor.getId().getValue(),
         metadata: {
           assigneeId,
         },
@@ -247,7 +247,7 @@ export class RequestWorkflowService {
   /**
    * Submit a request for review
    */
-  async submitRequest(requestId: string, submitter: User): Promise<Request> {
+  async submitRequest(requestId: string, submitter: Account): Promise<Request> {
     const request = await this.requestRepository.findById(
       RequestId.create(requestId)
     )
@@ -348,13 +348,13 @@ export class RequestWorkflowService {
   /**
    * Validate update permissions
    */
-  private validateUpdatePermissions(request: Request, updater: User): void {
+  private validateUpdatePermissions(request: Request, updater: Account): void {
     // Only requester can update their own draft request
     if (
       request.getRequesterId().getValue() !== updater.getId().getValue() &&
       !updater.isAdmin()
     ) {
-      throw new Error('User does not have permission to update this request')
+      throw new Error('Account does not have permission to update this request')
     }
 
     // Cannot update if not in draft status
@@ -368,14 +368,14 @@ export class RequestWorkflowService {
    */
   private validateCancellationPermissions(
     request: Request,
-    canceller: User
+    canceller: Account
   ): void {
     // Only requester or admin can cancel
     if (
       request.getRequesterId().getValue() !== canceller.getId().getValue() &&
       !canceller.isAdmin()
     ) {
-      throw new Error('User does not have permission to cancel this request')
+      throw new Error('Account does not have permission to cancel this request')
     }
 
     // Check if request can be cancelled

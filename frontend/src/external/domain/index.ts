@@ -5,7 +5,7 @@ export * from './shared/repository'
 export * from './shared/specification'
 
 // Domain aggregates and entities
-export * from './user'
+export * from './account'
 export * from './request'
 export * from './attachment'
 export * from './comment'

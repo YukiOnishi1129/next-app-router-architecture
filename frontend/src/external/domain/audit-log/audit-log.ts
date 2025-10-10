@@ -1,16 +1,16 @@
-import { UserId } from '../user'
+import { AccountId } from '../account'
 import { AuditLogId } from './audit-log-id'
 
 /**
  * Audit event types
  */
 export enum AuditEventType {
-  // User events
-  USER_CREATED = 'USER_CREATED',
-  USER_UPDATED = 'USER_UPDATED',
-  USER_STATUS_CHANGED = 'USER_STATUS_CHANGED',
-  USER_ROLE_ASSIGNED = 'USER_ROLE_ASSIGNED',
-  USER_ROLE_REMOVED = 'USER_ROLE_REMOVED',
+  // Account events
+  ACCOUNT_CREATED = 'ACCOUNT_CREATED',
+  ACCOUNT_UPDATED = 'ACCOUNT_UPDATED',
+  ACCOUNT_STATUS_CHANGED = 'ACCOUNT_STATUS_CHANGED',
+  ACCOUNT_ROLE_ASSIGNED = 'ACCOUNT_ROLE_ASSIGNED',
+  ACCOUNT_ROLE_REMOVED = 'ACCOUNT_ROLE_REMOVED',
 
   // Request events
   REQUEST_CREATED = 'REQUEST_CREATED',
@@ -62,7 +62,7 @@ export class AuditContext {
     return this.ipAddress
   }
 
-  getUserAgent(): string | null {
+  getAccountAgent(): string | null {
     return this.userAgent
   }
 
@@ -84,7 +84,7 @@ export class AuditLog {
     private readonly eventType: AuditEventType,
     private readonly entityType: string,
     private readonly entityId: string,
-    private readonly actorId: UserId | null,
+    private readonly actorId: AccountId | null,
     private readonly description: string,
     private readonly changes: Record<
       string,
@@ -113,7 +113,7 @@ export class AuditLog {
       params.eventType,
       params.entityType,
       params.entityId,
-      params.actorId ? UserId.create(params.actorId) : null,
+      params.actorId ? AccountId.create(params.actorId) : null,
       params.description,
       params.changes || null,
       new AuditContext(
@@ -147,7 +147,7 @@ export class AuditLog {
       params.eventType,
       params.entityType,
       params.entityId,
-      params.actorId ? UserId.create(params.actorId) : null,
+      params.actorId ? AccountId.create(params.actorId) : null,
       params.description,
       params.changes,
       new AuditContext(
@@ -176,7 +176,7 @@ export class AuditLog {
     return this.entityId
   }
 
-  getActorId(): UserId | null {
+  getActorId(): AccountId | null {
     return this.actorId
   }
 
@@ -200,8 +200,8 @@ export class AuditLog {
     return this.actorId === null
   }
 
-  isUserEvent(): boolean {
-    return this.eventType.toString().startsWith('USER_')
+  isAccountEvent(): boolean {
+    return this.eventType.toString().startsWith('ACCOUNT_')
   }
 
   isRequestEvent(): boolean {
@@ -223,7 +223,7 @@ export class AuditLog {
       changes: this.changes,
       context: {
         ipAddress: this.context.getIpAddress(),
-        userAgent: this.context.getUserAgent(),
+        userAgent: this.context.getAccountAgent(),
         sessionId: this.context.getSessionId(),
         metadata: this.context.getMetadata(),
       },

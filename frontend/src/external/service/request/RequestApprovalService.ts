@@ -3,13 +3,13 @@ import {
   Request,
   RequestId,
   RequestStatus,
-  User,
-  UserId,
+  Account,
+  AccountId,
   AuditLog,
 } from '@/external/domain'
 import {
   RequestRepository,
-  UserRepository,
+  AccountRepository,
   NotificationRepository,
   AuditLogRepository,
 } from '@/external/repository'
@@ -26,7 +26,7 @@ export enum ApprovalAction {
 
 export class RequestApprovalService {
   private requestRepository: RequestRepository
-  private userRepository: UserRepository
+  private accountRepository: AccountRepository
   private notificationRepository: NotificationRepository
   private auditLogRepository: AuditLogRepository
 
@@ -36,7 +36,7 @@ export class RequestApprovalService {
   ) {
     // Initialize concrete repository implementations
     this.requestRepository = new RequestRepository()
-    this.userRepository = new UserRepository()
+    this.accountRepository = new AccountRepository()
     this.notificationRepository = new NotificationRepository()
     this.auditLogRepository = new AuditLogRepository()
   }
@@ -44,7 +44,7 @@ export class RequestApprovalService {
   /**
    * Start review process for a request
    */
-  async startReview(requestId: string, reviewer: User): Promise<Request> {
+  async startReview(requestId: string, reviewer: Account): Promise<Request> {
     const request = await this.processApproval(
       requestId,
       reviewer,
@@ -63,7 +63,7 @@ export class RequestApprovalService {
    */
   async approveRequest(
     requestId: string,
-    approver: User,
+    approver: Account,
     comment?: string
   ): Promise<Request> {
     return this.processApproval(
@@ -79,7 +79,7 @@ export class RequestApprovalService {
    */
   async rejectRequest(
     requestId: string,
-    reviewer: User,
+    reviewer: Account,
     reason: string
   ): Promise<Request> {
     return this.processApproval(
@@ -95,7 +95,7 @@ export class RequestApprovalService {
    */
   async processApproval(
     requestId: string,
-    approver: User,
+    approver: Account,
     action: ApprovalAction,
     comment?: string
   ): Promise<Request> {
@@ -180,14 +180,14 @@ export class RequestApprovalService {
   /**
    * Check if user can approve request
    */
-  canApprove(request: Request, user: User): boolean {
-    // Business rule: User cannot approve their own request
-    if (request.getRequesterId().getValue() === user.getId().getValue()) {
+  canApprove(request: Request, account: Account): boolean {
+    // Business rule: Account cannot approve their own request
+    if (request.getRequesterId().getValue() === account.getId().getValue()) {
       return false
     }
 
     // Business rule: Only admins can approve (no manager role in domain)
-    if (!user.isAdmin()) {
+    if (!account.isAdmin()) {
       return false
     }
 
@@ -203,12 +203,13 @@ export class RequestApprovalService {
    * Get pending approvals for a user
    */
   async getPendingApprovals(approverId: string): Promise<Request[]> {
-    const user = await this.userRepository.findById(UserId.create(approverId))
-    if (!user || !user.isAdmin()) {
+    const account = await this.accountRepository.findById(
+      AccountId.create(approverId)
+    )
+    if (!account || !account.isAdmin()) {
       return []
     }
 
-    // Get all submitted and in-review requests
     const submittedRequests = await this.requestRepository.findByStatus(
       RequestStatus.SUBMITTED
     )
@@ -218,7 +219,6 @@ export class RequestApprovalService {
 
     const allPendingRequests = [...submittedRequests, ...inReviewRequests]
 
-    // Filter out requests created by the approver
     return allPendingRequests.filter(
       (request) => request.getRequesterId().getValue() !== approverId
     )
@@ -227,9 +227,14 @@ export class RequestApprovalService {
   /**
    * Validate approver permissions
    */
-  private validateApproverPermissions(request: Request, approver: User): void {
+  private validateApproverPermissions(
+    request: Request,
+    approver: Account
+  ): void {
     if (!this.canApprove(request, approver)) {
-      throw new Error('User does not have permission to approve this request')
+      throw new Error(
+        'Account does not have permission to approve this request'
+      )
     }
   }
 }

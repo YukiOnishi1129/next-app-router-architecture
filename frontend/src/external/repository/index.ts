@@ -1,4 +1,4 @@
-export * from './db/UserRepository'
+export * from './db/AccountRepository'
 export * from './db/RequestRepository'
 export * from './db/AttachmentRepository'
 export * from './db/CommentRepository'

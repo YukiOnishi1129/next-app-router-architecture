@@ -15,13 +15,13 @@ export {
 } from './audit/AuditService'
 export {
   AuthenticationService,
-  UserManagementService,
+  AccountManagementService,
   type AuthToken,
-  type UserProfile,
-  type CreateUserData,
-  type UpdateUserData,
+  type AccountProfile,
+  type CreateAccountData,
+  type UpdateAccountData,
 } from './auth'
-export type { ListUsersParams } from './auth/UserManagementService'
+export type { ListAccountsParams } from './auth/AccountManagementService'
 export { AttachmentService } from './attachment/AttachmentService'
 export { CommentService } from './comment/CommentService'
 export {

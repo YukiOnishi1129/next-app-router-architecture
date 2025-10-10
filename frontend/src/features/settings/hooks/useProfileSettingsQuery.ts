@@ -2,20 +2,20 @@
 
 import { useQuery } from '@tanstack/react-query'
 
-import { getCurrentUserAction } from '@/external/handler/user/query.action'
+import { getCurrentAccountAction } from '@/external/handler/account/query.action'
 
 import { settingsKeys } from '../queries/keys'
 
-import type { GetUserResponse } from '@/external/dto/user'
+import type { GetAccountResponse } from '@/external/dto/account'
 
-type Profile = NonNullable<GetUserResponse['user']>
+type Profile = NonNullable<GetAccountResponse['account']>
 
 async function fetchProfile(): Promise<Profile> {
-  const result = await getCurrentUserAction()
-  if (!result.success || !result.user) {
+  const result = await getCurrentAccountAction()
+  if (!result.success || !result.account) {
     throw new Error(result.error ?? 'Failed to load profile')
   }
-  return result.user
+  return result.account
 }
 
 export const useProfileSettingsQuery = () => {

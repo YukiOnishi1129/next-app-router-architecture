@@ -1,8 +1,8 @@
 import { Request } from './request'
 import { RequestId } from './request-id'
 import { RequestStatus } from './request-status'
+import { AccountId } from '../account'
 import { Repository } from '../shared/repository'
-import { UserId } from '../user'
 
 /**
  * Request repository interface
@@ -10,12 +10,12 @@ import { UserId } from '../user'
 export interface RequestRepository extends Repository<Request, RequestId> {
   findAll(limit?: number, offset?: number): Promise<Request[]>
   findByRequesterId(
-    requesterId: UserId,
+    requesterId: AccountId,
     limit?: number,
     offset?: number
   ): Promise<Request[]>
   findByAssigneeId(
-    assigneeId: UserId,
+    assigneeId: AccountId,
     limit?: number,
     offset?: number
   ): Promise<Request[]>

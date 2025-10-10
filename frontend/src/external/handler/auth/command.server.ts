@@ -11,7 +11,7 @@ import { signInCommandSchema, signUpCommandSchema } from '@/external/dto/auth'
 
 import {
   authService,
-  userManagementService,
+  accountManagementService,
   auditService,
   SERVER_CONTEXT,
 } from './shared'
@@ -35,13 +35,13 @@ export async function loginCommandServer(
       validated.password
     )
 
-    const user = await userManagementService.getOrCreateUser({
+    const user = await accountManagementService.getOrCreateAccount({
       email: authResult.userInfo.email,
       name: authResult.userInfo.name,
       externalId: authResult.userInfo.id,
     })
 
-    await auditService.logUserLogin(user, SERVER_CONTEXT)
+    await auditService.logAccountLogin(user, SERVER_CONTEXT)
 
     await Promise.all([
       setRefreshTokenCookieServer(authResult.refreshToken),
@@ -52,7 +52,7 @@ export async function loginCommandServer(
 
     return {
       success: true,
-      user: {
+      account: {
         id: user.getId().getValue(),
         email: user.getEmail().getValue(),
         name: user.getName(),
@@ -92,7 +92,7 @@ export async function signUpCommandServer(
       validated.name
     )
 
-    const user = await userManagementService.getOrCreateUser({
+    const user = await accountManagementService.getOrCreateAccount({
       email: authResult.userInfo.email,
       name:
         authResult.userInfo.name ||
@@ -101,7 +101,7 @@ export async function signUpCommandServer(
       externalId: authResult.userInfo.id,
     })
 
-    await auditService.logUserLogin(user, SERVER_CONTEXT)
+    await auditService.logAccountLogin(user, SERVER_CONTEXT)
 
     await Promise.all([
       setRefreshTokenCookieServer(authResult.refreshToken),
@@ -112,7 +112,7 @@ export async function signUpCommandServer(
 
     return {
       success: true,
-      user: {
+      account: {
         id: user.getId().getValue(),
         email: user.getEmail().getValue(),
         name: user.getName(),

@@ -9,7 +9,7 @@ This document explains how the Request & Approval System handles authentication 
 - **Identity Provider**: Google Cloud Identity Platform (email & password)
 - **Session broker**: NextAuth Credentials provider
 - **User store**: Drizzle ORM + PostgreSQL
-- **Roles**: `ADMIN`, `MEMBER`, `GUEST` (permissions resolved via `UserManagementService#getPermissionsForRoles`)
+- **Roles**: `ADMIN`, `MEMBER`, `GUEST` (permissions resolved via `AccountManagementService#getPermissionsForRoles`)
 
 ---
 
@@ -28,7 +28,7 @@ AuthenticationService → Identity Platform
         │
         │ idToken + refreshToken + profile
         ▼
-UserManagementService + AuditService
+AccountManagementService + AuditService
         │
         │ Persist / hydrate / audit
         ▼
@@ -87,7 +87,7 @@ Sign-up follows the same path with `action: 'signup'`. Sign-out executes `useSig
 | `token.server.ts` | `refreshIdTokenCommandServer` for secure token refresh |
 | `query.server.ts` | Session lookups (`getSessionServer`, `checkPermissionServer`) |
 
-Handlers rely on `AuthenticationService` (Identity Platform REST) and `UserManagementService` (DB persistence, permissions), logging each auth event via `AuditService`.
+Handlers rely on `AuthenticationService` (Identity Platform REST) and `AccountManagementService` (DB persistence, permissions), logging each auth event via `AuditService`.
 
 ### NextAuth Configuration
 

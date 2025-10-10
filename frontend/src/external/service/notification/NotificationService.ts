@@ -2,16 +2,22 @@ import {
   Request,
   RequestPriority,
   Comment,
-  User,
-  UserId,
+  Account,
+  AccountId,
   Notification,
   NotificationId,
   NotificationType,
 } from '@/external/domain'
-import { NotificationRepository, UserRepository } from '@/external/repository'
+import {
+  NotificationRepository,
+  AccountRepository,
+} from '@/external/repository'
 
 export interface NotificationChannel {
-  sendNotification(notification: Notification, recipient: User): Promise<void>
+  sendNotification(
+    notification: Notification,
+    recipient: Account
+  ): Promise<void>
 }
 
 export interface NotificationPreferences {
@@ -38,7 +44,7 @@ const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
 export class EmailChannel implements NotificationChannel {
   async sendNotification(
     notification: Notification,
-    recipient: User
+    recipient: Account
   ): Promise<void> {
     // Implementation would send actual email
     console.log(
@@ -51,7 +57,7 @@ export class EmailChannel implements NotificationChannel {
 export class InAppChannel implements NotificationChannel {
   async sendNotification(
     notification: Notification,
-    recipient: User
+    recipient: Account
   ): Promise<void> {
     // In-app notifications are handled by storing in the database
     // The frontend will poll or use websockets to receive them
@@ -64,13 +70,13 @@ export class InAppChannel implements NotificationChannel {
 export class NotificationService {
   private channels: Map<string, NotificationChannel>
   private notificationRepository: NotificationRepository
-  private userRepository: UserRepository
-  private userPreferences: Map<string, NotificationPreferences>
+  private accountRepository: AccountRepository
+  private accountPreferences: Map<string, NotificationPreferences>
 
   constructor() {
     // Initialize repositories
     this.notificationRepository = new NotificationRepository()
-    this.userRepository = new UserRepository()
+    this.accountRepository = new AccountRepository()
 
     // Initialize notification channels
     this.channels = new Map([
@@ -78,7 +84,7 @@ export class NotificationService {
       ['inApp', new InAppChannel()],
     ])
 
-    this.userPreferences = new Map()
+    this.accountPreferences = new Map()
   }
 
   /**
@@ -111,10 +117,10 @@ export class NotificationService {
    */
   async notifyRequestStatusChange(
     request: Request,
-    changedBy: User
+    changedBy: Account
   ): Promise<void> {
     // Get requester
-    const requester = await this.userRepository.findById(
+    const requester = await this.accountRepository.findById(
       request.getRequesterId()
     )
     if (!requester) {
@@ -153,7 +159,7 @@ export class NotificationService {
     oldPriority: RequestPriority
   ): Promise<void> {
     // Get requester
-    const requester = await this.userRepository.findById(
+    const requester = await this.accountRepository.findById(
       request.getRequesterId()
     )
     if (!requester) {
@@ -234,7 +240,7 @@ export class NotificationService {
       return
     }
 
-    const assignee = await this.userRepository.findById(assigneeId)
+    const assignee = await this.accountRepository.findById(assigneeId)
     if (!assignee) {
       console.error(`Assignee not found: ${assigneeId.getValue()}`)
       return
@@ -259,12 +265,12 @@ export class NotificationService {
   async notifyCommentAdded(
     request: Request,
     comment: Comment,
-    author: User,
+    author: Account,
     additionalRecipientIds: string[] = []
   ): Promise<void> {
-    const recipients = new Map<string, User>()
+    const recipients = new Map<string, Account>()
 
-    const requester = await this.userRepository.findById(
+    const requester = await this.accountRepository.findById(
       request.getRequesterId()
     )
     if (
@@ -276,7 +282,7 @@ export class NotificationService {
 
     const assigneeId = request.getAssigneeId()
     if (assigneeId) {
-      const assignee = await this.userRepository.findById(assigneeId)
+      const assignee = await this.accountRepository.findById(assigneeId)
       if (
         assignee &&
         assignee.getId().getValue() !== author.getId().getValue()
@@ -290,8 +296,8 @@ export class NotificationService {
         continue
       }
       if (!recipients.has(recipientId)) {
-        const user = await this.userRepository.findById(
-          UserId.create(recipientId)
+        const user = await this.accountRepository.findById(
+          AccountId.create(recipientId)
         )
         if (user) {
           recipients.set(recipientId, user)
@@ -324,7 +330,7 @@ export class NotificationService {
     daysRemaining: number
   ): Promise<void> {
     // Get requester
-    const requester = await this.userRepository.findById(
+    const requester = await this.accountRepository.findById(
       request.getRequesterId()
     )
     if (!requester) {
@@ -370,7 +376,7 @@ export class NotificationService {
    */
   private async sendNotification(
     notification: Notification,
-    recipient: User,
+    recipient: Account,
     channelNames: string[]
   ): Promise<void> {
     // Send through each channel
@@ -392,8 +398,8 @@ export class NotificationService {
   /**
    * Get user's notifications
    */
-  async getUserNotifications(
-    userId: string,
+  async getAccountNotifications(
+    accountId: string,
     options: {
       unreadOnly?: boolean
       limit?: number
@@ -405,7 +411,7 @@ export class NotificationService {
     unreadCount: number
   }> {
     const { unreadOnly = false, limit, offset } = options
-    const recipientId = UserId.create(userId)
+    const recipientId = AccountId.create(accountId)
     const allNotifications =
       await this.notificationRepository.findByRecipientId(recipientId)
 
@@ -431,13 +437,16 @@ export class NotificationService {
    */
   async markAsRead(
     notificationId: string,
-    userId: string
+    accountId: string
   ): Promise<Notification> {
     const notification = await this.notificationRepository.findById(
       NotificationId.create(notificationId)
     )
 
-    if (!notification || notification.getRecipientId().getValue() !== userId) {
+    if (
+      !notification ||
+      notification.getRecipientId().getValue() !== accountId
+    ) {
       throw new Error('Notification not found or unauthorized')
     }
 
@@ -450,9 +459,9 @@ export class NotificationService {
   /**
    * Mark all notifications as read
    */
-  async markAllAsRead(userId: string, before?: Date): Promise<number> {
+  async markAllAsRead(accountId: string, before?: Date): Promise<number> {
     const notifications = await this.notificationRepository.findByRecipientId(
-      UserId.create(userId)
+      AccountId.create(accountId)
     )
 
     let updatedCount = 0
@@ -475,7 +484,7 @@ export class NotificationService {
    * Get notification preferences
    */
   async getNotificationPreferences(
-    _userId: string
+    _accountId: string
   ): Promise<NotificationPreferences> {
     // Deprecated method retained for backward compatibility
     return DEFAULT_NOTIFICATION_PREFERENCES
@@ -485,18 +494,20 @@ export class NotificationService {
    * Update notification preferences
    */
   async updateNotificationPreferences(
-    userId: string,
+    accountId: string,
     _preferences: NotificationPreferences
   ): Promise<NotificationPreferences> {
     // Deprecated method retained for backward compatibility
-    return this.updateUserPreferences(userId, _preferences)
+    return this.updateAccountPreferences(accountId, _preferences)
   }
 
   /**
    * Get user notification preferences with defaults
    */
-  async getUserPreferences(userId: string): Promise<NotificationPreferences> {
-    const stored = this.userPreferences.get(userId)
+  async getAccountPreferences(
+    accountId: string
+  ): Promise<NotificationPreferences> {
+    const stored = this.accountPreferences.get(accountId)
     if (stored) {
       return { ...stored, types: [...stored.types] }
     }
@@ -509,25 +520,25 @@ export class NotificationService {
   /**
    * Update user notification preferences and persist in-memory
    */
-  async updateUserPreferences(
-    userId: string,
+  async updateAccountPreferences(
+    accountId: string,
     preferences: Partial<NotificationPreferences>
   ): Promise<NotificationPreferences> {
-    const current = await this.getUserPreferences(userId)
+    const current = await this.getAccountPreferences(accountId)
     const updated: NotificationPreferences = {
       emailEnabled: preferences.emailEnabled ?? current.emailEnabled,
       inAppEnabled: preferences.inAppEnabled ?? current.inAppEnabled,
       types: preferences.types ? [...preferences.types] : [...current.types],
     }
 
-    this.userPreferences.set(userId, updated)
+    this.accountPreferences.set(accountId, updated)
     return updated
   }
 
   /**
    * Send a test notification to verify channels
    */
-  async sendTestNotification(user: User): Promise<void> {
+  async sendTestNotification(user: Account): Promise<void> {
     const notification = Notification.create({
       recipientId: user.getId().getValue(),
       title: 'Test Notification',
@@ -544,15 +555,17 @@ export class NotificationService {
   /**
    * Get admins
    */
-  private async getAdmins(): Promise<User[]> {
+  private async getAdmins(): Promise<Account[]> {
     // In a production environment, this would query the database with a role filter
     // For now, we'll fetch users individually or implement a custom query
     // TODO: Implement a proper query to fetch admin users from database
     const adminIds: string[] = [] // This should be fetched from configuration or database
-    const admins: User[] = []
+    const admins: Account[] = []
 
     for (const adminId of adminIds) {
-      const admin = await this.userRepository.findById(UserId.create(adminId))
+      const admin = await this.accountRepository.findById(
+        AccountId.create(adminId)
+      )
       if (admin && admin.isAdmin()) {
         admins.push(admin)
       }
@@ -564,11 +577,11 @@ export class NotificationService {
   /**
    * Get request stakeholders
    */
-  private async getRequestStakeholders(request: Request): Promise<User[]> {
-    const stakeholders: User[] = []
+  private async getRequestStakeholders(request: Request): Promise<Account[]> {
+    const stakeholders: Account[] = []
 
     // Add requester
-    const requester = await this.userRepository.findById(
+    const requester = await this.accountRepository.findById(
       request.getRequesterId()
     )
     if (requester) {
@@ -578,7 +591,7 @@ export class NotificationService {
     // Add assignee if exists
     const assigneeId = request.getAssigneeId()
     if (assigneeId) {
-      const assignee = await this.userRepository.findById(assigneeId)
+      const assignee = await this.accountRepository.findById(assigneeId)
       if (assignee) {
         stakeholders.push(assignee)
       }
@@ -592,7 +605,7 @@ export class NotificationService {
 
     // Remove duplicates
     const uniqueIds = new Set(stakeholders.map((s) => s.getId().getValue()))
-    return stakeholders.filter((s: User) => {
+    return stakeholders.filter((s: Account) => {
       const id = s.getId().getValue()
       if (uniqueIds.has(id)) {
         uniqueIds.delete(id)

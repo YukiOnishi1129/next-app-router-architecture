@@ -4,12 +4,12 @@ import { ZodError } from 'zod'
 
 import { getSessionServer } from '@/features/auth/servers/session.server'
 
-import { UserId } from '@/external/domain'
+import { AccountId } from '@/external/domain'
 import { requestListSchema } from '@/external/dto/request'
 
 import {
   requestRepository,
-  userManagementService,
+  accountManagementService,
   mapRequestToDto,
 } from './shared'
 
@@ -18,7 +18,7 @@ import type {
   RequestListResponse,
 } from '@/external/dto/request'
 
-async function requireSessionUser() {
+async function requireSessionAccount() {
   const session = await getSessionServer()
   if (!session?.account) {
     throw new Error('Unauthorized')
@@ -30,10 +30,10 @@ export async function listMyRequestsServer(
   params?: RequestListInput
 ): Promise<RequestListResponse> {
   try {
-    const currentUser = await requireSessionUser()
+    const currentAccount = await requireSessionAccount()
     const validated = requestListSchema.parse(params ?? {})
 
-    const requesterId = UserId.create(currentUser.id)
+    const requesterId = AccountId.create(currentAccount.id)
     const requests = await requestRepository.findByRequesterId(
       requesterId,
       validated.limit,
@@ -62,10 +62,10 @@ export async function listAssignedRequestsServer(
   params?: RequestListInput
 ): Promise<RequestListResponse> {
   try {
-    const currentUser = await requireSessionUser()
+    const currentAccount = await requireSessionAccount()
     const validated = requestListSchema.parse(params ?? {})
 
-    const assigneeId = UserId.create(currentUser.id)
+    const assigneeId = AccountId.create(currentAccount.id)
     const requests = await requestRepository.findByAssigneeId(
       assigneeId,
       validated.limit,
@@ -97,10 +97,12 @@ export async function listAllRequestsServer(
   params?: RequestListInput
 ): Promise<RequestListResponse> {
   try {
-    const currentUser = await requireSessionUser()
+    const currentAccount = await requireSessionAccount()
     const validated = requestListSchema.parse(params ?? {})
 
-    const user = await userManagementService.findUserById(currentUser.id)
+    const user = await accountManagementService.findAccountById(
+      currentAccount.id
+    )
     if (!user || !user.isAdmin()) {
       return { success: false, error: 'Insufficient permissions' }
     }

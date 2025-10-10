@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import type { User } from '@/features/user/types/user'
+import type { Account } from '@/features/account/types/account'
 import type { Route } from 'next'
 
 const redirectUrlSchema = z
@@ -22,7 +22,7 @@ export type SignInCommandRequest = z.input<typeof signInCommandSchema>
 export type SignInCommandResponse = {
   success: boolean
   error?: string
-  user?: User
+  account?: Account
   idToken?: string
   refreshToken?: string
   redirectUrl?: Route
@@ -40,7 +40,7 @@ export type SignUpCommandRequest = z.input<typeof signUpCommandSchema>
 export type SignUpCommandResponse = {
   success: boolean
   error?: string
-  user?: User
+  account?: Account
   idToken?: string
   refreshToken?: string
   redirectUrl?: Route

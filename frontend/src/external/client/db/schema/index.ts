@@ -1,4 +1,4 @@
-export * from './users'
+export * from './accounts'
 export * from './requests'
 export * from './attachments'
 export * from './comments'

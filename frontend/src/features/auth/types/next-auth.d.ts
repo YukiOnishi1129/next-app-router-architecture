@@ -1,17 +1,17 @@
-import type { User as UserType } from '@/features/user/types/user'
+import type { Account as AccountType } from '@/features/account/types/account'
 
 declare module 'next-auth' {
   interface Session {
-    account: UserType
+    account: AccountType
   }
   interface User {
     id: string
-    account: UserType
+    account: AccountType
   }
 }
 
 declare module 'next-auth/jwt' {
   interface JWT {
-    account: UserType
+    account: AccountType
   }
 }

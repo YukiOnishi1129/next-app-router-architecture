@@ -29,7 +29,7 @@ export default meta
 const Template: StoryFn<typeof ProfileFormPresenter> = (overrides) => {
   const form = useForm<ProfileFormValues>({
     defaultValues: {
-      userId: 'user_1',
+      accountId: 'user_1',
       name: 'John Doe',
       email: 'user@example.com',
     },
@@ -75,7 +75,7 @@ Updating.args = {
 export const ValidationErrors: StoryFn<typeof ProfileFormPresenter> = () => {
   const form = useForm<ProfileFormValues>({
     defaultValues: {
-      userId: 'user_1',
+      accountId: 'user_1',
       name: '',
       email: '',
     },

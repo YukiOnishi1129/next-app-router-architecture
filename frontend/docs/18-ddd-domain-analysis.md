@@ -6,14 +6,14 @@ This document summarises the domain model for the Request & Approval System, usi
 
 ## Core Entities
 
-### User
+- ### Account
 
-- Identified by `UserId` (UUID)
+- Identified by `AccountId` (UUID)
 - Attributes: name, email, roles (`ADMIN`, `MEMBER`, `GUEST`), status, created/updated timestamps
 - Behaviours:
   - `canApproveRequest()` → true when role includes `ADMIN` or `MEMBER` with approver rights
   - `assignRole`, `removeRole`, `changeStatus`
-  - Equality based on `UserId`
+  - Equality based on `AccountId`
 
 ### Request (Aggregate Root)
 
@@ -38,7 +38,7 @@ This document summarises the domain model for the Request & Approval System, usi
 
 ## Value Objects
 
-- `UserId`, `RequestId` – branded strings to prevent misuse
+- `AccountId`, `RequestId` – branded strings to prevent misuse
 - `Email`, `Money`, `RequestType`, `RequestStatus`
 - Rules enforced inside constructors (e.g., valid email format, non-negative amounts)
 
@@ -59,7 +59,7 @@ Events carry aggregate id, actor, timestamp, and payload (e.g., rejection reason
 ```ts
 export interface RequestRepository {
   findById(id: RequestId): Promise<RequestAggregate | null>
-  findByCreatedBy(userId: UserId): Promise<RequestAggregate[]>
+  findByCreatedBy(accountId: AccountId): Promise<RequestAggregate[]>
   findPendingApprovals(): Promise<RequestAggregate[]>
   save(request: RequestAggregate): Promise<void>
 }
@@ -74,7 +74,7 @@ Concrete implementations live under `external/repository/db` and rely on Drizzle
 Examples:
 
 - `RequestWorkflowService` – orchestrates submit/approve/reject operations, emits domain events, triggers notifications.
-- `UserManagementService` – hydrates users from the database, manages roles, calculates permissions.
+- `AccountManagementService` – hydrates accounts from the database, manages roles, calculates permissions.
 
 Services depend on repositories and domain entities; they do not manipulate raw database records directly.
 
@@ -94,7 +94,7 @@ class Request {
     return new RequestSubmittedEvent(this.id, this.createdBy, new Date())
   }
 
-  approve(approver: UserId, comment?: string) {
+  approve(approver: AccountId, comment?: string) {
     if (this.status !== 'submitted') throw new Error('Cannot approve')
     this.status = 'approved'
     this.approverId = approver

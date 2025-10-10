@@ -8,14 +8,14 @@
 
 import {
   IdentityPlatformClient,
-  UserInfo,
+  AccountInfo,
 } from '@/external/client/gcp/identity-platform'
 
 export interface AuthToken {
   token: string
   refreshToken: string
   expiresAt: Date
-  userId: string
+  accountId: string
 }
 
 export interface EmailPasswordAuthResult {
@@ -54,7 +54,7 @@ export class AuthenticationService {
       })
 
     // Get detailed user info
-    const userInfo = await this.identityPlatformClient.getUserInfo(
+    const userInfo = await this.identityPlatformClient.getAccountInfo(
       authResult.idToken
     )
 
@@ -95,7 +95,7 @@ export class AuthenticationService {
       })
 
     // Get detailed user info
-    const userInfo = await this.identityPlatformClient.getUserInfo(
+    const userInfo = await this.identityPlatformClient.getAccountInfo(
       authResult.idToken
     )
 
@@ -121,14 +121,14 @@ export class AuthenticationService {
   /**
    * Verify ID token and get user info
    */
-  async verifyToken(idToken: string): Promise<UserInfo | null> {
+  async verifyToken(idToken: string): Promise<AccountInfo | null> {
     try {
       const isValid = await this.identityPlatformClient.verifyIdToken(idToken)
       if (!isValid) {
         return null
       }
 
-      return await this.identityPlatformClient.getUserInfo(idToken)
+      return await this.identityPlatformClient.getAccountInfo(idToken)
     } catch (error) {
       console.error('Token verification failed:', error)
       return null
@@ -170,14 +170,17 @@ export class AuthenticationService {
   /**
    * Update user profile in Identity Platform
    */
-  async updateUserProfile(
+  async updateAccountProfile(
     idToken: string,
     updates: {
       displayName?: string
       photoUrl?: string
     }
-  ): Promise<UserInfo> {
-    return await this.identityPlatformClient.updateUserProfile(idToken, updates)
+  ): Promise<AccountInfo> {
+    return await this.identityPlatformClient.updateAccountProfile(
+      idToken,
+      updates
+    )
   }
 
   /**
@@ -190,8 +193,8 @@ export class AuthenticationService {
   /**
    * Delete user account
    */
-  async deleteUserAccount(idToken: string): Promise<void> {
-    return await this.identityPlatformClient.deleteUserAccount(idToken)
+  async deleteAccountAccount(idToken: string): Promise<void> {
+    return await this.identityPlatformClient.deleteAccountAccount(idToken)
   }
 
   /**

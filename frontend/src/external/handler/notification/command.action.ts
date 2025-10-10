@@ -35,9 +35,9 @@ export async function updateNotificationPreferencesAction(
 }
 
 export async function sendTestNotificationAction(
-  userId: string
+  accountId: string
 ): Promise<NotificationCommandResponse> {
-  return sendTestNotificationServer(userId)
+  return sendTestNotificationServer(accountId)
 }
 
 export type {

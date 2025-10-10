@@ -27,7 +27,7 @@ export async function listAttachmentsServer(
 
     const attachments = await attachmentService.getAttachments({
       requestId: validated.requestId,
-      userId: session.account.id,
+      accountId: session.account.id,
     })
 
     return {
@@ -59,7 +59,7 @@ export async function getAttachmentContentServer(
 
     const { data, attachment } = await attachmentService.downloadAttachment({
       attachmentId,
-      userId: session.account.id,
+      accountId: session.account.id,
       context: {
         ipAddress: 'server',
         userAgent: 'server-query',

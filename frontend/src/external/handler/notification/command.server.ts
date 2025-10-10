@@ -10,7 +10,7 @@ import {
   updateNotificationPreferencesSchema,
 } from '@/external/dto/notification'
 
-import { notificationService, userManagementService } from './shared'
+import { notificationService, accountManagementService } from './shared'
 
 import type {
   MarkNotificationReadInput,
@@ -109,7 +109,7 @@ export async function updateNotificationPreferencesServer(
       }
     }
 
-    const updated = await notificationService.updateUserPreferences(
+    const updated = await notificationService.updateAccountPreferences(
       session.account.id,
       {
         emailEnabled: validated.emailNotifications,
@@ -150,7 +150,7 @@ export async function updateNotificationPreferencesServer(
 }
 
 export async function sendTestNotificationServer(
-  userId: string
+  accountId: string
 ): Promise<NotificationCommandResponse> {
   try {
     const session = await getSessionServer()
@@ -158,19 +158,20 @@ export async function sendTestNotificationServer(
       return { success: false, error: 'Unauthorized' }
     }
 
-    const currentUser = await userManagementService.findUserById(
+    const currentAccount = await accountManagementService.findAccountById(
       session.account.id
     )
-    if (!currentUser || !currentUser.isAdmin()) {
+    if (!currentAccount || !currentAccount.isAdmin()) {
       return { success: false, error: 'Insufficient permissions' }
     }
 
-    const targetUser = await userManagementService.findUserById(userId)
-    if (!targetUser) {
+    const targetAccount =
+      await accountManagementService.findAccountById(accountId)
+    if (!targetAccount) {
       return { success: false, error: 'Target user not found' }
     }
 
-    await notificationService.sendTestNotification(targetUser)
+    await notificationService.sendTestNotification(targetAccount)
     return { success: true }
   } catch (error) {
     return {

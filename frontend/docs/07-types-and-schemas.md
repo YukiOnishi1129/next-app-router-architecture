@@ -21,7 +21,7 @@ shared/types/          # Global/shared types
   ├── auth.ts         # NextAuth session/account shapes
   └── common.ts       # Utility types (Result, Nullable, etc.)
 features/
-  └── users/
+  └── accounts/
       ├── types/      # Feature-specific types
       └── schemas/    # Zod schemas, reused on server
 external/
@@ -30,13 +30,13 @@ external/
 
 ---
 
-## Example: User Schema
+## Example: Account Schema
 
 ```ts
-// features/users/schemas/user.ts
+// features/accounts/schemas/account.ts
 import { z } from 'zod'
 
-export const userSchema = z.object({
+export const accountSchema = z.object({
   id: z.string().uuid(),
   email: z.string().email(),
   name: z.string().min(1).max(100),
@@ -45,15 +45,15 @@ export const userSchema = z.object({
   updatedAt: z.date(),
 })
 
-export type User = z.infer<typeof userSchema>
+export type Account = z.infer<typeof accountSchema>
 
-export const createUserSchema = userSchema.omit({
+export const createAccountSchema = accountSchema.omit({
   id: true,
   createdAt: true,
   updatedAt: true,
 })
 
-export type CreateUserInput = z.infer<typeof createUserSchema>
+export type CreateAccountInput = z.infer<typeof createAccountSchema>
 ```
 
 ---
@@ -74,7 +74,7 @@ export type SignInCommandRequest = z.infer<typeof signInCommandSchema>
 export type SignInCommandResponse = {
   success: boolean
   error?: string
-  user?: User
+  account?: Account
   idToken?: string
   refreshToken?: string
   redirectUrl?: Route
@@ -109,13 +109,13 @@ export type ApiResult<T> = ApiSuccess<T> | ApiError
 ```ts
 // shared/types/brand.ts
 export type Brand<T, U extends string> = T & { readonly __brand: U }
-export type UserId = Brand<string, 'UserId'>
+export type AccountId = Brand<string, 'AccountId'>
 export type RequestId = Brand<string, 'RequestId'>
 
-const toUserId = (value: string): UserId => value as UserId
+const toAccountId = (value: string): AccountId => value as AccountId
 ```
 
-Branded IDs ensure a `UserId` is never passed where a `RequestId` is expected.
+Branded IDs ensure a `AccountId` is never passed where a `RequestId` is expected.
 
 ---
 
@@ -134,12 +134,12 @@ export type Nullable<T> = T | null
 ## Database Integration
 
 ```ts
-// external/repository/db/UserRepository.ts
+// external/repository/db/AccountRepository.ts
 import { db } from '@/external/client/db/client'
 import { users } from '@/external/client/db/schema'
 
-export class UserRepository {
-  async findById(id: UserId): Promise<User | null> {
+export class AccountRepository {
+  async findById(id: AccountId): Promise<User | null> {
     const result = await db.select().from(users).where(eq(users.id, id))
     // map to domain entity...
   }

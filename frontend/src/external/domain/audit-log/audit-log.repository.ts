@@ -1,7 +1,7 @@
 import { AuditLog, AuditEventType } from './audit-log'
 import { AuditLogId } from './audit-log-id'
+import { AccountId } from '../account'
 import { Repository } from '../shared/repository'
-import { UserId } from '../user'
 
 /**
  * Filter criteria for audit logs
@@ -10,7 +10,7 @@ export interface AuditLogFilter {
   eventType?: AuditEventType
   entityType?: string
   entityId?: string
-  actorId?: UserId
+  actorId?: AccountId
   startDate?: Date
   endDate?: Date
 }
@@ -26,7 +26,7 @@ export interface AuditLogRepository extends Repository<AuditLog, AuditLogId> {
   ): Promise<AuditLog[]>
   findByEntityId(entityType: string, entityId: string): Promise<AuditLog[]>
   findByActorId(
-    actorId: UserId,
+    actorId: AccountId,
     limit?: number,
     offset?: number
   ): Promise<AuditLog[]>
