@@ -1,25 +1,26 @@
 'use client'
 
-import { useCallback } from 'react'
-
-import { createRequestAction } from '@/features/requests/actions'
-
 import { RequestFormPresenter } from './RequestFormPresenter'
 import { useRequestForm } from './useRequestForm'
 
-import type { FormEvent } from 'react'
-
 export function RequestFormContainer() {
-  const { form, handleSubmit } = useRequestForm()
+  const {
+    form,
+    handleSubmit,
+    typeOptions,
+    priorityOptions,
+    serverError,
+    isSubmitting,
+  } = useRequestForm()
 
-  const onSubmit = useCallback(
-    (event: FormEvent<HTMLFormElement>) => {
-      handleSubmit(event, async (input) => {
-        await createRequestAction(input)
-      })
-    },
-    [handleSubmit]
+  return (
+    <RequestFormPresenter
+      form={form}
+      onSubmit={handleSubmit}
+      typeOptions={typeOptions}
+      priorityOptions={priorityOptions}
+      serverError={serverError}
+      isSubmitting={isSubmitting}
+    />
   )
-
-  return <RequestFormPresenter form={form} onSubmit={onSubmit} />
 }
