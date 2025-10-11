@@ -2,8 +2,8 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 
-import { submitRequestAction } from '@/features/requests/actions'
 import { requestKeys } from '@/features/requests/queries/keys'
+import { submitRequestAction } from '@/external/handler/request/command.action'
 
 export const useSubmitRequestMutation = (requestId: string) => {
   const queryClient = useQueryClient()

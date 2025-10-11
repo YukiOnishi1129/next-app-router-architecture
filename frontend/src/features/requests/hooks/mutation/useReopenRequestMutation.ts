@@ -3,8 +3,8 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 
 import { approvalKeys } from '@/features/approvals/queries/keys'
-import { reopenRequestAction } from '@/features/requests/actions'
 import { requestKeys } from '@/features/requests/queries/keys'
+import { reopenRequestAction } from '@/external/handler/request/command.action'
 
 export const useReopenRequestMutation = () => {
   const queryClient = useQueryClient()

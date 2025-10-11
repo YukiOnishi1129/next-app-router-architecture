@@ -8,7 +8,6 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 
-import { updateRequestAction } from '@/features/requests/actions'
 import { useRequestDetailQuery } from '@/features/requests/hooks/query/useRequestDetailQuery'
 import { requestKeys } from '@/features/requests/queries/keys'
 import {
@@ -16,6 +15,8 @@ import {
   updateRequestFormSchema,
 } from '@/features/requests/schemas'
 import { RequestPriority, RequestType } from '@/features/requests/types'
+
+import { updateRequestAction } from '@/external/handler/request/command.action'
 
 import { formatEnumLabel } from '@/shared/lib/format'
 
