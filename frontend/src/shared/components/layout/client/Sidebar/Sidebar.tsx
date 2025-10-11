@@ -22,11 +22,6 @@ const navItems: NavItem[] = [
       (path.startsWith('/requests/') && !path.startsWith('/requests/new')),
   },
   {
-    href: '/requests/new',
-    label: 'Create Request',
-    isActive: (path) => path.startsWith('/requests/new'),
-  },
-  {
     href: '/approvals',
     label: 'Approvals',
     isActive: (path) => path.startsWith('/approvals'),
