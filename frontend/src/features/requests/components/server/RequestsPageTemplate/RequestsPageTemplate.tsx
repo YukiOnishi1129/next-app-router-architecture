@@ -27,7 +27,6 @@ export async function RequestsPageTemplate({
   filters = {},
 }: RequestsPageTemplateProps) {
   const queryClient = getQueryClient()
-
   await queryClient.prefetchQuery({
     queryKey: requestKeys.list(filters),
     queryFn: async () => {

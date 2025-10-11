@@ -22,6 +22,17 @@ export type RequestListResponse = {
   offset?: number
 }
 
+const reviewerStatuses = [
+  RequestStatus.APPROVED,
+  RequestStatus.REJECTED,
+] as const
+
+export const reviewerRequestListSchema = requestListSchema.extend({
+  status: z.enum(reviewerStatuses).optional(),
+})
+
+export type ReviewerRequestListInput = z.input<typeof reviewerRequestListSchema>
+
 export const requestDetailSchema = z.object({
   requestId: z.uuid(),
 })
@@ -67,4 +78,15 @@ export type RequestSummaryResponse = {
   success: boolean
   error?: string
   summary?: RequestSummary
+}
+
+export type ReviewerSummary = {
+  approved: number
+  rejected: number
+}
+
+export type ReviewerSummaryResponse = {
+  success: boolean
+  error?: string
+  summary?: ReviewerSummary
 }

@@ -43,11 +43,3 @@ export async function getRequestDetailAction(
 export async function getRequestSummaryAction(): Promise<RequestSummaryResponse> {
   return getRequestSummaryServer()
 }
-
-export type {
-  RequestDetailInput,
-  RequestDetailResponse,
-  RequestListInput,
-  RequestListResponse,
-  RequestSummaryResponse,
-} from './query.server'

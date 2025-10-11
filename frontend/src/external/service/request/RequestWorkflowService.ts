@@ -367,6 +367,25 @@ export class RequestWorkflowService {
     return { total, byStatus }
   }
 
+  async getReviewerSummary(reviewerId: string): Promise<{
+    approved: number
+    rejected: number
+  }> {
+    const accountId = AccountId.create(reviewerId)
+    const [approved, rejected] = await Promise.all([
+      this.requestRepository.countReviewedByAccount(
+        RequestStatus.APPROVED,
+        accountId
+      ),
+      this.requestRepository.countReviewedByAccount(
+        RequestStatus.REJECTED,
+        accountId
+      ),
+    ])
+
+    return { approved, rejected }
+  }
+
   /**
    * Get requests by workflow status
    */

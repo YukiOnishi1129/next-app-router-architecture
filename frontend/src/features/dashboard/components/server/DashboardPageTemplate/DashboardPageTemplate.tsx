@@ -6,6 +6,7 @@ import { RequestStatusBadge } from '@/shared/components/ui/request-status-badge'
 import { RequestStatus } from '@/external/domain/request/request-status'
 import {
   getRequestSummaryServer,
+  getReviewerSummaryServer,
   listPendingApprovalsServer,
 } from '@/external/handler/request/query.server'
 
@@ -13,10 +14,13 @@ const linkBaseClasses =
   'group block rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background'
 
 export async function DashboardPageTemplate() {
-  const [requestSummary, pendingApprovals] = await Promise.all([
-    getRequestSummaryServer(),
-    listPendingApprovalsServer(),
-  ])
+  const [requestSummary, pendingApprovals, reviewerSummary] = await Promise.all(
+    [
+      getRequestSummaryServer(),
+      listPendingApprovalsServer(),
+      getReviewerSummaryServer(),
+    ]
+  )
 
   if (!requestSummary.success || !requestSummary.summary) {
     throw new Error(requestSummary.error ?? 'Failed to load dashboard summary')
@@ -25,6 +29,12 @@ export async function DashboardPageTemplate() {
   if (!pendingApprovals.success || !pendingApprovals.requests) {
     throw new Error(
       pendingApprovals.error ?? 'Failed to load pending approvals'
+    )
+  }
+
+  if (!reviewerSummary.success || !reviewerSummary.summary) {
+    throw new Error(
+      reviewerSummary.error ?? 'Failed to load review history summary'
     )
   }
 
@@ -63,6 +73,23 @@ export async function DashboardPageTemplate() {
     value: pendingApprovals.requests.length,
     description: 'Requests from others waiting for your decision.',
   }
+
+  const reviewHistoryCards = [
+    {
+      label: 'Approved by me',
+      status: RequestStatus.APPROVED,
+      href: '/approvals/history?status=APPROVED' as const,
+      value: reviewerSummary.summary.approved,
+      description: 'Requests you approved.',
+    },
+    {
+      label: 'Rejected by me',
+      status: RequestStatus.REJECTED,
+      href: '/approvals/history?status=REJECTED' as const,
+      value: reviewerSummary.summary.rejected,
+      description: 'Requests you rejected.',
+    },
+  ]
 
   return (
     <section className="space-y-8 px-6 py-8">
@@ -125,6 +152,35 @@ export async function DashboardPageTemplate() {
               </p>
             </Card>
           </Link>
+        </div>
+
+        <div className="space-y-3">
+          <h2 className="text-foreground text-lg font-medium">
+            My review history
+          </h2>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {reviewHistoryCards.map((item) => (
+              <Link
+                key={item.label}
+                href={item.href}
+                className={linkBaseClasses}
+                aria-label={item.label}
+              >
+                <Card className="space-y-3 p-4 transition group-hover:shadow-md">
+                  <div className="flex items-center justify-between">
+                    <p className="text-muted-foreground text-xs uppercase">
+                      {item.label}
+                    </p>
+                    <RequestStatusBadge status={item.status} />
+                  </div>
+                  <span className="text-3xl font-semibold">{item.value}</span>
+                  <p className="text-muted-foreground text-xs">
+                    {item.description}
+                  </p>
+                </Card>
+              </Link>
+            ))}
+          </div>
         </div>
       </div>
     </section>

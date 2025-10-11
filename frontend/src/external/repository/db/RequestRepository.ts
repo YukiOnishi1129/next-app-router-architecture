@@ -88,6 +88,30 @@ export class RequestRepository implements IRequestRepository {
     return result.map((row) => this.mapToDomainEntity(row))
   }
 
+  async findByReviewerId(
+    reviewerId: AccountId,
+    status?: RequestStatus,
+    limit?: number,
+    offset?: number
+  ): Promise<Request[]> {
+    const conditions = [eq(requests.reviewerId, reviewerId.getValue())] as const
+
+    const baseQuery = db
+      .select()
+      .from(requests)
+      .where(
+        and(
+          ...conditions,
+          ...(status ? [eq(requests.status, status as DbRequestStatus)] : [])
+        )
+      )
+      .orderBy(desc(requests.updatedAt))
+
+    const query = this.applyPagination(baseQuery, limit, offset)
+    const result = await query
+    return result.map((row) => this.mapToDomainEntity(row))
+  }
+
   async findAll(limit?: number, offset?: number): Promise<Request[]> {
     const baseQuery = db
       .select()
@@ -134,6 +158,23 @@ export class RequestRepository implements IRequestRepository {
         and(
           eq(requests.status, status as DbRequestStatus),
           eq(requests.requesterId, requesterId.getValue())
+        )
+      )
+
+    return result[0]?.value ?? 0
+  }
+
+  async countReviewedByAccount(
+    status: RequestStatus.APPROVED | RequestStatus.REJECTED,
+    reviewerId: AccountId
+  ): Promise<number> {
+    const result = await db
+      .select({ value: count() })
+      .from(requests)
+      .where(
+        and(
+          eq(requests.status, status as DbRequestStatus),
+          eq(requests.reviewerId, reviewerId.getValue())
         )
       )
 

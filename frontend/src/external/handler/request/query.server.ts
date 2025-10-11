@@ -4,11 +4,12 @@ import { ZodError } from 'zod'
 
 import { getSessionServer } from '@/features/auth/servers/session.server'
 
-import { AccountId, RequestId } from '@/external/domain'
+import { AccountId, RequestId, RequestStatus } from '@/external/domain'
 import {
   requestDetailSchema,
   requestHistorySchema,
   requestListSchema,
+  reviewerRequestListSchema,
 } from '@/external/dto/request'
 
 import {
@@ -31,6 +32,8 @@ import type {
   RequestHistoryInput,
   RequestHistoryResponse,
   RequestSummaryResponse,
+  ReviewerRequestListInput,
+  ReviewerSummaryResponse,
 } from '@/external/dto/request'
 
 async function requireSessionAccount() {
@@ -342,16 +345,6 @@ export async function getRequestHistoryServer(
   }
 }
 
-export type {
-  RequestDetailInput,
-  RequestDetailResponse,
-  RequestListInput,
-  RequestListResponse,
-  RequestHistoryInput,
-  RequestHistoryResponse,
-  RequestSummaryResponse,
-} from '@/external/dto/request'
-
 export async function getRequestSummaryServer(): Promise<RequestSummaryResponse> {
   try {
     const currentAccount = await requireSessionAccount()
@@ -373,6 +366,127 @@ export async function getRequestSummaryServer(): Promise<RequestSummaryResponse>
     }
   }
 }
+
+export async function getReviewerSummaryServer(): Promise<ReviewerSummaryResponse> {
+  try {
+    const currentAccount = await requireSessionAccount()
+    const summary = await workflowService.getReviewerSummary(currentAccount.id)
+
+    return {
+      success: true,
+      summary,
+    }
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : 'Failed to load reviewer summary',
+    }
+  }
+}
+
+export async function listReviewedRequestsServer(
+  params?: ReviewerRequestListInput
+): Promise<RequestListResponse> {
+  try {
+    const currentAccount = await requireSessionAccount()
+    const validated = reviewerRequestListSchema.parse(params ?? {})
+
+    const reviewerAccount = await accountManagementService.findAccountById(
+      currentAccount.id
+    )
+    if (!reviewerAccount) {
+      return { success: false, error: 'Account not found' }
+    }
+
+    const reviewerId = AccountId.create(currentAccount.id)
+    const requests = await requestRepository.findByReviewerId(
+      reviewerId,
+      validated.status,
+      validated.limit,
+      validated.offset
+    )
+
+    const requesterNameCache = new Map<string, string | null>()
+    const getRequesterName = async (requesterId: string) => {
+      if (requesterNameCache.has(requesterId)) {
+        return requesterNameCache.get(requesterId) ?? null
+      }
+      const requester =
+        await accountManagementService.findAccountById(requesterId)
+      const name = requester?.getName() ?? null
+      requesterNameCache.set(requesterId, name)
+      return name
+    }
+
+    const reviewerName = reviewerAccount.getName()
+
+    const requestDtos = []
+    for (const request of requests) {
+      const requesterId = request.getRequesterId().getValue()
+      const requesterName = await getRequesterName(requesterId)
+      requestDtos.push(
+        mapRequestToDto(request, {
+          requesterName,
+          reviewerName,
+        })
+      )
+    }
+
+    let total: number
+    if (validated.status) {
+      total = await requestRepository.countReviewedByAccount(
+        validated.status,
+        reviewerId
+      )
+    } else {
+      const [approvedCount, rejectedCount] = await Promise.all([
+        requestRepository.countReviewedByAccount(
+          RequestStatus.APPROVED,
+          reviewerId
+        ),
+        requestRepository.countReviewedByAccount(
+          RequestStatus.REJECTED,
+          reviewerId
+        ),
+      ])
+      total = approvedCount + rejectedCount
+    }
+
+    return {
+      success: true,
+      requests: requestDtos,
+      total,
+      limit: validated.limit,
+      offset: validated.offset,
+    }
+  } catch (error) {
+    if (error instanceof ZodError) {
+      return { success: false, error: 'Invalid input data' }
+    }
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : 'Failed to load reviewed requests',
+    }
+  }
+}
+
+export type {
+  RequestDetailInput,
+  RequestDetailResponse,
+  RequestListInput,
+  RequestListResponse,
+  RequestHistoryInput,
+  RequestHistoryResponse,
+  RequestSummaryResponse,
+  ReviewerRequestListInput,
+  ReviewerSummaryResponse,
+} from '@/external/dto/request'
 
 export async function listPendingApprovalsServer(): Promise<PendingApprovalListResponse> {
   try {
