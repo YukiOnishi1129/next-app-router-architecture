@@ -55,7 +55,8 @@ export async function listMyRequestsServer(
     const requests = await requestRepository.findByRequesterId(
       requesterId,
       validated.limit,
-      validated.offset
+      validated.offset,
+      validated.status
     )
 
     const requester = await accountManagementService.findAccountById(
@@ -95,7 +96,8 @@ export async function listAssignedRequestsServer(
     const requests = await requestRepository.findByAssigneeId(
       assigneeId,
       validated.limit,
-      validated.offset
+      validated.offset,
+      validated.status
     )
 
     const assigneeAccount = await accountManagementService.findAccountById(
@@ -144,7 +146,8 @@ export async function listAllRequestsServer(
 
     const requests = await requestRepository.findAll(
       validated.limit,
-      validated.offset
+      validated.offset,
+      validated.status
     )
 
     return {

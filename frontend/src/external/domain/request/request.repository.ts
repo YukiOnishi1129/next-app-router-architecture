@@ -8,16 +8,22 @@ import { Repository } from '../shared/repository'
  * Request repository interface
  */
 export interface RequestRepository extends Repository<Request, RequestId> {
-  findAll(limit?: number, offset?: number): Promise<Request[]>
+  findAll(
+    limit?: number,
+    offset?: number,
+    status?: RequestStatus
+  ): Promise<Request[]>
   findByRequesterId(
     requesterId: AccountId,
     limit?: number,
-    offset?: number
+    offset?: number,
+    status?: RequestStatus
   ): Promise<Request[]>
   findByAssigneeId(
     assigneeId: AccountId,
     limit?: number,
-    offset?: number
+    offset?: number,
+    status?: RequestStatus
   ): Promise<Request[]>
   findByReviewerId(
     reviewerId: AccountId,

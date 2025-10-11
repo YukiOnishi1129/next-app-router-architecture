@@ -50,6 +50,11 @@ export function ApprovalsHistory({ status, summary }: ApprovalsHistoryProps) {
     [summary.approved, summary.rejected]
   )
 
+  const filtered = useMemo(
+    () => (data ? data.filter((request) => request.status === status) : []),
+    [data, status]
+  )
+
   const activeTab = tabs.find((tab) => tab.value === status) ?? tabs[0]
 
   return (
@@ -94,17 +99,17 @@ export function ApprovalsHistory({ status, summary }: ApprovalsHistoryProps) {
           <div className="border-border bg-muted/30 h-24 animate-pulse rounded-md border" />
           <div className="border-border bg-muted/30 h-24 animate-pulse rounded-md border" />
         </div>
-      ) : !error && (!data || data.length === 0) ? (
+      ) : !error && filtered.length === 0 ? (
         <div className="border-muted-foreground/40 text-muted-foreground rounded-md border border-dashed p-6 text-center text-sm">
           No requests found for this tab yet.
         </div>
-      ) : !error && data ? (
+      ) : !error ? (
         <div className="space-y-3">
           {isRefetching ? (
             <p className="text-muted-foreground text-xs">Refreshing…</p>
           ) : null}
           <div className="grid gap-4 md:grid-cols-2">
-            {data.map((request) => (
+            {filtered.map((request) => (
               <Link
                 key={request.id}
                 href={`/requests/${request.id}`}

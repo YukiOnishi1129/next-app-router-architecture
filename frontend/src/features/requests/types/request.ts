@@ -1,8 +1,4 @@
-import {
-  RequestPriority,
-  RequestStatus,
-  RequestType,
-} from '@/external/domain/request/request-status'
+import { RequestPriority, RequestStatus, RequestType } from './status'
 
 export interface RequestSummary {
   id: string

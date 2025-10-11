@@ -33,15 +33,24 @@ export function selectRequestListFetcher(
   filters: RequestFilterInput,
   fetchers: RequestListFetchers
 ): RequestListFetcher {
-  if (filters.pendingApprovalsOnly) {
-    return fetchers.listAssigned
-  }
+  const baseFetcher = filters.pendingApprovalsOnly
+    ? fetchers.listAssigned
+    : filters.mineOnly === false
+      ? fetchers.listAll
+      : fetchers.listMine
 
-  if (filters.mineOnly === false) {
-    return fetchers.listAll
-  }
+  return (params?: RequestListInput) => {
+    const finalParams: RequestListInput | undefined = (() => {
+      const merged = {
+        ...(params ?? {}),
+        ...(filters.status ? { status: filters.status } : {}),
+      }
 
-  return fetchers.listMine
+      return Object.keys(merged).length > 0 ? merged : undefined
+    })()
+
+    return baseFetcher(finalParams)
+  }
 }
 
 export function ensureRequestListResponse(

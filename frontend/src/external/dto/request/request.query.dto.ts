@@ -9,6 +9,7 @@ import type { NotificationDto } from '@/external/dto/notification'
 export const requestListSchema = z.object({
   limit: z.number().min(1).max(100).default(50),
   offset: z.number().min(0).default(0),
+  status: z.nativeEnum(RequestStatus).optional(),
 })
 
 export type RequestListInput = z.input<typeof requestListSchema>

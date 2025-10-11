@@ -59,12 +59,20 @@ export class RequestRepository implements IRequestRepository {
   async findByRequesterId(
     requesterId: AccountId,
     limit?: number,
-    offset?: number
+    offset?: number,
+    status?: RequestStatus
   ): Promise<Request[]> {
+    const whereClause = status
+      ? and(
+          eq(requests.requesterId, requesterId.getValue()),
+          eq(requests.status, status as DbRequestStatus)
+        )
+      : eq(requests.requesterId, requesterId.getValue())
+
     const baseQuery = db
       .select()
       .from(requests)
-      .where(eq(requests.requesterId, requesterId.getValue()))
+      .where(whereClause)
       .orderBy(desc(requests.createdAt))
 
     const query = this.applyPagination(baseQuery, limit, offset)
@@ -75,12 +83,20 @@ export class RequestRepository implements IRequestRepository {
   async findByAssigneeId(
     assigneeId: AccountId,
     limit?: number,
-    offset?: number
+    offset?: number,
+    status?: RequestStatus
   ): Promise<Request[]> {
+    const whereClause = status
+      ? and(
+          eq(requests.assigneeId, assigneeId.getValue()),
+          eq(requests.status, status as DbRequestStatus)
+        )
+      : eq(requests.assigneeId, assigneeId.getValue())
+
     const baseQuery = db
       .select()
       .from(requests)
-      .where(eq(requests.assigneeId, assigneeId.getValue()))
+      .where(whereClause)
       .orderBy(desc(requests.createdAt))
 
     const query = this.applyPagination(baseQuery, limit, offset)
@@ -94,16 +110,16 @@ export class RequestRepository implements IRequestRepository {
     limit?: number,
     offset?: number
   ): Promise<Request[]> {
-    const conditions = [eq(requests.reviewerId, reviewerId.getValue())] as const
-
     const baseQuery = db
       .select()
       .from(requests)
       .where(
-        and(
-          ...conditions,
-          ...(status ? [eq(requests.status, status as DbRequestStatus)] : [])
-        )
+        status
+          ? and(
+              eq(requests.reviewerId, reviewerId.getValue()),
+              eq(requests.status, status as DbRequestStatus)
+            )
+          : eq(requests.reviewerId, reviewerId.getValue())
       )
       .orderBy(desc(requests.updatedAt))
 
@@ -112,12 +128,21 @@ export class RequestRepository implements IRequestRepository {
     return result.map((row) => this.mapToDomainEntity(row))
   }
 
-  async findAll(limit?: number, offset?: number): Promise<Request[]> {
+  async findAll(
+    limit?: number,
+    offset?: number,
+    status?: RequestStatus
+  ): Promise<Request[]> {
     const baseQuery = db
       .select()
       .from(requests)
       .orderBy(desc(requests.createdAt))
-    const query = this.applyPagination(baseQuery, limit, offset)
+
+    const filteredQuery = status
+      ? baseQuery.where(eq(requests.status, status as DbRequestStatus))
+      : baseQuery
+
+    const query = this.applyPagination(filteredQuery, limit, offset)
     const result = await query
     return result.map((row) => this.mapToDomainEntity(row))
   }

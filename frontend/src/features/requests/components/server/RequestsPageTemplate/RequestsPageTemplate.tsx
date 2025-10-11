@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { dehydrate, HydrationBoundary } from '@tanstack/react-query'
 
 import { RequestList } from '@/features/requests/components/client/RequestList'
+import { RequestsStatusTabList } from '@/features/requests/components/client/RequestsStatusTabList'
 import { requestKeys } from '@/features/requests/queries/keys'
 import {
   ensureRequestListResponse,
@@ -17,14 +18,19 @@ import {
   listMyRequestsServer,
 } from '@/external/handler/request/query.server'
 
-import type { RequestFilterInput } from '@/features/requests/types'
+import type {
+  RequestFilterInput,
+  RequestsStatusTabKey,
+} from '@/features/requests/types'
 
 type RequestsPageTemplateProps = {
   filters?: RequestFilterInput
+  activeTabKey: RequestsStatusTabKey
 }
 
 export async function RequestsPageTemplate({
   filters = {},
+  activeTabKey,
 }: RequestsPageTemplateProps) {
   const queryClient = getQueryClient()
   await queryClient.prefetchQuery({
@@ -57,6 +63,8 @@ export async function RequestsPageTemplate({
           Create request
         </Link>
       </header>
+
+      <RequestsStatusTabList activeKey={activeTabKey} />
 
       <HydrationBoundary state={dehydrate(queryClient)}>
         <RequestList filters={filters} />
