@@ -61,6 +61,12 @@ export async function DashboardPageTemplate() {
       href: '/requests?status=APPROVED' as const,
       description: 'Requests that made it through.',
     },
+    {
+      label: 'Rejected',
+      status: RequestStatus.REJECTED,
+      href: '/requests?status=REJECTED' as const,
+      description: 'Requests that need revisions.',
+    },
   ].map((item) => ({
     ...item,
     value: summaryByStatus.get(item.status) ?? 0,
@@ -103,7 +109,7 @@ export async function DashboardPageTemplate() {
       <div className="space-y-6">
         <div className="space-y-3">
           <h2 className="text-foreground text-lg font-medium">My requests</h2>
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             {myRequestCards.map((item) => (
               <Link
                 key={item.label}
