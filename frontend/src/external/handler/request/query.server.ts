@@ -4,8 +4,8 @@ import { ZodError } from 'zod'
 
 import { getSessionServer } from '@/features/auth/servers/session.server'
 
-import { AccountId } from '@/external/domain'
-import { requestListSchema } from '@/external/dto/request'
+import { AccountId, RequestId } from '@/external/domain'
+import { requestDetailSchema, requestListSchema } from '@/external/dto/request'
 
 import {
   requestRepository,
@@ -14,6 +14,8 @@ import {
 } from './shared'
 
 import type {
+  RequestDetailInput,
+  RequestDetailResponse,
   RequestListInput,
   RequestListResponse,
 } from '@/external/dto/request'
@@ -40,9 +42,17 @@ export async function listMyRequestsServer(
       validated.offset
     )
 
+    const requester = await accountManagementService.findAccountById(
+      currentAccount.id
+    )
+
     return {
       success: true,
-      requests: requests.map(mapRequestToDto),
+      requests: requests.map((request) =>
+        mapRequestToDto(request, {
+          requesterName: requester?.getName() ?? null,
+        })
+      ),
       total: requests.length,
       limit: validated.limit,
       offset: validated.offset,
@@ -72,9 +82,18 @@ export async function listAssignedRequestsServer(
       validated.offset
     )
 
+    const assigneeAccount = await accountManagementService.findAccountById(
+      currentAccount.id
+    )
+
     return {
       success: true,
-      requests: requests.map(mapRequestToDto),
+      requests: requests.map((request) =>
+        mapRequestToDto(request, {
+          requesterName: null,
+          assigneeName: assigneeAccount?.getName() ?? null,
+        })
+      ),
       total: requests.length,
       limit: validated.limit,
       offset: validated.offset,
@@ -114,7 +133,11 @@ export async function listAllRequestsServer(
 
     return {
       success: true,
-      requests: requests.map(mapRequestToDto),
+      requests: requests.map((request) =>
+        mapRequestToDto(request, {
+          requesterName: null,
+        })
+      ),
       total: requests.length,
       limit: validated.limit,
       offset: validated.offset,
@@ -130,7 +153,79 @@ export async function listAllRequestsServer(
   }
 }
 
+export async function getRequestDetailServer(
+  params: RequestDetailInput
+): Promise<RequestDetailResponse> {
+  try {
+    const currentAccount = await requireSessionAccount()
+    const validated = requestDetailSchema.parse(params)
+
+    const account = await accountManagementService.findAccountById(
+      currentAccount.id
+    )
+    if (!account) {
+      return { success: false, error: 'Account not found' }
+    }
+
+    const request = await requestRepository.findById(
+      RequestId.create(validated.requestId)
+    )
+
+    if (!request) {
+      return { success: false, error: 'Request not found' }
+    }
+
+    const isRequester = request
+      .getRequesterId()
+      .equals(AccountId.create(currentAccount.id))
+    const assigneeId = request.getAssigneeId()
+    const isAssignee =
+      assigneeId?.equals(AccountId.create(currentAccount.id)) ?? false
+    const isAdmin = account.isAdmin()
+
+    if (!isRequester && !isAssignee && !isAdmin) {
+      return { success: false, error: 'Insufficient permissions' }
+    }
+
+    const requesterAccount = await accountManagementService.findAccountById(
+      request.getRequesterId().getValue()
+    )
+
+    const assigneeIdValue = request.getAssigneeId()?.getValue()
+    const assigneeAccount = assigneeIdValue
+      ? await accountManagementService.findAccountById(assigneeIdValue)
+      : null
+
+    const reviewerIdValue = request.getReviewerId()?.getValue()
+    const reviewerAccount = reviewerIdValue
+      ? await accountManagementService.findAccountById(reviewerIdValue)
+      : null
+
+    return {
+      success: true,
+      request: mapRequestToDto(request, {
+        requesterName: requesterAccount?.getName() ?? null,
+        assigneeName: assigneeAccount?.getName() ?? null,
+        reviewerName: reviewerAccount?.getName() ?? null,
+      }),
+    }
+  } catch (error) {
+    if (error instanceof ZodError) {
+      return { success: false, error: 'Invalid input data' }
+    }
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : 'Failed to load request detail',
+    }
+  }
+}
+
 export type {
+  RequestDetailInput,
+  RequestDetailResponse,
   RequestListInput,
   RequestListResponse,
 } from '@/external/dto/request'

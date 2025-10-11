@@ -53,7 +53,7 @@ export async function RequestsPageTemplate({
         </div>
         <Link
           href="/requests/new"
-          className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/80"
+          className="bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:ring-primary/80 inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium shadow transition focus-visible:ring-2 focus-visible:outline-none"
         >
           Create request
         </Link>

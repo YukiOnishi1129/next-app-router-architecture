@@ -1,7 +1,10 @@
 'use client'
 
+import Link from 'next/link'
+
 import { Card } from '@/shared/components/ui/card'
 import { RequestStatusBadge } from '@/shared/components/ui/request-status-badge'
+import { formatDateTime, formatEnumLabel } from '@/shared/lib/format'
 
 import type { RequestSummary } from '@/features/requests/types'
 
@@ -11,24 +14,6 @@ type RequestListPresenterProps = {
   isRefetching?: boolean
   errorMessage?: string
 }
-
-const formatDate = (value: string | null) => {
-  if (!value) {
-    return '—'
-  }
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) {
-    return '—'
-  }
-  return date.toLocaleDateString()
-}
-
-const formatLabel = (value: string) =>
-  value
-    .toLowerCase()
-    .split('_')
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(' ')
 
 export function RequestListPresenter({
   requests,
@@ -67,22 +52,38 @@ export function RequestListPresenter({
       ) : null}
       <div className="grid gap-4 md:grid-cols-2">
         {requests.map((request) => (
-          <Card key={request.id} className="flex flex-col gap-2 p-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-medium">{request.title}</h3>
-              <RequestStatusBadge status={request.status} />
-            </div>
-            <dl className="text-muted-foreground grid grid-cols-2 gap-1 text-xs">
-              <dt>Type</dt>
-              <dd className="text-right">{formatLabel(request.type)}</dd>
-              <dt>Priority</dt>
-              <dd className="text-right">{formatLabel(request.priority)}</dd>
-              <dt>Created</dt>
-              <dd className="text-right">{formatDate(request.createdAt)}</dd>
-              <dt>Submitted</dt>
-              <dd className="text-right">{formatDate(request.submittedAt)}</dd>
-            </dl>
-          </Card>
+          <Link
+            key={request.id}
+            href={`/requests/${request.id}`}
+            className="transition hover:-translate-y-0.5 hover:shadow-md"
+          >
+            <Card className="flex h-full flex-col gap-2 p-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-medium">{request.title}</h3>
+                <RequestStatusBadge status={request.status} />
+              </div>
+              <dl className="text-muted-foreground grid grid-cols-2 gap-1 text-xs">
+                <dt>Type</dt>
+                <dd className="text-right">{formatEnumLabel(request.type)}</dd>
+                <dt>Priority</dt>
+                <dd className="text-right">
+                  {formatEnumLabel(request.priority)}
+                </dd>
+                <dt>Created</dt>
+                <dd className="text-right">
+                  {formatDateTime(request.createdAt, {
+                    dateStyle: 'medium',
+                  })}
+                </dd>
+                <dt>Submitted</dt>
+                <dd className="text-right">
+                  {formatDateTime(request.submittedAt, {
+                    dateStyle: 'medium',
+                  })}
+                </dd>
+              </dl>
+            </Card>
+          </Link>
         ))}
       </div>
     </div>

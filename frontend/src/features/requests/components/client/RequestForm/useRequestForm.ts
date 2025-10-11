@@ -15,6 +15,8 @@ import {
   mapCreateRequestFormToInput,
 } from '@/features/requests/schemas'
 
+import { formatEnumLabel } from '@/shared/lib/format'
+
 import {
   RequestPriority,
   RequestType,
@@ -22,13 +24,6 @@ import {
 
 import type { CreateRequestFormValues } from '@/features/requests/schemas'
 import type { FormEvent } from 'react'
-
-const formatEnumLabel = (value: string) =>
-  value
-    .toLowerCase()
-    .split('_')
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(' ')
 
 export const useRequestForm = () => {
   const form = useForm<CreateRequestFormValues>({

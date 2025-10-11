@@ -1,9 +1,11 @@
 import type {
+  RequestDetailResponse,
   RequestDto,
   RequestListInput,
   RequestListResponse,
 } from '@/external/dto/request'
 import type {
+  RequestDetail,
   RequestFilterInput,
   RequestSummary,
 } from '@/features/requests/types'
@@ -66,5 +68,35 @@ export function mapRequestDtoToSummary(request: RequestDto): RequestSummary {
     priority: request.priority,
     createdAt: request.createdAt,
     submittedAt: request.submittedAt ?? null,
+  }
+}
+
+export function ensureRequestDetailResponse(
+  response: RequestDetailResponse
+): RequestDto {
+  if (!response.success || !response.request) {
+    throw new Error(response.error ?? 'Failed to load request detail')
+  }
+  return response.request
+}
+
+export function mapRequestDtoToDetail(request: RequestDto): RequestDetail {
+  return {
+    id: request.id,
+    title: request.title,
+    description: request.description,
+    status: request.status,
+    type: request.type,
+    priority: request.priority,
+    requesterId: request.requesterId,
+    requesterName: request.requesterName ?? null,
+    assigneeId: request.assigneeId ?? null,
+    assigneeName: request.assigneeName ?? null,
+    reviewerId: request.reviewerId ?? null,
+    reviewerName: request.reviewerName ?? null,
+    createdAt: request.createdAt,
+    updatedAt: request.updatedAt,
+    submittedAt: request.submittedAt ?? null,
+    reviewedAt: request.reviewedAt ?? null,
   }
 }

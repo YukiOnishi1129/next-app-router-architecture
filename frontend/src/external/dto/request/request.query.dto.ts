@@ -17,3 +17,15 @@ export type RequestListResponse = {
   limit?: number
   offset?: number
 }
+
+export const requestDetailSchema = z.object({
+  requestId: z.uuid(),
+})
+
+export type RequestDetailInput = z.input<typeof requestDetailSchema>
+
+export type RequestDetailResponse = {
+  success: boolean
+  error?: string
+  request?: RequestDto
+}

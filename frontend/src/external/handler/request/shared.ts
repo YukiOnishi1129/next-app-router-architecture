@@ -26,7 +26,14 @@ export const requestRepository = new RequestRepository()
 
 export type { RequestDto } from '@/external/dto/request'
 
-export function mapRequestToDto(request: Request): RequestDto {
+export function mapRequestToDto(
+  request: Request,
+  options?: {
+    requesterName?: string | null
+    assigneeName?: string | null
+    reviewerName?: string | null
+  }
+): RequestDto {
   const json = request.toJSON()
   return {
     id: json.id,
@@ -36,11 +43,14 @@ export function mapRequestToDto(request: Request): RequestDto {
     priority: json.priority,
     status: json.status,
     requesterId: json.requesterId,
+    requesterName: options?.requesterName ?? null,
     assigneeId: json.assigneeId,
+    assigneeName: options?.assigneeName ?? null,
     createdAt: json.createdAt,
     updatedAt: json.updatedAt,
     submittedAt: json.submittedAt,
     reviewedAt: json.reviewedAt,
     reviewerId: json.reviewerId,
+    reviewerName: options?.reviewerName ?? null,
   }
 }

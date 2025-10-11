@@ -49,14 +49,14 @@ export async function createRequestServer(
     const currentAccount = await requireSessionAccount()
     const validated = createRequestSchema.parse(data)
 
-    const user = await accountManagementService.findAccountById(
+    const account = await accountManagementService.findAccountById(
       currentAccount.id
     )
-    if (!user) {
+    if (!account) {
       return { success: false, error: 'Account not found' }
     }
 
-    const request = await workflowService.createRequest(user, {
+    const request = await workflowService.createRequest(account, {
       title: validated.title,
       description: validated.description,
       type: validated.type,
@@ -66,7 +66,9 @@ export async function createRequestServer(
 
     return {
       success: true,
-      request: mapRequestToDto(request),
+      request: mapRequestToDto(request, {
+        requesterName: account.getName(),
+      }),
     }
   } catch (error) {
     if (error instanceof ZodError) {
@@ -87,16 +89,16 @@ export async function updateRequestServer(
     const currentAccount = await requireSessionAccount()
     const validated = updateRequestSchema.parse(data)
 
-    const user = await accountManagementService.findAccountById(
+    const account = await accountManagementService.findAccountById(
       currentAccount.id
     )
-    if (!user) {
+    if (!account) {
       return { success: false, error: 'Account not found' }
     }
 
     const request = await workflowService.updateRequest(
       validated.requestId,
-      user,
+      account,
       {
         title: validated.title,
         description: validated.description,
@@ -107,7 +109,11 @@ export async function updateRequestServer(
 
     return {
       success: true,
-      request: mapRequestToDto(request),
+      request: mapRequestToDto(request, {
+        requesterName: request.getRequesterId().equals(account.getId())
+          ? account.getName()
+          : null,
+      }),
     }
   } catch (error) {
     if (error instanceof ZodError) {
@@ -128,21 +134,25 @@ export async function submitRequestServer(
     const currentAccount = await requireSessionAccount()
     const validated = submitRequestSchema.parse(data)
 
-    const user = await accountManagementService.findAccountById(
+    const account = await accountManagementService.findAccountById(
       currentAccount.id
     )
-    if (!user) {
+    if (!account) {
       return { success: false, error: 'Account not found' }
     }
 
     const request = await workflowService.submitRequest(
       validated.requestId,
-      user
+      account
     )
 
     return {
       success: true,
-      request: mapRequestToDto(request),
+      request: mapRequestToDto(request, {
+        requesterName: request.getRequesterId().equals(account.getId())
+          ? account.getName()
+          : null,
+      }),
     }
   } catch (error) {
     if (error instanceof ZodError) {
@@ -177,7 +187,9 @@ export async function reviewRequestServer(
 
     return {
       success: true,
-      request: mapRequestToDto(request),
+      request: mapRequestToDto(request, {
+        reviewerName: reviewer.getName(),
+      }),
     }
   } catch (error) {
     if (error instanceof ZodError) {
