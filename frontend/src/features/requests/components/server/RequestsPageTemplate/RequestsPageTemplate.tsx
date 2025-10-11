@@ -1,3 +1,5 @@
+import Link from 'next/link'
+
 import { dehydrate, HydrationBoundary } from '@tanstack/react-query'
 
 import { RequestList } from '@/features/requests/components/client/RequestList'
@@ -42,11 +44,19 @@ export async function RequestsPageTemplate({
 
   return (
     <section className="space-y-6 px-6 py-8">
-      <header className="space-y-2">
-        <h1 className="text-2xl font-semibold">Requests</h1>
-        <p className="text-muted-foreground text-sm">
-          Track and manage your pending and completed approval requests.
-        </p>
+      <header className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div className="space-y-2">
+          <h1 className="text-2xl font-semibold">Requests</h1>
+          <p className="text-muted-foreground text-sm">
+            Track and manage your pending and completed approval requests.
+          </p>
+        </div>
+        <Link
+          href="/requests/new"
+          className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/80"
+        >
+          Create request
+        </Link>
       </header>
 
       <HydrationBoundary state={dehydrate(queryClient)}>

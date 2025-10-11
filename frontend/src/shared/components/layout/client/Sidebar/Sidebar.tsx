@@ -7,6 +7,7 @@ import { cn } from '@/shared/lib/utils'
 
 const navItems = [
   { href: '/requests', label: 'My Requests' },
+  { href: '/requests/new', label: 'Create Request' },
   { href: '/approvals', label: 'Approvals' },
   { href: '/dashboard', label: 'Dashboard' },
 ] as const
