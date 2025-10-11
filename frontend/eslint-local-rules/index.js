@@ -5,4 +5,5 @@ module.exports = {
   'require-server-only': require('./require-server-only'),
   'restrict-action-imports': require('./restrict-action-imports'),
   'use-nextjs-helpers': require('./use-nextjs-helpers'),
+  'no-external-domain-imports': require('./no-external-domain-imports'),
 }
