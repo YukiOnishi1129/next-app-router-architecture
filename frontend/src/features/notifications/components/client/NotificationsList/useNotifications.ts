@@ -2,28 +2,36 @@
 
 import { useMemo } from 'react'
 
+import { useMarkNotificationReadMutation } from '@/features/notifications/hooks/mutation/useMarkNotificationReadMutation'
 import { useNotificationsQuery } from '@/features/notifications/hooks/query/useNotificationsQuery'
 import { mapNotificationDto } from '@/features/notifications/queries/notifications.helpers'
 
-import type { NotificationItem } from '@/features/notifications/types'
-
 export const useNotifications = (unreadOnly = false) => {
-  const { data, isLoading, isFetching, error } =
+  const { data, isLoading, isFetching, error, refetch } =
     useNotificationsQuery(unreadOnly)
+  const markReadMutation = useMarkNotificationReadMutation()
 
-  const notifications = useMemo<NotificationItem[]>(() => {
+  const { notifications, unreadNotifications } = useMemo(() => {
     if (!data?.notifications) {
-      return []
+      return { notifications: [], unreadNotifications: [] }
     }
-    return data.notifications.map(mapNotificationDto)
+    const mapped = data.notifications.map(mapNotificationDto)
+    return {
+      notifications: mapped,
+      unreadNotifications: mapped.filter((notification) => !notification.read),
+    }
   }, [data])
 
   return {
     notifications,
+    unreadNotifications,
     total: data?.total ?? notifications.length,
     unreadCount: data?.unreadCount ?? 0,
     isLoading: isLoading && !data,
     isRefetching: isFetching && !!data,
     errorMessage: error instanceof Error ? error.message : undefined,
+    refetch,
+    markRead: markReadMutation.mutateAsync,
+    isMarkingRead: markReadMutation.isPending,
   }
 }
