@@ -1,5 +1,9 @@
 'use client'
 
+import { useMemo } from 'react'
+
+import { PendingApprovalCard } from '@/features/approvals/components/client/PendingApprovalCard'
+
 import { PendingApprovalsListPresenter } from './PendingApprovalsListPresenter'
 import { usePendingApprovals } from './usePendingApprovals'
 
@@ -9,30 +13,29 @@ export function PendingApprovalsListContainer() {
     isLoading,
     isRefetching,
     errorMessage,
-    onApprove,
-    onReject,
-    approvingRequestId,
-    rejectingRequestId,
-    approveError,
-    rejectError,
     successMessage,
-    lastAction,
+    handleActionComplete,
   } = usePendingApprovals()
+
+  const cards = useMemo(
+    () =>
+      approvals.map((approval) => (
+        <PendingApprovalCard
+          key={approval.id}
+          approval={approval}
+          onActionComplete={handleActionComplete}
+        />
+      )),
+    [approvals, handleActionComplete]
+  )
 
   return (
     <PendingApprovalsListPresenter
-      approvals={approvals}
+      cards={cards}
       isLoading={isLoading}
       isRefetching={isRefetching}
       errorMessage={errorMessage}
-      onApprove={onApprove}
-      onReject={onReject}
-      approvingRequestId={approvingRequestId}
-      rejectingRequestId={rejectingRequestId}
-      approveError={approveError}
-      rejectError={rejectError}
       successMessage={successMessage}
-      lastAction={lastAction}
     />
   )
 }
