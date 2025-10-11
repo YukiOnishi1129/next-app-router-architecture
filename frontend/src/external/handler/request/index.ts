@@ -32,6 +32,7 @@ export {
   listMyRequestsServer,
   listAssignedRequestsServer,
   listAllRequestsServer,
+  getRequestHistoryServer,
 } from './query.server'
 
 // Backwards-compatible aliases
@@ -53,4 +54,9 @@ export {
 } from './query.action'
 
 export type { RequestCommandResponse } from './command.server'
-export type { RequestListInput, RequestListResponse } from './query.server'
+export type {
+  RequestListInput,
+  RequestListResponse,
+  RequestHistoryInput,
+  RequestHistoryResponse,
+} from './query.server'

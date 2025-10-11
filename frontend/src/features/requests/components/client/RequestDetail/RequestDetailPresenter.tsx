@@ -1,5 +1,9 @@
 'use client'
 
+import { useEffect, useState } from 'react'
+
+import { RequestHistory } from '@/features/requests/components/client/RequestHistory'
+
 import { Button } from '@/shared/components/ui/button'
 import { Card } from '@/shared/components/ui/card'
 import { RequestStatusBadge } from '@/shared/components/ui/request-status-badge'
@@ -18,6 +22,16 @@ type RequestDetailPresenterProps = {
   onSubmit?: () => void
   isSubmitting?: boolean
   submitError?: string
+  canApprove?: boolean
+  canReject?: boolean
+  onApprove?: () => void
+  onReject?: (reason: string) => void
+  isApproving?: boolean
+  isRejecting?: boolean
+  approveError?: string
+  rejectError?: string
+  approveSuccessMessage?: string | null
+  rejectSuccessMessage?: string | null
 }
 
 export function RequestDetailPresenter({
@@ -30,7 +44,62 @@ export function RequestDetailPresenter({
   onSubmit,
   isSubmitting = false,
   submitError,
+  canApprove = false,
+  canReject = false,
+  onApprove,
+  onReject,
+  isApproving = false,
+  isRejecting = false,
+  approveError,
+  rejectError,
+  approveSuccessMessage = null,
+  rejectSuccessMessage = null,
 }: RequestDetailPresenterProps) {
+  const [showRejectForm, setShowRejectForm] = useState(false)
+  const [rejectReason, setRejectReason] = useState('')
+  const [rejectFormError, setRejectFormError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!canReject) {
+      setShowRejectForm(false)
+      setRejectReason('')
+      setRejectFormError(null)
+    }
+  }, [canReject])
+
+  useEffect(() => {
+    if (rejectSuccessMessage) {
+      setShowRejectForm(false)
+      setRejectReason('')
+      setRejectFormError(null)
+    }
+  }, [rejectSuccessMessage])
+
+  const handleApproveClick = () => {
+    if (!onApprove) {
+      return
+    }
+    onApprove()
+  }
+
+  const handleRejectToggle = () => {
+    setShowRejectForm((prev) => !prev)
+    setRejectFormError(null)
+  }
+
+  const handleRejectSubmit = () => {
+    if (!onReject) {
+      return
+    }
+    const trimmed = rejectReason.trim()
+    if (!trimmed) {
+      setRejectFormError('Please provide a rejection reason.')
+      return
+    }
+    setRejectFormError(null)
+    onReject(trimmed)
+  }
+
   if (errorMessage) {
     return (
       <div className="text-destructive border-destructive/40 bg-destructive/10 rounded-md border p-4 text-sm">
@@ -61,11 +130,41 @@ export function RequestDetailPresenter({
         <p className="text-muted-foreground text-xs">Refreshing…</p>
       ) : null}
 
+      {approveSuccessMessage ? (
+        <div className="rounded-md border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">
+          {approveSuccessMessage}
+        </div>
+      ) : null}
+      {rejectSuccessMessage ? (
+        <div className="rounded-md border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">
+          {rejectSuccessMessage}
+        </div>
+      ) : null}
+
       <header className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div className="space-y-1">
           <h1 className="text-2xl font-semibold">{request.title}</h1>
         </div>
         <div className="flex items-center gap-3">
+          {canApprove ? (
+            <Button
+              type="button"
+              disabled={isApproving || isRejecting}
+              onClick={handleApproveClick}
+            >
+              {isApproving ? 'Approving…' : 'Approve'}
+            </Button>
+          ) : null}
+          {canReject ? (
+            <Button
+              type="button"
+              variant="outline"
+              disabled={isApproving || isRejecting}
+              onClick={handleRejectToggle}
+            >
+              {showRejectForm ? 'Cancel' : 'Reject'}
+            </Button>
+          ) : null}
           {canSubmit ? (
             <Button
               type="button"
@@ -80,10 +179,61 @@ export function RequestDetailPresenter({
         </div>
       </header>
 
+      {approveError ? (
+        <div className="text-destructive border-destructive/40 bg-destructive/10 rounded-md border p-4 text-sm">
+          {approveError}
+        </div>
+      ) : null}
+      {rejectError ? (
+        <div className="text-destructive border-destructive/40 bg-destructive/10 rounded-md border p-4 text-sm">
+          {rejectError}
+        </div>
+      ) : null}
+
       {submitError ? (
         <div className="text-destructive border-destructive/40 bg-destructive/10 rounded-md border p-4 text-sm">
           {submitError}
         </div>
+      ) : null}
+
+      {showRejectForm ? (
+        <Card className="space-y-3 p-4">
+          <section className="space-y-2">
+            <div>
+              <h2 className="text-base font-semibold">Reject request</h2>
+              <p className="text-muted-foreground text-xs">
+                Share a brief reason so the requester knows what to adjust.
+              </p>
+            </div>
+            <textarea
+              className="border-border focus-visible:ring-primary/80 bg-background min-h-[120px] w-full rounded-md border p-2 text-sm focus-visible:ring-2 focus-visible:outline-none"
+              value={rejectReason}
+              onChange={(event) => setRejectReason(event.target.value)}
+              disabled={isRejecting}
+              placeholder="Reason for rejecting this request"
+            />
+            {rejectFormError ? (
+              <p className="text-destructive text-xs">{rejectFormError}</p>
+            ) : null}
+          </section>
+          <div className="flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={handleRejectToggle}
+              disabled={isRejecting}
+            >
+              Back
+            </Button>
+            <Button
+              type="button"
+              disabled={isRejecting || !rejectReason.trim()}
+              onClick={handleRejectSubmit}
+            >
+              {isRejecting ? 'Rejecting…' : 'Submit rejection'}
+            </Button>
+          </div>
+        </Card>
       ) : null}
 
       <Card className="space-y-4 p-6">
@@ -147,6 +297,8 @@ export function RequestDetailPresenter({
           </p>
         </Card>
       ) : null}
+
+      <RequestHistory requestId={request.id} />
     </div>
   )
 }

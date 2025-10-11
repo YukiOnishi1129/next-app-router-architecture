@@ -21,4 +21,8 @@ export interface NotificationRepository
     recipientId: AccountId,
     limit?: number
   ): Promise<Notification[]>
+  findByRelatedEntity(
+    relatedEntityType: string,
+    relatedEntityId: string
+  ): Promise<Notification[]>
 }

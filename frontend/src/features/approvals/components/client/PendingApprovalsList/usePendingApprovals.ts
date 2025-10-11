@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { useApproveRequestMutation } from '@/features/approvals/hooks/mutation/useApproveRequestMutation'
 import { useRejectRequestMutation } from '@/features/approvals/hooks/mutation/useRejectRequestMutation'
@@ -14,10 +14,23 @@ type ActionError = {
   message: string
 } | null
 
+type LastAction =
+  | {
+      type: 'approve'
+      requestId: string
+    }
+  | {
+      type: 'reject'
+      requestId: string
+    }
+  | null
+
 export const usePendingApprovals = () => {
   const { data, isLoading, isFetching, error } = usePendingApprovalsQuery()
   const approveMutation = useApproveRequestMutation()
   const rejectMutation = useRejectRequestMutation()
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [lastAction, setLastAction] = useState<LastAction>(null)
 
   const approvals = useMemo<PendingApproval[]>(() => {
     if (!data) {
@@ -38,21 +51,55 @@ export const usePendingApprovals = () => {
   )
 
   const handleReject = useCallback(
-    (requestId: string) => {
+    (requestId: string, reason: string) => {
       if (rejectMutation.isPending) {
         return
       }
-      const reason = window.prompt(
-        'Please provide a reason for rejecting this request.'
-      )
-      if (!reason || !reason.trim()) {
-        return
-      }
       rejectMutation.reset()
-      rejectMutation.mutate({ requestId, reason: reason.trim() })
+      rejectMutation.mutate({ requestId, reason })
     },
     [rejectMutation]
   )
+
+  useEffect(() => {
+    if (approveMutation.isSuccess && approveMutation.variables) {
+      setLastAction({
+        type: 'approve',
+        requestId: approveMutation.variables.requestId,
+      })
+      setSuccessMessage('Request approved successfully.')
+    }
+  }, [approveMutation.isSuccess, approveMutation.variables])
+
+  useEffect(() => {
+    if (rejectMutation.isSuccess && rejectMutation.variables) {
+      setLastAction({
+        type: 'reject',
+        requestId: rejectMutation.variables.requestId,
+      })
+      setSuccessMessage('Request rejected successfully.')
+    }
+  }, [rejectMutation.isSuccess, rejectMutation.variables])
+
+  useEffect(() => {
+    if (!successMessage) {
+      return
+    }
+    const timer = window.setTimeout(() => {
+      setSuccessMessage(null)
+    }, 4000)
+    return () => window.clearTimeout(timer)
+  }, [successMessage])
+
+  useEffect(() => {
+    if (!lastAction) {
+      return
+    }
+    const timer = window.setTimeout(() => {
+      setLastAction(null)
+    }, 4000)
+    return () => window.clearTimeout(timer)
+  }, [lastAction])
 
   const approvingRequestId = approveMutation.isPending
     ? (approveMutation.variables?.requestId ?? null)
@@ -88,5 +135,7 @@ export const usePendingApprovals = () => {
     rejectingRequestId,
     approveError,
     rejectError,
+    successMessage,
+    lastAction,
   }
 }

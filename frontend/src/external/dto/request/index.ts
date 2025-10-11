@@ -26,5 +26,8 @@ export {
   requestDetailSchema,
   type RequestDetailInput,
   type RequestDetailResponse,
+  requestHistorySchema,
+  type RequestHistoryInput,
+  type RequestHistoryResponse,
   type PendingApprovalListResponse,
 } from './request.query.dto'

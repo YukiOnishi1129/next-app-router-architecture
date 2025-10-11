@@ -1,2 +1,3 @@
 export * from './createRequest.action'
 export * from './submitRequest.action'
+export * from './getRequestHistory.action'

@@ -12,4 +12,6 @@ export const requestKeys = {
     [...requestKeys.all, 'drafts', requesterId] as const,
   summary: (requesterId: string) =>
     [...requestKeys.all, 'summary', requesterId] as const,
+  history: (requestId: string) =>
+    [...requestKeys.all, 'history', requestId] as const,
 }

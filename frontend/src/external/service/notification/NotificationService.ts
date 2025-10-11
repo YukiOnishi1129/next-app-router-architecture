@@ -433,6 +433,13 @@ export class NotificationService {
   }
 
   /**
+   * Get notifications related to a specific request
+   */
+  async getNotificationsForRequest(requestId: string): Promise<Notification[]> {
+    return this.notificationRepository.findByRelatedEntity('REQUEST', requestId)
+  }
+
+  /**
    * Mark notification as read
    */
   async markAsRead(

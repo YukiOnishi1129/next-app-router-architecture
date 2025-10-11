@@ -3,6 +3,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 
 import { approvalKeys } from '@/features/approvals/queries/keys'
+import { notificationKeys } from '@/features/notifications/queries/keys'
 import { requestKeys } from '@/features/requests/queries/keys'
 
 import { approveRequestAction } from '@/external/handler/request/command.action'
@@ -28,6 +29,12 @@ export const useApproveRequestMutation = () => {
         }),
         queryClient.invalidateQueries({
           queryKey: requestKeys.all,
+        }),
+        queryClient.invalidateQueries({
+          queryKey: requestKeys.history(variables.requestId),
+        }),
+        queryClient.invalidateQueries({
+          queryKey: notificationKeys.list(),
         }),
       ])
     },

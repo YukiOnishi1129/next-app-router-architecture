@@ -15,6 +15,8 @@ export function PendingApprovalsListContainer() {
     rejectingRequestId,
     approveError,
     rejectError,
+    successMessage,
+    lastAction,
   } = usePendingApprovals()
 
   return (
@@ -29,6 +31,8 @@ export function PendingApprovalsListContainer() {
       rejectingRequestId={rejectingRequestId}
       approveError={approveError}
       rejectError={rejectError}
+      successMessage={successMessage}
+      lastAction={lastAction}
     />
   )
 }
