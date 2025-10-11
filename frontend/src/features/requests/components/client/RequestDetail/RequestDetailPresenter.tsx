@@ -1,5 +1,6 @@
 'use client'
 
+import { Button } from '@/shared/components/ui/button'
 import { Card } from '@/shared/components/ui/card'
 import { RequestStatusBadge } from '@/shared/components/ui/request-status-badge'
 import { formatDateTime, formatEnumLabel } from '@/shared/lib/format'
@@ -13,6 +14,10 @@ type RequestDetailPresenterProps = {
   isRefetching?: boolean
   errorMessage?: string
   highlightCommentId?: string | null
+  canSubmit?: boolean
+  onSubmit?: () => void
+  isSubmitting?: boolean
+  submitError?: string
 }
 
 export function RequestDetailPresenter({
@@ -21,6 +26,10 @@ export function RequestDetailPresenter({
   isRefetching,
   errorMessage,
   highlightCommentId,
+  canSubmit = false,
+  onSubmit,
+  isSubmitting = false,
+  submitError,
 }: RequestDetailPresenterProps) {
   if (errorMessage) {
     return (
@@ -56,8 +65,26 @@ export function RequestDetailPresenter({
         <div className="space-y-1">
           <h1 className="text-2xl font-semibold">{request.title}</h1>
         </div>
-        <RequestStatusBadge status={request.status} />
+        <div className="flex items-center gap-3">
+          {canSubmit ? (
+            <Button
+              type="button"
+              variant="default"
+              disabled={isSubmitting}
+              onClick={onSubmit}
+            >
+              {isSubmitting ? 'Submitting…' : 'Submit request'}
+            </Button>
+          ) : null}
+          <RequestStatusBadge status={request.status} />
+        </div>
       </header>
+
+      {submitError ? (
+        <div className="text-destructive border-destructive/40 bg-destructive/10 rounded-md border p-4 text-sm">
+          {submitError}
+        </div>
+      ) : null}
 
       <Card className="space-y-4 p-6">
         <section className="space-y-1">

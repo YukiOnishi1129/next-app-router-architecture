@@ -18,6 +18,10 @@ export function RequestDetailContainer({
     isRefetching,
     errorMessage,
     highlightCommentId: highlight,
+    canSubmit,
+    onSubmit,
+    isSubmitting,
+    submitError,
   } = useRequestDetail({ requestId, highlightCommentId })
 
   return (
@@ -27,6 +31,10 @@ export function RequestDetailContainer({
       isRefetching={isRefetching}
       errorMessage={errorMessage}
       highlightCommentId={highlight}
+      canSubmit={canSubmit}
+      onSubmit={onSubmit}
+      isSubmitting={isSubmitting}
+      submitError={submitError}
     />
   )
 }
