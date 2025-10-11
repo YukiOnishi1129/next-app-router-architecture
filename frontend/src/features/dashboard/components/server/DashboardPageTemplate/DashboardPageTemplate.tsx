@@ -2,13 +2,27 @@ import { Card } from '@/shared/components/ui/card'
 import { RequestStatusBadge } from '@/shared/components/ui/request-status-badge'
 
 import { RequestStatus } from '@/external/domain/request/request-status'
+import { getRequestSummaryServer } from '@/external/handler/request/query.server'
 
 export async function DashboardPageTemplate() {
+  const requestSummary = await getRequestSummaryServer()
+
+  if (!requestSummary.success || !requestSummary.summary) {
+    throw new Error(requestSummary.error ?? 'Failed to load dashboard summary')
+  }
+
+  const summaryByStatus = new Map(
+    requestSummary.summary.byStatus.map((entry) => [entry.status, entry.count])
+  )
+
   const stats = [
-    { label: 'Draft requests', value: 3, status: RequestStatus.DRAFT },
-    { label: 'Submitted', value: 5, status: RequestStatus.SUBMITTED },
-    { label: 'Approved', value: 12, status: RequestStatus.APPROVED },
-  ]
+    { label: 'Draft requests', status: RequestStatus.DRAFT },
+    { label: 'Submitted', status: RequestStatus.SUBMITTED },
+    { label: 'Approved', status: RequestStatus.APPROVED },
+  ].map((item) => ({
+    ...item,
+    value: summaryByStatus.get(item.status) ?? 0,
+  }))
 
   return (
     <section className="space-y-6 px-6 py-8">

@@ -2,6 +2,7 @@
 
 import {
   getRequestDetailServer,
+  getRequestSummaryServer,
   listAllRequestsServer,
   listAssignedRequestsServer,
   listMyRequestsServer,
@@ -12,6 +13,7 @@ import type {
   RequestDetailResponse,
   RequestListInput,
   RequestListResponse,
+  RequestSummaryResponse,
 } from './query.server'
 
 export async function listMyRequestsAction(
@@ -38,9 +40,14 @@ export async function getRequestDetailAction(
   return getRequestDetailServer(params)
 }
 
+export async function getRequestSummaryAction(): Promise<RequestSummaryResponse> {
+  return getRequestSummaryServer()
+}
+
 export type {
   RequestDetailInput,
   RequestDetailResponse,
   RequestListInput,
   RequestListResponse,
+  RequestSummaryResponse,
 } from './query.server'

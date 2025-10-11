@@ -32,4 +32,7 @@ export {
   type RequestHistoryInput,
   type RequestHistoryResponse,
   type PendingApprovalListResponse,
+  type RequestSummary,
+  type RequestSummaryResponse,
+  type RequestSummaryStatusEntry,
 } from './request.query.dto'

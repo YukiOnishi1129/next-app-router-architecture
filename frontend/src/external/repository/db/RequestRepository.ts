@@ -1,4 +1,4 @@
-import { eq, desc, count } from 'drizzle-orm'
+import { eq, desc, count, and } from 'drizzle-orm'
 
 import { db } from '@/external/client/db/client'
 import { requests } from '@/external/client/db/schema'
@@ -119,6 +119,23 @@ export class RequestRepository implements IRequestRepository {
       .select({ value: count() })
       .from(requests)
       .where(eq(requests.status, status as DbRequestStatus))
+
+    return result[0]?.value ?? 0
+  }
+
+  async countByStatusForRequester(
+    status: RequestStatus,
+    requesterId: AccountId
+  ): Promise<number> {
+    const result = await db
+      .select({ value: count() })
+      .from(requests)
+      .where(
+        and(
+          eq(requests.status, status as DbRequestStatus),
+          eq(requests.requesterId, requesterId.getValue())
+        )
+      )
 
     return result[0]?.value ?? 0
   }

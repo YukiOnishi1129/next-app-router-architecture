@@ -25,4 +25,8 @@ export interface RequestRepository extends Repository<Request, RequestId> {
     offset?: number
   ): Promise<Request[]>
   countByStatus(status: RequestStatus): Promise<number>
+  countByStatusForRequester(
+    status: RequestStatus,
+    requesterId: AccountId
+  ): Promise<number>
 }

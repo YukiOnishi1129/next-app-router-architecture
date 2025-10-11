@@ -335,6 +335,38 @@ export class RequestWorkflowService {
     }
   }
 
+  async getRequesterStatusSummary(requesterId: string): Promise<{
+    total: number
+    byStatus: Array<{ status: RequestStatus; count: number }>
+  }> {
+    const statuses = [
+      RequestStatus.DRAFT,
+      RequestStatus.SUBMITTED,
+      RequestStatus.IN_REVIEW,
+      RequestStatus.APPROVED,
+      RequestStatus.REJECTED,
+      RequestStatus.CANCELLED,
+    ]
+
+    const counts = await Promise.all(
+      statuses.map((status) =>
+        this.requestRepository.countByStatusForRequester(
+          status,
+          AccountId.create(requesterId)
+        )
+      )
+    )
+
+    const byStatus = statuses.map((status, index) => ({
+      status,
+      count: counts[index] ?? 0,
+    }))
+
+    const total = counts.reduce((sum, value) => sum + value, 0)
+
+    return { total, byStatus }
+  }
+
   /**
    * Get requests by workflow status
    */

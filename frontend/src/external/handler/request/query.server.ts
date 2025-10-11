@@ -19,6 +19,7 @@ import {
   auditService,
   notificationService,
   mapAuditLogToDto,
+  workflowService,
 } from './shared'
 
 import type {
@@ -29,6 +30,7 @@ import type {
   RequestListResponse,
   RequestHistoryInput,
   RequestHistoryResponse,
+  RequestSummaryResponse,
 } from '@/external/dto/request'
 
 async function requireSessionAccount() {
@@ -347,7 +349,30 @@ export type {
   RequestListResponse,
   RequestHistoryInput,
   RequestHistoryResponse,
+  RequestSummaryResponse,
 } from '@/external/dto/request'
+
+export async function getRequestSummaryServer(): Promise<RequestSummaryResponse> {
+  try {
+    const currentAccount = await requireSessionAccount()
+    const summary = await workflowService.getRequesterStatusSummary(
+      currentAccount.id
+    )
+
+    return {
+      success: true,
+      summary,
+    }
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : 'Failed to load request summary',
+    }
+  }
+}
 
 export async function listPendingApprovalsServer(): Promise<PendingApprovalListResponse> {
   try {
