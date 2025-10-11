@@ -68,9 +68,6 @@ export class RequestWorkflowService {
       await this.auditService.logRequestCreated(request)
     })
 
-    // Send notifications (outside transaction)
-    await this.notificationService.notifyNewRequest(request)
-
     return request
   }
 
