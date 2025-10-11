@@ -28,9 +28,11 @@ export function RequestDetailContainer({
     onApprove,
     onReject,
     onReopen,
+    onReopenAndSubmit,
     isApproving,
     isRejecting,
     isReopening,
+    isResubmitting,
     approveError,
     rejectError,
     reopenError,
@@ -56,9 +58,11 @@ export function RequestDetailContainer({
       onApprove={onApprove}
       onReject={onReject}
       onReopen={onReopen}
+      onReopenAndSubmit={onReopenAndSubmit}
       isApproving={isApproving}
       isRejecting={isRejecting}
       isReopening={isReopening}
+      isResubmitting={isResubmitting}
       approveError={approveError}
       rejectError={rejectError}
       reopenError={reopenError}

@@ -39,6 +39,7 @@ export const useRequestDetail = ({
   const [reopenSuccessMessage, setReopenSuccessMessage] = useState<
     string | null
   >(null)
+  const [isResubmitting, setIsResubmitting] = useState(false)
 
   const detail = useMemo<RequestDetail | null>(
     () => (data ? mapRequestDtoToDetail(data) : null),
@@ -106,6 +107,32 @@ export const useRequestDetail = ({
     reopenMutation.mutate({ requestId })
   }, [canReopen, reopenMutation, requestId])
 
+  const handleReopenAndSubmit = useCallback(async () => {
+    if (
+      !canReopen ||
+      reopenMutation.isPending ||
+      submitMutation.isPending ||
+      isResubmitting
+    ) {
+      return
+    }
+    setIsResubmitting(true)
+    setApproveSuccessMessage(null)
+    setRejectSuccessMessage(null)
+    setReopenSuccessMessage(null)
+    try {
+      reopenMutation.reset()
+      await reopenMutation.mutateAsync({ requestId })
+      submitMutation.reset()
+      await submitMutation.mutateAsync()
+      setReopenSuccessMessage('Request resubmitted successfully.')
+    } catch {
+      // Errors bubble via mutation error states
+    } finally {
+      setIsResubmitting(false)
+    }
+  }, [canReopen, isResubmitting, reopenMutation, requestId, submitMutation])
+
   useEffect(() => {
     if (approveMutation.isSuccess) {
       setApproveSuccessMessage('Request approved successfully.')
@@ -119,9 +146,14 @@ export const useRequestDetail = ({
   }, [rejectMutation.isSuccess])
 
   useEffect(() => {
-    if (reopenMutation.isSuccess) {
-      setReopenSuccessMessage('Request reopened for editing.')
+    if (!reopenMutation.isSuccess) {
+      return
     }
+    setReopenSuccessMessage(
+      (current) =>
+        current ??
+        'Request reopened for editing. Make updates and submit again.'
+    )
   }, [reopenMutation.isSuccess])
 
   useEffect(() => {
@@ -167,9 +199,11 @@ export const useRequestDetail = ({
     onApprove: handleApprove,
     onReject: handleReject,
     onReopen: handleReopen,
+    onReopenAndSubmit: handleReopenAndSubmit,
     isApproving: approveMutation.isPending,
     isRejecting: rejectMutation.isPending,
     isReopening: reopenMutation.isPending,
+    isResubmitting,
     approveError:
       approveMutation.error instanceof Error
         ? approveMutation.error.message

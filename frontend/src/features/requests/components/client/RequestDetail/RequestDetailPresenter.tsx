@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react'
 
+import { useRouter } from 'next/navigation'
+
 import { RequestHistory } from '@/features/requests/components/client/RequestHistory'
 
 import { Button } from '@/shared/components/ui/button'
@@ -28,9 +30,11 @@ type RequestDetailPresenterProps = {
   onApprove?: () => void
   onReject?: (reason: string) => void
   onReopen?: () => void
+  onReopenAndSubmit?: () => void
   isApproving?: boolean
   isRejecting?: boolean
   isReopening?: boolean
+  isResubmitting?: boolean
   approveError?: string
   rejectError?: string
   reopenError?: string
@@ -55,9 +59,11 @@ export function RequestDetailPresenter({
   onApprove,
   onReject,
   onReopen,
+  onReopenAndSubmit,
   isApproving = false,
   isRejecting = false,
   isReopening = false,
+  isResubmitting = false,
   approveError,
   rejectError,
   reopenError,
@@ -68,6 +74,7 @@ export function RequestDetailPresenter({
   const [showRejectForm, setShowRejectForm] = useState(false)
   const [rejectReason, setRejectReason] = useState('')
   const [rejectFormError, setRejectFormError] = useState<string | null>(null)
+  const router = useRouter()
 
   useEffect(() => {
     if (!canReject) {
@@ -115,6 +122,13 @@ export function RequestDetailPresenter({
       return
     }
     onReopen()
+  }
+
+  const handleReopenAndSubmitClick = () => {
+    if (!onReopenAndSubmit) {
+      return
+    }
+    onReopenAndSubmit()
   }
 
   if (errorMessage) {
@@ -171,7 +185,9 @@ export function RequestDetailPresenter({
           {canApprove ? (
             <Button
               type="button"
-              disabled={isApproving || isRejecting || isReopening}
+              disabled={
+                isApproving || isRejecting || isReopening || isResubmitting
+              }
               onClick={handleApproveClick}
             >
               {isApproving ? 'Approving…' : 'Approve'}
@@ -181,27 +197,51 @@ export function RequestDetailPresenter({
             <Button
               type="button"
               variant="outline"
-              disabled={isApproving || isRejecting || isReopening}
+              disabled={
+                isApproving || isRejecting || isReopening || isResubmitting
+              }
               onClick={handleRejectToggle}
             >
               {showRejectForm ? 'Cancel' : 'Reject'}
+            </Button>
+          ) : null}
+          {canSubmit ? (
+            <Button
+              type="button"
+              variant="outline"
+              disabled={isSubmitting || isReopening || isResubmitting}
+              onClick={() => router.push(`/requests/${request.id}/edit`)}
+            >
+              Edit request
             </Button>
           ) : null}
           {canReopen ? (
             <Button
               type="button"
               variant="outline"
-              disabled={isReopening}
+              disabled={isReopening || isResubmitting}
               onClick={handleReopenClick}
             >
               {isReopening ? 'Reopening…' : 'Reopen request'}
+            </Button>
+          ) : null}
+          {canReopen ? (
+            <Button
+              type="button"
+              variant="outline"
+              disabled={
+                isReopening || isResubmitting || isApproving || isRejecting
+              }
+              onClick={handleReopenAndSubmitClick}
+            >
+              {isResubmitting ? 'Resubmitting…' : 'Reopen & submit'}
             </Button>
           ) : null}
           {canSubmit ? (
             <Button
               type="button"
               variant="default"
-              disabled={isSubmitting || isReopening}
+              disabled={isSubmitting || isReopening || isResubmitting}
               onClick={onSubmit}
             >
               {isSubmitting ? 'Submitting…' : 'Submit request'}
