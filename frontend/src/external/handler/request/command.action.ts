@@ -5,6 +5,7 @@ import {
   approveRequestServer,
   cancelRequestServer,
   createRequestServer,
+  reopenRequestServer,
   rejectRequestServer,
   reviewRequestServer,
   submitRequestServer,
@@ -17,6 +18,7 @@ import type {
   ApproveRequestInput,
   CancelRequestInput,
   CreateRequestInput,
+  ReopenRequestInput,
   RejectRequestInput,
   ReviewRequestInput,
   SubmitRequestInput,
@@ -65,6 +67,12 @@ export async function cancelRequestAction(
   return cancelRequestServer(data)
 }
 
+export async function reopenRequestAction(
+  data: ReopenRequestInput
+): Promise<RequestCommandResponse> {
+  return reopenRequestServer(data)
+}
+
 export async function assignRequestAction(
   data: AssignRequestInput
 ): Promise<RequestCommandResponse> {
@@ -80,5 +88,6 @@ export type {
   ApproveRequestInput,
   RejectRequestInput,
   CancelRequestInput,
+  ReopenRequestInput,
   AssignRequestInput,
 } from './command.server'

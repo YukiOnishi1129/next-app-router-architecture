@@ -5,5 +5,5 @@ import { getSessionServer } from '@/features/auth/servers/session.server'
 export default async function HomePage() {
   const session = await getSessionServer()
 
-  redirect(session ? '/requests' : '/login')
+  redirect(session ? '/dashboard' : '/login')
 }

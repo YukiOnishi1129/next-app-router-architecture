@@ -2,25 +2,29 @@
 
 import { Badge } from '@/shared/components/ui/badge'
 
-import type { ComponentProps } from 'react'
+import { RequestStatus } from '@/external/domain/request/request-status'
 
-type RequestStatus = 'draft' | 'submitted' | 'approved' | 'rejected'
+import type { ComponentProps } from 'react'
 
 const STATUS_VARIANTS: Record<
   RequestStatus,
   ComponentProps<typeof Badge>['variant']
 > = {
-  draft: 'outline',
-  submitted: 'default',
-  approved: 'success',
-  rejected: 'destructive',
+  [RequestStatus.DRAFT]: 'outline',
+  [RequestStatus.SUBMITTED]: 'default',
+  [RequestStatus.IN_REVIEW]: 'default',
+  [RequestStatus.APPROVED]: 'success',
+  [RequestStatus.REJECTED]: 'destructive',
+  [RequestStatus.CANCELLED]: 'outline',
 }
 
 const STATUS_LABELS: Record<RequestStatus, string> = {
-  draft: 'Draft',
-  submitted: 'Submitted',
-  approved: 'Approved',
-  rejected: 'Rejected',
+  [RequestStatus.DRAFT]: 'Draft',
+  [RequestStatus.SUBMITTED]: 'Submitted',
+  [RequestStatus.IN_REVIEW]: 'In Review',
+  [RequestStatus.APPROVED]: 'Approved',
+  [RequestStatus.REJECTED]: 'Rejected',
+  [RequestStatus.CANCELLED]: 'Cancelled',
 }
 
 export function RequestStatusBadge({

@@ -19,10 +19,24 @@ export interface RequestRepository extends Repository<Request, RequestId> {
     limit?: number,
     offset?: number
   ): Promise<Request[]>
+  findByReviewerId(
+    reviewerId: AccountId,
+    status?: RequestStatus,
+    limit?: number,
+    offset?: number
+  ): Promise<Request[]>
   findByStatus(
     status: RequestStatus,
     limit?: number,
     offset?: number
   ): Promise<Request[]>
   countByStatus(status: RequestStatus): Promise<number>
+  countByStatusForRequester(
+    status: RequestStatus,
+    requesterId: AccountId
+  ): Promise<number>
+  countReviewedByAccount(
+    status: RequestStatus.APPROVED | RequestStatus.REJECTED,
+    reviewerId: AccountId
+  ): Promise<number>
 }

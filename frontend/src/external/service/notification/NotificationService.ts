@@ -4,6 +4,7 @@ import {
   Comment,
   Account,
   AccountId,
+  AccountStatus,
   Notification,
   NotificationId,
   NotificationType,
@@ -148,6 +149,34 @@ export class NotificationService {
     // Notify other stakeholders if needed
     if (request.isApproved()) {
       await this.notifyStakeholders(request, notification)
+    }
+  }
+
+  /**
+   * Notify admins that a requester reopened a previously rejected request
+   */
+  async notifyRequestReopened(request: Request): Promise<void> {
+    const requester = await this.accountRepository.findById(
+      request.getRequesterId()
+    )
+    const requesterName = requester?.getName() ?? 'Requester'
+    const admins = await this.getAdmins()
+    if (!admins.length) {
+      return
+    }
+
+    for (const admin of admins) {
+      const notification = Notification.create({
+        recipientId: admin.getId().getValue(),
+        title: `Request reopened: ${request.getTitle()}`,
+        message: `${requesterName} reopened their request "${request.getTitle()}" for updates.`,
+        type: NotificationType.REQUEST_SUBMITTED,
+        relatedEntityId: request.getId().getValue(),
+        relatedEntityType: 'REQUEST',
+      })
+
+      await this.notificationRepository.save(notification)
+      await this.sendNotification(notification, admin, ['email', 'inApp'])
     }
   }
 
@@ -433,6 +462,13 @@ export class NotificationService {
   }
 
   /**
+   * Get notifications related to a specific request
+   */
+  async getNotificationsForRequest(requestId: string): Promise<Notification[]> {
+    return this.notificationRepository.findByRelatedEntity('REQUEST', requestId)
+  }
+
+  /**
    * Mark notification as read
    */
   async markAsRead(
@@ -556,22 +592,11 @@ export class NotificationService {
    * Get admins
    */
   private async getAdmins(): Promise<Account[]> {
-    // In a production environment, this would query the database with a role filter
-    // For now, we'll fetch users individually or implement a custom query
-    // TODO: Implement a proper query to fetch admin users from database
-    const adminIds: string[] = [] // This should be fetched from configuration or database
-    const admins: Account[] = []
-
-    for (const adminId of adminIds) {
-      const admin = await this.accountRepository.findById(
-        AccountId.create(adminId)
-      )
-      if (admin && admin.isAdmin()) {
-        admins.push(admin)
-      }
-    }
-
-    return admins
+    const accounts = await this.accountRepository.findAll()
+    return accounts.filter(
+      (account) =>
+        account.isAdmin() && account.getStatus() === AccountStatus.ACTIVE
+    )
   }
 
   /**

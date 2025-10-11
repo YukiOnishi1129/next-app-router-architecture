@@ -46,6 +46,10 @@ export const cancelRequestSchema = z.object({
   reason: z.string().min(1).optional(),
 })
 
+export const reopenRequestSchema = z.object({
+  requestId: z.string(),
+})
+
 export const assignRequestSchema = z.object({
   requestId: z.string(),
   assigneeId: z.string(),
@@ -58,6 +62,7 @@ export type ReviewRequestInput = z.input<typeof reviewRequestSchema>
 export type ApproveRequestInput = z.input<typeof approveRequestSchema>
 export type RejectRequestInput = z.input<typeof rejectRequestSchema>
 export type CancelRequestInput = z.input<typeof cancelRequestSchema>
+export type ReopenRequestInput = z.input<typeof reopenRequestSchema>
 export type AssignRequestInput = z.input<typeof assignRequestSchema>
 
 export type RequestCommandResponse = {
