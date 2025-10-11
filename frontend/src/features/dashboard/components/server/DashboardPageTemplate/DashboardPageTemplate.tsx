@@ -1,9 +1,10 @@
 import Link from 'next/link'
 
+import { RequestStatus } from '@/features/requests/types'
+
 import { Card } from '@/shared/components/ui/card'
 import { RequestStatusBadge } from '@/shared/components/ui/request-status-badge'
 
-import { RequestStatus } from '@/external/domain/request/request-status'
 import {
   getRequestSummaryServer,
   getReviewerSummaryServer,

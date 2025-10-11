@@ -1,4 +1,4 @@
-import { RequestStatus } from '@/external/domain/request/request-status'
+import { RequestStatus } from '@/features/requests/types'
 
 export type ReviewerStatus = Extract<RequestStatus, 'APPROVED' | 'REJECTED'>
 

@@ -5,13 +5,12 @@ import { useMemo } from 'react'
 import Link from 'next/link'
 
 import { useReviewedApprovalsQuery } from '@/features/approvals/hooks/query/useReviewedApprovalsQuery'
+import { RequestStatus } from '@/features/requests/types'
 
 import { Card } from '@/shared/components/ui/card'
 import { RequestStatusBadge } from '@/shared/components/ui/request-status-badge'
 import { formatDateTime, formatEnumLabel } from '@/shared/lib/format'
 import { cn } from '@/shared/lib/utils'
-
-import { RequestStatus } from '@/external/domain/request/request-status'
 
 import type { ReviewerSummary } from '@/external/dto/request'
 import type { ReviewerStatus } from '@/features/approvals/types'

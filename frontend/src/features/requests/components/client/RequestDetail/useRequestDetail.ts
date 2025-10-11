@@ -9,8 +9,7 @@ import { useReopenRequestMutation } from '@/features/requests/hooks/mutation/use
 import { useSubmitRequestMutation } from '@/features/requests/hooks/mutation/useSubmitRequestMutation'
 import { useRequestDetailQuery } from '@/features/requests/hooks/query/useRequestDetailQuery'
 import { mapRequestDtoToDetail } from '@/features/requests/queries/requestList.helpers'
-
-import { RequestStatus } from '@/external/domain/request/request-status'
+import { RequestStatus } from '@/features/requests/types'
 
 import type { RequestDetail } from '@/features/requests/types'
 

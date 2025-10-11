@@ -6,10 +6,10 @@ import { getSessionServer } from '@/features/auth/servers/session.server'
 import { RequestEditForm } from '@/features/requests/components/client/RequestForm/RequestEditForm'
 import { requestKeys } from '@/features/requests/queries/keys'
 import { ensureRequestDetailResponse } from '@/features/requests/queries/requestList.helpers'
+import { RequestStatus } from '@/features/requests/types'
 
 import { getQueryClient } from '@/shared/lib/query-client'
 
-import { RequestStatus } from '@/external/domain/request/request-status'
 import { getRequestDetailServer } from '@/external/handler/request/query.server'
 
 type RequestEditPageTemplateProps = {

@@ -14,13 +14,9 @@ import {
   createRequestSchema,
   mapCreateRequestFormToInput,
 } from '@/features/requests/schemas'
+import { RequestPriority, RequestType } from '@/features/requests/types'
 
 import { formatEnumLabel } from '@/shared/lib/format'
-
-import {
-  RequestPriority,
-  RequestType,
-} from '@/external/domain/request/request-status'
 
 import type { CreateRequestFormValues } from '@/features/requests/schemas'
 import type { FormEvent } from 'react'

@@ -1,9 +1,6 @@
 import { z } from 'zod'
 
-import {
-  RequestPriority,
-  RequestType,
-} from '@/external/domain/request/request-status'
+import { RequestPriority, RequestType } from '@/features/requests/types'
 
 export const createRequestSchema = z.object({
   title: z

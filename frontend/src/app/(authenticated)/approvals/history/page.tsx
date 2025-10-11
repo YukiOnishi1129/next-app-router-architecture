@@ -1,6 +1,5 @@
 import { ApprovalsHistoryPageTemplate } from '@/features/approvals/components/server/ApprovalsHistoryPageTemplate'
-
-import { RequestStatus } from '@/external/domain/request/request-status'
+import { RequestStatus } from '@/features/requests/types'
 
 import type { ReviewerStatus } from '@/features/approvals/types'
 
