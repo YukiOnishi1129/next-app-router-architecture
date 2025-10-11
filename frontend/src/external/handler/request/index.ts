@@ -8,6 +8,7 @@ export {
   approveRequestAction,
   rejectRequestAction,
   cancelRequestAction,
+  reopenRequestAction,
   assignRequestAction,
 } from './command.action'
 
@@ -25,6 +26,7 @@ export {
   approveRequestServer,
   rejectRequestServer,
   cancelRequestServer,
+  reopenRequestServer,
   assignRequestServer,
 } from './command.server'
 
@@ -32,6 +34,7 @@ export {
   listMyRequestsServer,
   listAssignedRequestsServer,
   listAllRequestsServer,
+  getRequestHistoryServer,
 } from './query.server'
 
 // Backwards-compatible aliases
@@ -43,6 +46,7 @@ export {
   approveRequestAction as approveRequest,
   rejectRequestAction as rejectRequest,
   cancelRequestAction as cancelRequest,
+  reopenRequestAction as reopenRequest,
   assignRequestAction as assignRequest,
 } from './command.action'
 
@@ -53,4 +57,9 @@ export {
 } from './query.action'
 
 export type { RequestCommandResponse } from './command.server'
-export type { RequestListInput, RequestListResponse } from './query.server'
+export type {
+  RequestListInput,
+  RequestListResponse,
+  RequestHistoryInput,
+  RequestHistoryResponse,
+} from './query.server'

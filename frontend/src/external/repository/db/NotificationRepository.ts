@@ -125,6 +125,24 @@ export class NotificationRepository implements INotificationRepository {
     return result.map((row) => this.mapToDomainEntity(row))
   }
 
+  async findByRelatedEntity(
+    relatedEntityType: string,
+    relatedEntityId: string
+  ): Promise<Notification[]> {
+    const result = await db
+      .select()
+      .from(notifications)
+      .where(
+        and(
+          eq(notifications.relatedEntityType, relatedEntityType),
+          eq(notifications.relatedEntityId, relatedEntityId)
+        )
+      )
+      .orderBy(desc(notifications.createdAt))
+
+    return result.map((row) => this.mapToDomainEntity(row))
+  }
+
   async save(entity: Notification): Promise<void> {
     const data = {
       id: entity.getId().getValue(),

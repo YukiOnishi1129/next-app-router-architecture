@@ -1,4 +1,5 @@
 export type { RequestDto } from './request.dto'
+export type { PendingApprovalDto } from './request.dto'
 export {
   createRequestSchema,
   updateRequestSchema,
@@ -7,6 +8,7 @@ export {
   approveRequestSchema,
   rejectRequestSchema,
   cancelRequestSchema,
+  reopenRequestSchema,
   assignRequestSchema,
   type CreateRequestInput,
   type UpdateRequestInput,
@@ -15,6 +17,7 @@ export {
   type ApproveRequestInput,
   type RejectRequestInput,
   type CancelRequestInput,
+  type ReopenRequestInput,
   type AssignRequestInput,
   type RequestCommandResponse,
 } from './request.command.dto'
@@ -22,4 +25,18 @@ export {
   requestListSchema,
   type RequestListInput,
   type RequestListResponse,
+  requestDetailSchema,
+  type RequestDetailInput,
+  type RequestDetailResponse,
+  requestHistorySchema,
+  type RequestHistoryInput,
+  type RequestHistoryResponse,
+  type PendingApprovalListResponse,
+  type RequestSummary,
+  type RequestSummaryResponse,
+  type RequestSummaryStatusEntry,
+  reviewerRequestListSchema,
+  type ReviewerRequestListInput,
+  type ReviewerSummary,
+  type ReviewerSummaryResponse,
 } from './request.query.dto'

@@ -8,6 +8,8 @@ export const metadata: Metadata = {
     'Workspace for authenticated users to review requests, approvals, and recent activity.',
 }
 
+export const dynamic = 'force-dynamic'
+
 export default function AuthenticatedLayout(props: LayoutProps<'/'>) {
   return (
     <AuthenticatedLayoutWrapper>{props.children}</AuthenticatedLayoutWrapper>

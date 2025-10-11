@@ -7,6 +7,7 @@ import {
   RequestType,
   Account,
   AccountId,
+  AuditEventType,
 } from '@/external/domain'
 import { RequestRepository } from '@/external/repository'
 
@@ -66,9 +67,6 @@ export class RequestWorkflowService {
       // Log audit trail
       await this.auditService.logRequestCreated(request)
     })
-
-    // Send notifications (outside transaction)
-    await this.notificationService.notifyNewRequest(request)
 
     return request
   }
@@ -245,6 +243,45 @@ export class RequestWorkflowService {
   }
 
   /**
+   * Reopen a rejected request back to draft
+   */
+  async reopenRequest(requestId: string, requester: Account): Promise<Request> {
+    const request = await this.requestRepository.findById(
+      RequestId.create(requestId)
+    )
+    if (!request) {
+      throw new Error(`Request not found: ${requestId}`)
+    }
+
+    if (!request.getRequesterId().equals(requester.getId())) {
+      throw new Error('Only the original requester can reopen this request')
+    }
+
+    if (!request.canReopen()) {
+      throw new Error('Request cannot be reopened in current status')
+    }
+
+    request.reopen()
+
+    await db.transaction(async () => {
+      await this.requestRepository.save(request)
+
+      await this.auditService.logAction({
+        action: 'request.reopen',
+        entityType: 'REQUEST',
+        entityId: requestId,
+        accountId: requester.getId().getValue(),
+        eventType: AuditEventType.REQUEST_UPDATED,
+        description: `Request reopened by ${requester.getName()}`,
+      })
+    })
+
+    await this.notificationService.notifyRequestReopened(request)
+
+    return request
+  }
+
+  /**
    * Submit a request for review
    */
   async submitRequest(requestId: string, submitter: Account): Promise<Request> {
@@ -296,6 +333,57 @@ export class RequestWorkflowService {
       canBeSubmitted: request.canSubmit(),
       nextPossibleStatuses: this.getNextPossibleStatuses(request.getStatus()),
     }
+  }
+
+  async getRequesterStatusSummary(requesterId: string): Promise<{
+    total: number
+    byStatus: Array<{ status: RequestStatus; count: number }>
+  }> {
+    const statuses = [
+      RequestStatus.DRAFT,
+      RequestStatus.SUBMITTED,
+      RequestStatus.IN_REVIEW,
+      RequestStatus.APPROVED,
+      RequestStatus.REJECTED,
+      RequestStatus.CANCELLED,
+    ]
+
+    const counts = await Promise.all(
+      statuses.map((status) =>
+        this.requestRepository.countByStatusForRequester(
+          status,
+          AccountId.create(requesterId)
+        )
+      )
+    )
+
+    const byStatus = statuses.map((status, index) => ({
+      status,
+      count: counts[index] ?? 0,
+    }))
+
+    const total = counts.reduce((sum, value) => sum + value, 0)
+
+    return { total, byStatus }
+  }
+
+  async getReviewerSummary(reviewerId: string): Promise<{
+    approved: number
+    rejected: number
+  }> {
+    const accountId = AccountId.create(reviewerId)
+    const [approved, rejected] = await Promise.all([
+      this.requestRepository.countReviewedByAccount(
+        RequestStatus.APPROVED,
+        accountId
+      ),
+      this.requestRepository.countReviewedByAccount(
+        RequestStatus.REJECTED,
+        accountId
+      ),
+    ])
+
+    return { approved, rejected }
   }
 
   /**

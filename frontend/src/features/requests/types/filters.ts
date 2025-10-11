@@ -1,6 +1,10 @@
+import { RequestStatus, RequestType } from './status'
+
+export type ReviewerStatus = Extract<RequestStatus, 'APPROVED' | 'REJECTED'>
+
 export type RequestFilterInput = {
-  status?: 'draft' | 'submitted' | 'approved' | 'rejected'
-  type?: 'expense' | 'purchase' | 'access'
+  status?: RequestStatus
+  type?: RequestType
   mineOnly?: boolean
   pendingApprovalsOnly?: boolean
 }

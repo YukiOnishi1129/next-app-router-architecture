@@ -1,34 +1,51 @@
 import { z } from 'zod'
 
+import {
+  RequestPriority,
+  RequestType,
+} from '@/external/domain/request/request-status'
+
 export const createRequestSchema = z.object({
   title: z
     .string()
     .trim()
     .min(1, 'Title is required')
-    .max(120, 'Title must be 120 characters or fewer'),
-  amount: z
+    .max(200, 'Title must be 200 characters or fewer'),
+  description: z
     .string()
     .trim()
+    .min(1, 'Description is required')
+    .max(5000, 'Description must be 5000 characters or fewer'),
+  type: z
+    .enum(RequestType)
+    .refine((val) => Object.values(RequestType).includes(val), {
+      message: 'Select a request type',
+    }),
+  priority: z
+    .enum(RequestPriority)
+    .refine((val) => Object.values(RequestPriority).includes(val), {
+      message: 'Select a priority',
+    }),
+  assigneeId: z
+    .string()
+    .trim()
+    .optional()
     .refine(
-      (value) =>
-        value === '' || (!Number.isNaN(Number(value)) && Number(value) >= 0),
-      'Amount must be zero or greater'
+      (value) => !value || z.string().uuid().safeParse(value).success,
+      'Assignee ID must be a valid UUID'
     ),
-  reason: z
-    .string()
-    .trim()
-    .min(1, 'Reason is required')
-    .max(2000, 'Reason must be 2000 characters or fewer'),
 })
 
-export type CreateRequestFormValues = z.infer<typeof createRequestSchema>
+export type CreateRequestFormValues = z.input<typeof createRequestSchema>
 
 export const mapCreateRequestFormToInput = (
   values: CreateRequestFormValues
 ) => ({
   title: values.title.trim(),
-  amount: values.amount === '' ? undefined : Number(values.amount),
-  reason: values.reason.trim(),
+  description: values.description.trim(),
+  type: values.type,
+  priority: values.priority,
+  assigneeId: values.assigneeId?.trim() || undefined,
 })
 
 export type CreateRequestInput = ReturnType<typeof mapCreateRequestFormToInput>

@@ -194,6 +194,10 @@ export class Request {
     return this.status === RequestStatus.DRAFT
   }
 
+  canReopen(): boolean {
+    return this.status === RequestStatus.REJECTED
+  }
+
   canCancel(): boolean {
     return [
       RequestStatus.DRAFT,
@@ -296,6 +300,17 @@ export class Request {
 
   assignTo(assigneeId: string): void {
     this.assigneeId = AccountId.create(assigneeId)
+    this.updatedAt = new Date()
+  }
+
+  reopen(): void {
+    if (!this.canReopen()) {
+      throw new Error('Only rejected requests can be reopened')
+    }
+    this.status = RequestStatus.DRAFT
+    this.reviewerId = null
+    this.reviewedAt = null
+    this.submittedAt = null
     this.updatedAt = new Date()
   }
 

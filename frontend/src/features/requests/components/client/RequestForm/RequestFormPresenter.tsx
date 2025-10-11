@@ -3,20 +3,42 @@
 import { Button } from '@/shared/components/ui/button'
 
 import type { CreateRequestFormValues } from '@/features/requests/schemas'
-import type { UseFormReturn } from 'react-hook-form'
+import type { FormEvent } from 'react'
+import type { Path, UseFormReturn } from 'react-hook-form'
 
-type RequestFormPresenterProps = {
-  form: UseFormReturn<CreateRequestFormValues>
-  onSubmit: (event: React.FormEvent<HTMLFormElement>) => void
+type Option = {
+  value: string
+  label: string
 }
 
-export function RequestFormPresenter({
+type RequestFormPresenterProps<
+  TFormValues extends CreateRequestFormValues = CreateRequestFormValues,
+> = {
+  form: UseFormReturn<TFormValues>
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void
+  typeOptions: Option[]
+  priorityOptions: Option[]
+  serverError?: string | null
+  isSubmitting?: boolean
+  submitLabel?: string
+  showAssigneeField?: boolean
+}
+
+export function RequestFormPresenter<
+  TFormValues extends CreateRequestFormValues = CreateRequestFormValues,
+>({
   form,
   onSubmit,
-}: RequestFormPresenterProps) {
+  typeOptions,
+  priorityOptions,
+  serverError,
+  isSubmitting = false,
+  submitLabel = 'Submit request',
+  showAssigneeField = true,
+}: RequestFormPresenterProps<TFormValues>) {
   const {
     register,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = form
 
   return (
@@ -25,54 +47,99 @@ export function RequestFormPresenter({
         Title
         <input
           className="border-border bg-background focus:ring-primary mt-1 w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none"
-          {...register('title')}
+          {...register('title' as Path<TFormValues>)}
           aria-invalid={Boolean(errors.title)}
         />
-        {errors.title ? (
+        {errors.title?.message ? (
           <p className="text-destructive mt-1 text-xs">
-            {errors.title.message}
+            {String(errors.title.message)}
           </p>
         ) : null}
       </label>
 
       <label className="block text-sm font-medium">
-        Amount (optional)
-        <input
-          className="border-border bg-background focus:ring-primary mt-1 w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none"
-          type="number"
-          step="0.01"
-          min={0}
-          {...register('amount')}
-          aria-invalid={Boolean(errors.amount)}
-        />
-        {errors.amount ? (
-          <p className="text-destructive mt-1 text-xs">
-            {errors.amount.message}
-          </p>
-        ) : null}
-      </label>
-
-      <label className="block text-sm font-medium">
-        Reason
+        Description
         <textarea
           className="border-border bg-background focus:ring-primary mt-1 w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none"
           rows={4}
-          {...register('reason')}
-          aria-invalid={Boolean(errors.reason)}
+          {...register('description' as Path<TFormValues>)}
+          aria-invalid={Boolean(errors.description)}
         />
-        {errors.reason ? (
+        {errors.description?.message ? (
           <p className="text-destructive mt-1 text-xs">
-            {errors.reason.message}
+            {String(errors.description.message)}
           </p>
         ) : null}
       </label>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <label className="block text-sm font-medium">
+          Type
+          <select
+            className="border-border bg-background focus:ring-primary mt-1 w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none"
+            {...register('type' as Path<TFormValues>)}
+            aria-invalid={Boolean(errors.type)}
+          >
+            {typeOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+          {errors.type?.message ? (
+            <p className="text-destructive mt-1 text-xs">
+              {String(errors.type.message)}
+            </p>
+          ) : null}
+        </label>
+
+        <label className="block text-sm font-medium">
+          Priority
+          <select
+            className="border-border bg-background focus:ring-primary mt-1 w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none"
+            {...register('priority' as Path<TFormValues>)}
+            aria-invalid={Boolean(errors.priority)}
+          >
+            {priorityOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+          {errors.priority?.message ? (
+            <p className="text-destructive mt-1 text-xs">
+              {String(errors.priority.message)}
+            </p>
+          ) : null}
+        </label>
+      </div>
+
+      {showAssigneeField ? (
+        <label className="block text-sm font-medium">
+          Assignee ID (optional)
+          <input
+            className="border-border bg-background focus:ring-primary mt-1 w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none"
+            {...register('assigneeId' as Path<TFormValues>)}
+            aria-invalid={Boolean(errors.assigneeId)}
+          />
+          {errors.assigneeId?.message ? (
+            <p className="text-destructive mt-1 text-xs">
+              {String(errors.assigneeId.message)}
+            </p>
+          ) : null}
+        </label>
+      ) : null}
+
+      {serverError ? (
+        <p className="text-destructive text-sm">{serverError}</p>
+      ) : null}
 
       <Button
         type="submit"
         className="w-full sm:w-auto"
         disabled={isSubmitting}
       >
-        {isSubmitting ? 'Submitting…' : 'Submit request'}
+        {isSubmitting ? 'Submitting…' : submitLabel}
       </Button>
     </form>
   )
