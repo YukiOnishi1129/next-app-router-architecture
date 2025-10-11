@@ -7,6 +7,7 @@ import {
   RequestType,
   Account,
   AccountId,
+  AuditEventType,
 } from '@/external/domain'
 import { RequestRepository } from '@/external/repository'
 
@@ -240,6 +241,45 @@ export class RequestWorkflowService {
     })
 
     await this.notificationService.notifyAssignment(request)
+
+    return request
+  }
+
+  /**
+   * Reopen a rejected request back to draft
+   */
+  async reopenRequest(requestId: string, requester: Account): Promise<Request> {
+    const request = await this.requestRepository.findById(
+      RequestId.create(requestId)
+    )
+    if (!request) {
+      throw new Error(`Request not found: ${requestId}`)
+    }
+
+    if (!request.getRequesterId().equals(requester.getId())) {
+      throw new Error('Only the original requester can reopen this request')
+    }
+
+    if (!request.canReopen()) {
+      throw new Error('Request cannot be reopened in current status')
+    }
+
+    request.reopen()
+
+    await db.transaction(async () => {
+      await this.requestRepository.save(request)
+
+      await this.auditService.logAction({
+        action: 'request.reopen',
+        entityType: 'REQUEST',
+        entityId: requestId,
+        accountId: requester.getId().getValue(),
+        eventType: AuditEventType.REQUEST_UPDATED,
+        description: `Request reopened by ${requester.getName()}`,
+      })
+    })
+
+    await this.notificationService.notifyRequestReopened(request)
 
     return request
   }

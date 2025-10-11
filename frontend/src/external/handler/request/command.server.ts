@@ -12,6 +12,7 @@ import {
   approveRequestSchema,
   rejectRequestSchema,
   cancelRequestSchema,
+  reopenRequestSchema,
   assignRequestSchema,
 } from '@/external/dto/request'
 
@@ -30,6 +31,7 @@ import type {
   ApproveRequestInput,
   RejectRequestInput,
   CancelRequestInput,
+  ReopenRequestInput,
   AssignRequestInput,
   RequestCommandResponse,
 } from '@/external/dto/request'
@@ -310,6 +312,43 @@ export async function cancelRequestServer(
   }
 }
 
+export async function reopenRequestServer(
+  data: ReopenRequestInput
+): Promise<RequestCommandResponse> {
+  try {
+    const currentAccount = await requireSessionAccount()
+    const validated = reopenRequestSchema.parse(data)
+
+    const account = await accountManagementService.findAccountById(
+      currentAccount.id
+    )
+    if (!account) {
+      return { success: false, error: 'Account not found' }
+    }
+
+    const request = await workflowService.reopenRequest(
+      validated.requestId,
+      account
+    )
+
+    return {
+      success: true,
+      request: mapRequestToDto(request, {
+        requesterName: account.getName(),
+      }),
+    }
+  } catch (error) {
+    if (error instanceof ZodError) {
+      return { success: false, error: 'Invalid input data' }
+    }
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : 'Failed to reopen request',
+    }
+  }
+}
+
 export async function assignRequestServer(
   data: AssignRequestInput
 ): Promise<RequestCommandResponse> {
@@ -354,6 +393,7 @@ export type {
   ApproveRequestInput,
   RejectRequestInput,
   CancelRequestInput,
+  ReopenRequestInput,
   AssignRequestInput,
   RequestCommandResponse,
 } from '@/external/dto/request'

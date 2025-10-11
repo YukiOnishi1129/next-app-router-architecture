@@ -152,6 +152,34 @@ export class NotificationService {
   }
 
   /**
+   * Notify admins that a requester reopened a previously rejected request
+   */
+  async notifyRequestReopened(request: Request): Promise<void> {
+    const requester = await this.accountRepository.findById(
+      request.getRequesterId()
+    )
+    const requesterName = requester?.getName() ?? 'Requester'
+    const admins = await this.getAdmins()
+    if (!admins.length) {
+      return
+    }
+
+    for (const admin of admins) {
+      const notification = Notification.create({
+        recipientId: admin.getId().getValue(),
+        title: `Request reopened: ${request.getTitle()}`,
+        message: `${requesterName} reopened their request "${request.getTitle()}" for updates.`,
+        type: NotificationType.REQUEST_SUBMITTED,
+        relatedEntityId: request.getId().getValue(),
+        relatedEntityType: 'REQUEST',
+      })
+
+      await this.notificationRepository.save(notification)
+      await this.sendNotification(notification, admin, ['email', 'inApp'])
+    }
+  }
+
+  /**
    * Notify about priority change
    */
   async notifyPriorityChange(

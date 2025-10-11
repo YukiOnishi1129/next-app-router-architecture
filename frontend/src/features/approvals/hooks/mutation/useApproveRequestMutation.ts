@@ -2,13 +2,13 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 
-import type { UseMutationOptions } from '@tanstack/react-query'
-
 import { approvalKeys } from '@/features/approvals/queries/keys'
 import { notificationKeys } from '@/features/notifications/queries/keys'
 import { requestKeys } from '@/features/requests/queries/keys'
 
 import { approveRequestAction } from '@/external/handler/request/command.action'
+
+import type { UseMutationOptions } from '@tanstack/react-query'
 
 type ApproveVariables = { requestId: string }
 type ApproveResult = { requestId: string }
@@ -20,8 +20,8 @@ export const useApproveRequestMutation = (
   const {
     onMutate,
     onError,
-    onSuccess,
-    onSettled,
+    onSuccess: userOnSuccess,
+    onSettled: userOnSettled,
     ...restOptions
   } = options ?? {}
 
@@ -35,7 +35,7 @@ export const useApproveRequestMutation = (
     },
     onMutate,
     onError,
-    onSuccess: async (data, variables, context) => {
+    onSuccess: async (data, variables, context, mutation) => {
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: approvalKeys.pending(),
@@ -53,14 +53,10 @@ export const useApproveRequestMutation = (
           queryKey: notificationKeys.list(),
         }),
       ])
-      if (onSuccess) {
-        await onSuccess(data, variables, context)
-      }
+      await userOnSuccess?.(data, variables, context, mutation)
     },
-    onSettled: async (data, error, variables, context) => {
-      if (onSettled) {
-        await onSettled(data, error, variables, context)
-      }
+    onSettled: async (data, error, variables, context, mutation) => {
+      await userOnSettled?.(data, error, variables, context, mutation)
     },
     ...restOptions,
   })

@@ -5,8 +5,10 @@ import { usePathname } from 'next/navigation'
 
 import { cn } from '@/shared/lib/utils'
 
+import type { Route } from 'next'
+
 type NavItem = {
-  href: string
+  href: Route
   label: string
   isActive: (path: string) => boolean
 }

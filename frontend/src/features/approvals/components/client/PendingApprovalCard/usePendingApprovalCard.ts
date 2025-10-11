@@ -58,7 +58,7 @@ export const usePendingApprovalCard = ({
   )
 
   const approveMutation = useApproveRequestMutation({
-    onSuccess: () => {
+    onSuccess: (_data, _variables, _context) => {
       scheduleLocalSuccess('approve')
       setShowRejectForm(false)
       setRejectReason('')
@@ -68,7 +68,7 @@ export const usePendingApprovalCard = ({
   })
 
   const rejectMutation = useRejectRequestMutation({
-    onSuccess: () => {
+    onSuccess: (_data, _variables, _context) => {
       scheduleLocalSuccess('reject')
       setShowRejectForm(false)
       setRejectReason('')

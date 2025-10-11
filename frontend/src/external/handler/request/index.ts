@@ -8,6 +8,7 @@ export {
   approveRequestAction,
   rejectRequestAction,
   cancelRequestAction,
+  reopenRequestAction,
   assignRequestAction,
 } from './command.action'
 
@@ -25,6 +26,7 @@ export {
   approveRequestServer,
   rejectRequestServer,
   cancelRequestServer,
+  reopenRequestServer,
   assignRequestServer,
 } from './command.server'
 
@@ -44,6 +46,7 @@ export {
   approveRequestAction as approveRequest,
   rejectRequestAction as rejectRequest,
   cancelRequestAction as cancelRequest,
+  reopenRequestAction as reopenRequest,
   assignRequestAction as assignRequest,
 } from './command.action'
 

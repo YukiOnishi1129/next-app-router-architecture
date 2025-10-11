@@ -24,14 +24,19 @@ export function RequestDetailContainer({
     submitError,
     canApprove,
     canReject,
+    canReopen,
     onApprove,
     onReject,
+    onReopen,
     isApproving,
     isRejecting,
+    isReopening,
     approveError,
     rejectError,
+    reopenError,
     approveSuccessMessage,
     rejectSuccessMessage,
+    reopenSuccessMessage,
   } = useRequestDetail({ requestId, highlightCommentId })
 
   return (
@@ -47,14 +52,19 @@ export function RequestDetailContainer({
       submitError={submitError}
       canApprove={canApprove}
       canReject={canReject}
+      canReopen={canReopen}
       onApprove={onApprove}
       onReject={onReject}
+      onReopen={onReopen}
       isApproving={isApproving}
       isRejecting={isRejecting}
+      isReopening={isReopening}
       approveError={approveError}
       rejectError={rejectError}
+      reopenError={reopenError}
       approveSuccessMessage={approveSuccessMessage}
       rejectSuccessMessage={rejectSuccessMessage}
+      reopenSuccessMessage={reopenSuccessMessage}
     />
   )
 }

@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useApproveRequestMutation } from '@/features/approvals/hooks/mutation/useApproveRequestMutation'
 import { useRejectRequestMutation } from '@/features/approvals/hooks/mutation/useRejectRequestMutation'
 import { useAuthSession } from '@/features/auth/hooks/useAuthSession'
+import { useReopenRequestMutation } from '@/features/requests/hooks/mutation/useReopenRequestMutation'
 import { useSubmitRequestMutation } from '@/features/requests/hooks/mutation/useSubmitRequestMutation'
 import { useRequestDetailQuery } from '@/features/requests/hooks/query/useRequestDetailQuery'
 import { mapRequestDtoToDetail } from '@/features/requests/queries/requestList.helpers'
@@ -28,10 +29,14 @@ export const useRequestDetail = ({
   const submitMutation = useSubmitRequestMutation(requestId)
   const approveMutation = useApproveRequestMutation()
   const rejectMutation = useRejectRequestMutation()
+  const reopenMutation = useReopenRequestMutation()
   const [approveSuccessMessage, setApproveSuccessMessage] = useState<
     string | null
   >(null)
   const [rejectSuccessMessage, setRejectSuccessMessage] = useState<
+    string | null
+  >(null)
+  const [reopenSuccessMessage, setReopenSuccessMessage] = useState<
     string | null
   >(null)
 
@@ -58,6 +63,9 @@ export const useRequestDetail = ({
   )
   const canReview = Boolean(
     detail && isAdmin && !isRequester && isReviewableStatus
+  )
+  const canReopen = Boolean(
+    detail && isRequester && detail.status === RequestStatus.REJECTED
   )
 
   const handleSubmit = useCallback(() => {
@@ -87,6 +95,17 @@ export const useRequestDetail = ({
     [canReview, rejectMutation, requestId]
   )
 
+  const handleReopen = useCallback(() => {
+    if (!canReopen || reopenMutation.isPending) {
+      return
+    }
+    setApproveSuccessMessage(null)
+    setRejectSuccessMessage(null)
+    setReopenSuccessMessage(null)
+    reopenMutation.reset()
+    reopenMutation.mutate({ requestId })
+  }, [canReopen, reopenMutation, requestId])
+
   useEffect(() => {
     if (approveMutation.isSuccess) {
       setApproveSuccessMessage('Request approved successfully.')
@@ -98,6 +117,12 @@ export const useRequestDetail = ({
       setRejectSuccessMessage('Request rejected successfully.')
     }
   }, [rejectMutation.isSuccess])
+
+  useEffect(() => {
+    if (reopenMutation.isSuccess) {
+      setReopenSuccessMessage('Request reopened for editing.')
+    }
+  }, [reopenMutation.isSuccess])
 
   useEffect(() => {
     if (!approveSuccessMessage) {
@@ -115,6 +140,14 @@ export const useRequestDetail = ({
     return () => window.clearTimeout(timer)
   }, [rejectSuccessMessage])
 
+  useEffect(() => {
+    if (!reopenSuccessMessage) {
+      return
+    }
+    const timer = window.setTimeout(() => setReopenSuccessMessage(null), 4000)
+    return () => window.clearTimeout(timer)
+  }, [reopenSuccessMessage])
+
   return {
     detail,
     highlightCommentId: highlightCommentId ?? null,
@@ -130,10 +163,13 @@ export const useRequestDetail = ({
         : undefined,
     canApprove: canReview,
     canReject: canReview,
+    canReopen,
     onApprove: handleApprove,
     onReject: handleReject,
+    onReopen: handleReopen,
     isApproving: approveMutation.isPending,
     isRejecting: rejectMutation.isPending,
+    isReopening: reopenMutation.isPending,
     approveError:
       approveMutation.error instanceof Error
         ? approveMutation.error.message
@@ -142,7 +178,12 @@ export const useRequestDetail = ({
       rejectMutation.error instanceof Error
         ? rejectMutation.error.message
         : undefined,
+    reopenError:
+      reopenMutation.error instanceof Error
+        ? reopenMutation.error.message
+        : undefined,
     approveSuccessMessage,
     rejectSuccessMessage,
+    reopenSuccessMessage,
   }
 }

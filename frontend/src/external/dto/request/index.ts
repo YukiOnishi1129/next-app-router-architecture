@@ -8,6 +8,7 @@ export {
   approveRequestSchema,
   rejectRequestSchema,
   cancelRequestSchema,
+  reopenRequestSchema,
   assignRequestSchema,
   type CreateRequestInput,
   type UpdateRequestInput,
@@ -16,6 +17,7 @@ export {
   type ApproveRequestInput,
   type RejectRequestInput,
   type CancelRequestInput,
+  type ReopenRequestInput,
   type AssignRequestInput,
   type RequestCommandResponse,
 } from './request.command.dto'
