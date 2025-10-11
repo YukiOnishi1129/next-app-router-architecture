@@ -22,3 +22,13 @@ export type RequestDto = {
   reviewerId?: string | null
   reviewerName?: string | null
 }
+
+export type PendingApprovalDto = {
+  id: string
+  title: string
+  status: RequestStatus
+  type: RequestType
+  priority: RequestPriority
+  requesterName: string | null
+  submittedAt: string | null
+}

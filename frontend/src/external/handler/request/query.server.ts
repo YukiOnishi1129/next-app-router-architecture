@@ -11,9 +11,11 @@ import {
   requestRepository,
   accountManagementService,
   mapRequestToDto,
+  approvalService,
 } from './shared'
 
 import type {
+  PendingApprovalListResponse,
   RequestDetailInput,
   RequestDetailResponse,
   RequestListInput,
@@ -229,3 +231,43 @@ export type {
   RequestListInput,
   RequestListResponse,
 } from '@/external/dto/request'
+
+export async function listPendingApprovalsServer(): Promise<PendingApprovalListResponse> {
+  try {
+    const currentAccount = await requireSessionAccount()
+
+    const approvals = await approvalService.getPendingApprovals(
+      currentAccount.id
+    )
+
+    const requests = await Promise.all(
+      approvals.map(async (request) => {
+        const requesterAccount = await accountManagementService.findAccountById(
+          request.getRequesterId().getValue()
+        )
+
+        return {
+          id: request.getId().getValue(),
+          title: request.getTitle(),
+          status: request.getStatus(),
+          type: request.getType(),
+          priority: request.getPriority(),
+          requesterName: requesterAccount?.getName() ?? null,
+          submittedAt: request.getSubmittedAt()
+            ? request.getSubmittedAt()!.toISOString()
+            : null,
+        }
+      })
+    )
+
+    return { success: true, requests }
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : 'Failed to load pending approvals',
+    }
+  }
+}

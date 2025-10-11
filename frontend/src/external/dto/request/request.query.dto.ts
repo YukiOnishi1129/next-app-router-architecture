@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import type { RequestDto } from './request.dto'
+import type { PendingApprovalDto, RequestDto } from './request.dto'
 
 export const requestListSchema = z.object({
   limit: z.number().min(1).max(100).default(50),
@@ -28,4 +28,10 @@ export type RequestDetailResponse = {
   success: boolean
   error?: string
   request?: RequestDto
+}
+
+export type PendingApprovalListResponse = {
+  success: boolean
+  error?: string
+  requests?: PendingApprovalDto[]
 }

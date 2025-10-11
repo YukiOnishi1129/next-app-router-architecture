@@ -4,7 +4,7 @@ import { Button } from '@/shared/components/ui/button'
 import { Card } from '@/shared/components/ui/card'
 import { RequestStatusBadge } from '@/shared/components/ui/request-status-badge'
 import { formatDateTime, formatEnumLabel } from '@/shared/lib/format'
-import { renderIdentity } from '@/shared/lib/presentation'
+import { formatIdentity } from '@/shared/lib/presentation'
 
 import type { RequestDetail } from '@/features/requests/types'
 
@@ -106,15 +106,11 @@ export function RequestDetailPresenter({
             </div>
             <div className="flex justify-between">
               <dt className="font-medium">Requester</dt>
-              <dd className="flex-1 text-right">
-                {renderIdentity(request.requesterName, '—')}
-              </dd>
+              <dd>{formatIdentity(request.requesterName)}</dd>
             </div>
             <div className="flex justify-between">
               <dt className="font-medium">Assignee</dt>
-              <dd className="flex-1 text-right">
-                {renderIdentity(request.assigneeName, 'Unassigned')}
-              </dd>
+              <dd>{formatIdentity(request.assigneeName, 'Unassigned')}</dd>
             </div>
           </dl>
           <dl className="text-muted-foreground space-y-1 text-sm">
@@ -136,9 +132,7 @@ export function RequestDetailPresenter({
             </div>
             <div className="flex justify-between">
               <dt className="font-medium">Reviewer</dt>
-              <dd className="flex-1 text-right">
-                {renderIdentity(request.reviewerName, '—')}
-              </dd>
+              <dd>{formatIdentity(request.reviewerName)}</dd>
             </div>
           </dl>
         </section>

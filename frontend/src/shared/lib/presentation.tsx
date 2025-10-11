@@ -1,13 +1,11 @@
-'use client'
-
 const FALLBACK_PLACEHOLDER = '—'
 
-export function renderIdentity(
+export function formatIdentity(
   name: string | null | undefined,
   fallback: string = FALLBACK_PLACEHOLDER
-) {
+): string {
   if (name && name.trim().length > 0) {
-    return <span>{name}</span>
+    return name
   }
-  return <span>{fallback}</span>
+  return fallback
 }

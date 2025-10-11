@@ -1,4 +1,5 @@
 export type { RequestDto } from './request.dto'
+export type { PendingApprovalDto } from './request.dto'
 export {
   createRequestSchema,
   updateRequestSchema,
@@ -25,4 +26,5 @@ export {
   requestDetailSchema,
   type RequestDetailInput,
   type RequestDetailResponse,
+  type PendingApprovalListResponse,
 } from './request.query.dto'
