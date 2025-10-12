@@ -3,6 +3,7 @@
 import { useCallback, useState } from 'react'
 
 import { useRouter } from 'next/navigation'
+import { Loader2 } from 'lucide-react'
 
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
@@ -58,7 +59,7 @@ export function ProfileEmailForm({
             newEmail: values.email,
           })
           reset({ email: values.email }, { keepDirty: false })
-          router.replace('/auth/check-email')
+          router.replace('/auth/email-change/requested')
         } catch (error) {
           setServerError(
             error instanceof Error
@@ -72,7 +73,16 @@ export function ProfileEmailForm({
   )
 
   return (
-    <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
+    <>
+      {isPending ? (
+        <div className="bg-background/80 fixed inset-0 z-[999] flex flex-col items-center justify-center gap-3 backdrop-blur-sm">
+          <Loader2 className="text-primary h-10 w-10 animate-spin" />
+          <p className="text-muted-foreground text-sm">
+            Sending confirmation email…
+          </p>
+        </div>
+      ) : null}
+      <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
       <div className="space-y-1 text-left">
         <label className="text-sm font-medium" htmlFor="email">
           Email address
@@ -113,6 +123,7 @@ export function ProfileEmailForm({
           Reset
         </Button>
       </div>
-    </form>
+      </form>
+    </>
   )
 }

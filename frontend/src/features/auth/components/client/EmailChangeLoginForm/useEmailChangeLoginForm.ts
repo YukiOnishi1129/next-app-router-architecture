@@ -75,7 +75,7 @@ export const useEmailChangeLoginForm = (
             }
 
             router.refresh()
-            router.replace('/settings/profile/email')
+            router.replace('/auth/email-change/complete')
           } catch (error) {
             if (
               error instanceof Error &&
