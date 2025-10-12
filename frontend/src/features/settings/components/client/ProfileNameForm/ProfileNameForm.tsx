@@ -8,6 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 
+import { useAuthSession } from '@/features/auth/hooks/useAuthSession'
 import { useUpdateProfileNameMutation } from '@/features/settings/hooks/useProfileMutations'
 
 import { Button } from '@/shared/components/ui/button'
@@ -30,6 +31,7 @@ export function ProfileNameForm({
 }: ProfileNameFormProps) {
   const router = useRouter()
   const updateProfileMutation = useUpdateProfileNameMutation()
+  const { update: updateSession } = useAuthSession()
   const [serverError, setServerError] = useState<string | null>(null)
 
   const form = useForm<NameFormValues>({
@@ -53,10 +55,15 @@ export function ProfileNameForm({
       void (async () => {
         setServerError(null)
         try {
-          await updateProfileMutation.mutateAsync({
+          const response = await updateProfileMutation.mutateAsync({
             accountId,
             name: values.name,
           })
+          if (response.success && response.account) {
+            await updateSession({
+              account: response.account,
+            })
+          }
           reset(values, { keepDirty: false })
           router.replace('/settings/profile?updated=name')
           router.refresh()
@@ -67,7 +74,7 @@ export function ProfileNameForm({
         }
       })()
     },
-    [accountId, reset, router, updateProfileMutation]
+    [accountId, reset, router, updateProfileMutation, updateSession]
   )
 
   return (
