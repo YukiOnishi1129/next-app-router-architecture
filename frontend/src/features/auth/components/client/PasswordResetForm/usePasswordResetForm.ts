@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 
-import { requestPasswordResetAction } from '@/features/auth/actions/password-reset.action'
+import { requestPasswordResetCommandAction } from '@/external/handler/auth/command.action'
 
 import type { FieldErrors, UseFormRegister } from 'react-hook-form'
 
@@ -48,7 +48,7 @@ export function usePasswordResetForm(): PasswordResetFormPresenterProps {
     startTransition(() => {
       void (async () => {
         try {
-          const response = await requestPasswordResetAction({
+          const response = await requestPasswordResetCommandAction({
             email: values.email,
           })
           if (!response.success) {

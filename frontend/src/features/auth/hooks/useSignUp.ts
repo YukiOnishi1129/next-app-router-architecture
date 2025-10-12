@@ -1,6 +1,6 @@
 import { useCallback } from 'react'
 
-import { signUpAction } from '@/features/auth/actions/sign-up.action'
+import { signUpCommandAction } from '@/external/handler/auth/command.action'
 
 export const useSignUp = () => {
   const handleSignUp = useCallback(
@@ -14,7 +14,7 @@ export const useSignUp = () => {
       password: string
     }) => {
       try {
-        const result = await signUpAction({
+        const result = await signUpCommandAction({
           name,
           email,
           password,
