@@ -8,7 +8,8 @@ import { refreshIdTokenServer } from '@/features/auth/servers/token.server'
 import {
   updateAccountRoleSchema,
   updateAccountStatusSchema,
-  updateAccountProfileSchema,
+  updateAccountNameSchema,
+  requestAccountEmailChangeSchema,
   confirmEmailChangeSchema,
 } from '@/external/dto/account'
 
@@ -24,8 +25,10 @@ import {
 import type {
   UpdateAccountRoleInput,
   UpdateAccountStatusInput,
-  UpdateAccountProfileInput,
+  UpdateAccountNameInput,
+  RequestAccountEmailChangeInput,
   UpdateAccountResponse,
+  RequestAccountEmailChangeResponse,
   ConfirmEmailChangeInput,
   ConfirmEmailChangeResponse,
 } from '@/external/dto/account'
@@ -165,8 +168,8 @@ export async function updateAccountStatusServer(
   }
 }
 
-export async function updateAccountProfileServer(
-  data: UpdateAccountProfileInput
+export async function updateAccountNameServer(
+  data: UpdateAccountNameInput
 ): Promise<UpdateAccountResponse> {
   try {
     const session = await getSessionServer()
@@ -174,7 +177,7 @@ export async function updateAccountProfileServer(
       return { success: false, error: 'Unauthorized' }
     }
 
-    const validated = updateAccountProfileSchema.parse(data)
+    const validated = updateAccountNameSchema.parse(data)
 
     const currentAccount = await accountManagementService.findAccountById(
       session.account.id
@@ -197,61 +200,15 @@ export async function updateAccountProfileServer(
       return { success: false, error: 'Account not found' }
     }
 
-    const emailChanged = targetAccount.getEmail().getValue() !== validated.email
     const nameChanged = targetAccount.getName() !== validated.name
 
-    if (emailChanged && !isSelfUpdate) {
-      return {
-        success: false,
-        error: 'Only the account owner can change their email address',
-      }
-    }
-
-    let verificationEmailSent = false
-    let updatedAccount = targetAccount
-
-    if (emailChanged) {
-      try {
-        const idToken = await refreshIdTokenServer()
-        const verificationUrl = new URL(
-          EMAIL_CHANGE_VERIFICATION_PATH,
-          APP_BASE_URL
-        )
-        verificationUrl.searchParams.set('accountId', validated.accountId)
-
-        await authenticationService.sendEmailChangeVerification(
-          idToken,
-          validated.email,
-          {
-            verificationContinueUrl: verificationUrl.toString(),
-          }
-        )
-        verificationEmailSent = true
-      } catch (error) {
-        const message =
-          error instanceof Error
-            ? error.message
-            : 'Failed to request email change'
-        if (message.includes('CREDENTIAL_TOO_OLD_LOGIN_AGAIN')) {
-          return {
-            success: false,
-            error:
-              'Please sign out and sign in again before changing your email address. This helps keep your account secure.',
-          }
-        }
-        return {
-          success: false,
-          error: message,
-        }
-      }
-    }
+    const updatedAccount = nameChanged
+      ? await accountManagementService.updateAccount(validated.accountId, {
+          name: validated.name,
+        })
+      : targetAccount
 
     if (nameChanged) {
-      updatedAccount = await accountManagementService.updateAccount(
-        validated.accountId,
-        { name: validated.name }
-      )
-
       await auditService.logAction({
         action: 'account.profile.update',
         entityType: 'ACCOUNT',
@@ -269,8 +226,6 @@ export async function updateAccountProfileServer(
     return {
       success: true,
       account: mapAccountToDto(updatedAccount),
-      verificationEmailSent,
-      pendingEmail: emailChanged ? validated.email : undefined,
     }
   } catch (error) {
     if (error instanceof ZodError) {
@@ -283,6 +238,73 @@ export async function updateAccountProfileServer(
           ? error.message
           : 'Failed to update account profile',
     }
+  }
+}
+
+export async function requestAccountEmailChangeServer(
+  data: RequestAccountEmailChangeInput
+): Promise<RequestAccountEmailChangeResponse> {
+  try {
+    const session = await getSessionServer()
+    if (!session?.account) {
+      return { success: false, error: 'Unauthorized' }
+    }
+
+    const validated = requestAccountEmailChangeSchema.parse(data)
+
+    if (validated.accountId !== session.account.id) {
+      return {
+        success: false,
+        error: 'Only the account owner can request an email change',
+      }
+    }
+
+    const account = await accountManagementService.findAccountById(
+      validated.accountId
+    )
+    if (!account) {
+      return { success: false, error: 'Account not found' }
+    }
+
+    if (account.getEmail().getValue() === validated.newEmail) {
+      return {
+        success: true,
+        pendingEmail: validated.newEmail,
+      }
+    }
+
+    const idToken = await refreshIdTokenServer()
+    const verificationUrl = new URL(
+      EMAIL_CHANGE_VERIFICATION_PATH,
+      APP_BASE_URL
+    )
+
+    await authenticationService.sendEmailChangeVerification(
+      idToken,
+      validated.newEmail,
+      {
+        verificationContinueUrl: verificationUrl.toString(),
+      }
+    )
+
+    return {
+      success: true,
+      pendingEmail: validated.newEmail,
+    }
+  } catch (error) {
+    if (error instanceof ZodError) {
+      return { success: false, error: 'Invalid input data' }
+    }
+    const message =
+      error instanceof Error ? error.message : 'Failed to request email change'
+    if (message.includes('CREDENTIAL_TOO_OLD_LOGIN_AGAIN')) {
+      return {
+        success: false,
+        error:
+          'Please sign out and sign in again before changing your email address. This helps keep your account secure.',
+      }
+    }
+    return { success: false, error: message }
   }
 }
 
@@ -299,13 +321,28 @@ export async function confirmEmailChangeServer(
       return { success: false, error: 'Account not found' }
     }
 
-    const result = await authenticationService.confirmEmailChange(
-      validated.oobCode
-    )
+    const idToken = await refreshIdTokenServer()
+    const identityAccount = await authenticationService.verifyToken(idToken)
+
+    if (!identityAccount?.email) {
+      return {
+        success: false,
+        error: 'Unable to verify email change. Please try again.',
+      }
+    }
+
+    const newEmail = identityAccount.email
+
+    if (account.getEmail().getValue() === newEmail) {
+      return {
+        success: true,
+        account: mapAccountToDto(account),
+      }
+    }
 
     const updatedAccount = await accountManagementService.updateAccount(
       validated.accountId,
-      { email: result.email }
+      { email: newEmail }
     )
 
     await auditService.logAction({
@@ -314,7 +351,7 @@ export async function confirmEmailChangeServer(
       entityId: validated.accountId,
       accountId: validated.accountId,
       metadata: {
-        newEmail: result.email,
+        newEmail,
       },
       eventType: AuditEventType.ACCOUNT_UPDATED,
       context: SERVER_AUDIT_CONTEXT,
@@ -341,8 +378,10 @@ export async function confirmEmailChangeServer(
 export type {
   UpdateAccountRoleInput,
   UpdateAccountStatusInput,
-  UpdateAccountProfileInput,
+  UpdateAccountNameInput,
+  RequestAccountEmailChangeInput,
   UpdateAccountResponse,
+  RequestAccountEmailChangeResponse,
   ConfirmEmailChangeInput,
   ConfirmEmailChangeResponse,
 } from '@/external/dto/account'

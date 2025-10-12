@@ -1,20 +1,38 @@
 import { useCallback } from 'react'
 
+import { useRouter } from 'next/navigation'
 import { signOut } from 'next-auth/react'
 
-import { deleteAuthCookiesAction } from '@/features/auth/actions/token.action'
+import { useQueryClient } from '@tanstack/react-query'
 
-import { redirectAction } from '@/shared/actions/redirect.action'
-import { getQueryClient } from '@/shared/lib/query-client'
+import { deleteAuthCookiesAction } from '@/features/auth/actions/token.action'
+import { setEmailChangePreviousEmailCookieAction } from '@/features/auth/actions/email-change.action'
+
+import type { Route } from 'next'
+
+type UseSignOutOptions = {
+  previousEmail?: string
+}
 
 export const useSignOut = () => {
-  const handleSignOut = useCallback(async () => {
-    const queryClient = getQueryClient()
-    await deleteAuthCookiesAction()
-    queryClient.clear()
-    await signOut({ redirect: false })
-    await redirectAction('/login')
-  }, [])
+  const router = useRouter()
+  const queryClient = useQueryClient()
+
+  const handleSignOut = useCallback(
+    async (redirectTo: Route = '/login', options?: UseSignOutOptions) => {
+      queryClient.clear()
+
+      if (options?.previousEmail) {
+        await setEmailChangePreviousEmailCookieAction(options.previousEmail)
+      }
+
+      await deleteAuthCookiesAction()
+      await signOut({ redirect: false })
+      router.replace(redirectTo)
+      router.refresh()
+    },
+    [queryClient, router]
+  )
 
   return { handleSignOut }
 }

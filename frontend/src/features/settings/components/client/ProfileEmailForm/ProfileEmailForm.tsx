@@ -8,30 +8,28 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 
-import { useUpdateProfileMutation } from '@/features/settings/hooks/useUpdateProfileMutation'
+import { useRequestEmailChangeMutation } from '@/features/settings/hooks/useProfileMutations'
 
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 
 type ProfileEmailFormProps = {
   accountId: string
-  currentName: string
   initialEmail: string
 }
 
 const emailSchema = z.object({
-  email: z.string().email('Please enter a valid email address.'),
+  email: z.email('Please enter a valid email address.'),
 })
 
 type EmailFormValues = z.infer<typeof emailSchema>
 
 export function ProfileEmailForm({
   accountId,
-  currentName,
   initialEmail,
 }: ProfileEmailFormProps) {
   const router = useRouter()
-  const updateProfileMutation = useUpdateProfileMutation()
+  const requestEmailChangeMutation = useRequestEmailChangeMutation()
   const [serverError, setServerError] = useState<string | null>(null)
 
   const form = useForm<EmailFormValues>({
@@ -48,24 +46,19 @@ export function ProfileEmailForm({
     reset,
   } = form
 
-  const isPending = updateProfileMutation.isPending || isSubmitting
+  const isPending = requestEmailChangeMutation.isPending || isSubmitting
 
   const onSubmit = useCallback(
     (values: EmailFormValues) => {
       void (async () => {
         setServerError(null)
         try {
-          const response = await updateProfileMutation.mutateAsync({
+          await requestEmailChangeMutation.mutateAsync({
             accountId,
-            name: currentName,
-            email: values.email,
+            newEmail: values.email,
           })
-          reset(values, { keepDirty: false })
-          if (response.verificationEmailSent) {
-            router.replace('/auth/check-email')
-          } else {
-            router.replace('/settings/profile')
-          }
+          reset({ email: values.email }, { keepDirty: false })
+          router.replace('/auth/check-email')
         } catch (error) {
           setServerError(
             error instanceof Error
@@ -75,7 +68,7 @@ export function ProfileEmailForm({
         }
       })()
     },
-    [accountId, currentName, reset, router, updateProfileMutation]
+    [accountId, reset, router, requestEmailChangeMutation]
   )
 
   return (
@@ -96,8 +89,8 @@ export function ProfileEmailForm({
       </div>
 
       <p className="text-muted-foreground text-xs">
-        Changing your email may require you to verify the new address before
-        signing in again.
+        Changing your email sends a verification link to the new address. Follow
+        the instructions to confirm the change and sign in again.
       </p>
 
       {serverError ? (

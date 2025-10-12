@@ -162,8 +162,7 @@ export class AuthenticationService {
         refreshToken: newTokens.refreshToken,
         expiresIn: newTokens.expiresIn,
       }
-    } catch (error) {
-      console.error('Token refresh failed:', error)
+    } catch {
       return null
     }
   }

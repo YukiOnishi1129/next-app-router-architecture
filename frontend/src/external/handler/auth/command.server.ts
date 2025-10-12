@@ -63,6 +63,7 @@ export async function loginCommandServer(
       email: authResult.userInfo.email,
       name: authResult.userInfo.name,
       externalId: authResult.userInfo.id,
+      previousEmail: validated.previousEmail,
     })
 
     await auditService.logAccountLogin(user, SERVER_CONTEXT)

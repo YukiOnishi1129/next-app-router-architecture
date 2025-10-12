@@ -14,6 +14,7 @@ export const authOptions: NextAuthOptions = {
         password: { label: 'Password', type: 'password' },
         action: { label: 'Action', type: 'text' },
         name: { label: 'Name', type: 'text' },
+        previousEmail: { label: 'Previous Email', type: 'text' },
       },
       async authorize(credentials) {
         return await authorizeServer({
@@ -21,6 +22,7 @@ export const authOptions: NextAuthOptions = {
           password: credentials?.password,
           action: credentials?.action,
           name: credentials?.name,
+          previousEmail: credentials?.previousEmail,
         })
       },
     }),

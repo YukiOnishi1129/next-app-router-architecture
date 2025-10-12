@@ -8,7 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 
-import { useUpdateProfileMutation } from '@/features/settings/hooks/useUpdateProfileMutation'
+import { useUpdateProfileNameMutation } from '@/features/settings/hooks/useProfileMutations'
 
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
@@ -16,7 +16,6 @@ import { Input } from '@/shared/components/ui/input'
 type ProfileNameFormProps = {
   accountId: string
   initialName: string
-  currentEmail: string
 }
 
 const nameSchema = z.object({
@@ -28,10 +27,9 @@ type NameFormValues = z.infer<typeof nameSchema>
 export function ProfileNameForm({
   accountId,
   initialName,
-  currentEmail,
 }: ProfileNameFormProps) {
   const router = useRouter()
-  const updateProfileMutation = useUpdateProfileMutation()
+  const updateProfileMutation = useUpdateProfileNameMutation()
   const [serverError, setServerError] = useState<string | null>(null)
 
   const form = useForm<NameFormValues>({
@@ -58,7 +56,6 @@ export function ProfileNameForm({
           await updateProfileMutation.mutateAsync({
             accountId,
             name: values.name,
-            email: currentEmail,
           })
           reset(values, { keepDirty: false })
           router.replace('/settings/profile?updated=name')
@@ -70,7 +67,7 @@ export function ProfileNameForm({
         }
       })()
     },
-    [accountId, currentEmail, reset, router, updateProfileMutation]
+    [accountId, reset, router, updateProfileMutation]
   )
 
   return (

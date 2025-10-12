@@ -15,6 +15,7 @@ export const signInCommandSchema = z.object({
   email: z.email(),
   password: z.string().min(6),
   redirectUrl: redirectUrlSchema.optional(),
+  previousEmail: z.email().optional(),
 })
 
 export type SignInCommandRequest = z.input<typeof signInCommandSchema>

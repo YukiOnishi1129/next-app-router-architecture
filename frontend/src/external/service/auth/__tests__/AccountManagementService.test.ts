@@ -195,6 +195,32 @@ describe('AccountManagementService', () => {
       expect(result.getName()).toBe('New Account')
       expect(mockRepository.save).toHaveBeenCalled()
     })
+
+    it('should update existing account when located by previous email', async () => {
+      // Arrange
+      const existingAccount = Account.create({
+        name: 'Existing Account',
+        email: 'old@example.com',
+        roles: [AccountRole.MEMBER],
+      })
+
+      mockRepository.findByEmail
+        .mockResolvedValueOnce(null) // New email lookup
+        .mockResolvedValueOnce(existingAccount) // Previous email lookup
+      mockRepository.save.mockResolvedValue(undefined)
+
+      // Act
+      const result = await accountService.getOrCreateAccount({
+        email: 'new@example.com',
+        previousEmail: 'old@example.com',
+        name: 'Existing Account',
+      })
+
+      // Assert
+      expect(result).toBe(existingAccount)
+      expect(result.getEmail().getValue()).toBe('new@example.com')
+      expect(mockRepository.save).toHaveBeenCalledWith(existingAccount)
+    })
   })
 
   describe('hasPermission', () => {

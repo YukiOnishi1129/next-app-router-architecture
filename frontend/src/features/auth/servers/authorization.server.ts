@@ -15,6 +15,7 @@ interface AuthorizeCredentials {
   password?: string
   action?: string
   name?: string
+  previousEmail?: string
 }
 
 const loginServer = async (
@@ -28,6 +29,7 @@ const loginServer = async (
     const res = await loginCommandServer({
       email: credentials.email,
       password: credentials.password,
+      previousEmail: credentials.previousEmail,
     })
     if (!res.success) {
       throw new Error(res.error || 'Login failed')
@@ -63,6 +65,16 @@ const loginServer = async (
   }
 }
 
+const emailChangeLoginServer = async (
+  credentials: AuthorizeCredentials
+): Promise<User> => {
+  if (!credentials.previousEmail) {
+    throw new Error('Previous email is required to complete email update login')
+  }
+
+  return await loginServer(credentials)
+}
+
 export async function authorizeServer(
   credentials: AuthorizeCredentials
 ): Promise<User | null> {
@@ -76,6 +88,8 @@ export async function authorizeServer(
         throw new Error('Sign-up via credentials is not supported')
       case CREDENTIAL_TYPE.LOGIN:
         return await loginServer(credentials)
+      case CREDENTIAL_TYPE.EMAIL_CHANGE_LOGIN:
+        return await emailChangeLoginServer(credentials)
       default:
         throw new Error('Invalid action')
     }

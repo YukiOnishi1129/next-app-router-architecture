@@ -9,7 +9,6 @@ const isAuthenticatedServer = async (): Promise<boolean> => {
   try {
     const session = await getSessionServer()
     if (!session?.user) return false
-    await refreshIdTokenServer()
     return true
   } catch {
     return false

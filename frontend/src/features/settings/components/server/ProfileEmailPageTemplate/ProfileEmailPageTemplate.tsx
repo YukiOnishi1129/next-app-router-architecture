@@ -33,7 +33,6 @@ export async function ProfileEmailPageTemplate() {
       <Card className="max-w-lg p-6">
         <ProfileEmailForm
           accountId={account.id}
-          currentName={account.name}
           initialEmail={account.email}
         />
       </Card>

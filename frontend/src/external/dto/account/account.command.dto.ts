@@ -14,29 +14,37 @@ export const updateAccountStatusSchema = z.object({
   status: z.enum(AccountStatus),
 })
 
-export const updateAccountProfileSchema = z.object({
+export const updateAccountNameSchema = z.object({
   accountId: z.string(),
   name: z.string().min(1).max(100),
-  email: z.string().email(),
+})
+
+export const requestAccountEmailChangeSchema = z.object({
+  accountId: z.string(),
+  newEmail: z.email(),
 })
 
 export type UpdateAccountRoleInput = z.input<typeof updateAccountRoleSchema>
 export type UpdateAccountStatusInput = z.input<typeof updateAccountStatusSchema>
-export type UpdateAccountProfileInput = z.input<
-  typeof updateAccountProfileSchema
+export type UpdateAccountNameInput = z.input<typeof updateAccountNameSchema>
+export type RequestAccountEmailChangeInput = z.input<
+  typeof requestAccountEmailChangeSchema
 >
 
 export type UpdateAccountResponse = {
   success: boolean
   error?: string
   account?: Account
-  verificationEmailSent?: boolean
+}
+
+export type RequestAccountEmailChangeResponse = {
+  success: boolean
+  error?: string
   pendingEmail?: string
 }
 
 export const confirmEmailChangeSchema = z.object({
   accountId: z.string(),
-  oobCode: z.string().min(1),
 })
 
 export type ConfirmEmailChangeInput = z.input<typeof confirmEmailChangeSchema>
