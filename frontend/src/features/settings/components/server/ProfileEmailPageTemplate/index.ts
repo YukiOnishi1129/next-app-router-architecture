@@ -1,0 +1,1 @@
+export { ProfileEmailPageTemplate } from './ProfileEmailPageTemplate'
