@@ -1,10 +1,7 @@
 import Link from 'next/link'
-
-import { Button } from '@/shared/components/ui/button'
+import type { Route } from 'next'
 
 import { confirmEmailVerificationServer } from '@/external/handler/auth/command.server'
-
-import type { Route } from 'next'
 
 type VerifyEmailPageTemplateProps = {
   oobCode?: string | null
@@ -24,8 +21,11 @@ export async function VerifyEmailPageTemplate({
           new verification email from the login screen.
         </p>
         <div className="flex justify-center pt-4">
-          <Link href="/login">
-            <Button>Return to login</Button>
+          <Link
+            href="/login"
+            className="border-input bg-background text-foreground hover:bg-accent hover:text-accent-foreground inline-flex items-center justify-center rounded-md border px-4 py-2 text-sm font-medium shadow-sm transition-colors"
+          >
+            Return to login
           </Link>
         </div>
       </section>
@@ -43,8 +43,11 @@ export async function VerifyEmailPageTemplate({
             'We could not verify your email address. Request a new link and try again.'}
         </p>
         <div className="flex justify-center pt-4">
-          <Link href="/login">
-            <Button>Return to login</Button>
+          <Link
+            href="/login"
+            className="border-input bg-background text-foreground hover:bg-accent hover:text-accent-foreground inline-flex items-center justify-center rounded-md border px-4 py-2 text-sm font-medium shadow-sm transition-colors"
+          >
+            Return to login
           </Link>
         </div>
       </section>
@@ -62,8 +65,11 @@ export async function VerifyEmailPageTemplate({
         start using the application.
       </p>
       <div className="flex justify-center pt-4">
-        <Link href={destination}>
-          <Button>Continue</Button>
+        <Link
+          href={destination}
+          className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium shadow-sm transition-colors"
+        >
+          Continue
         </Link>
       </div>
     </section>

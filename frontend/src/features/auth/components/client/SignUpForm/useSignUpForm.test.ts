@@ -6,7 +6,6 @@ import { useSignUpForm } from './useSignUpForm'
 
 const mockHandleSignUp = vi.fn()
 const mockRouterReplace = vi.fn()
-const mockRouterRefresh = vi.fn()
 
 vi.mock('@/features/auth/hooks/useSignUp', () => ({
   useSignUp: () => ({ handleSignUp: mockHandleSignUp }),
@@ -15,7 +14,7 @@ vi.mock('@/features/auth/hooks/useSignUp', () => ({
 vi.mock('next/navigation', () => ({
   useRouter: () => ({
     replace: mockRouterReplace,
-    refresh: mockRouterRefresh,
+    refresh: vi.fn(),
   }),
 }))
 
@@ -23,11 +22,10 @@ describe('useSignUpForm', () => {
   beforeEach(() => {
     mockHandleSignUp.mockReset()
     mockRouterReplace.mockReset()
-    mockRouterRefresh.mockReset()
   })
 
   it('submits values and navigates on success', async () => {
-    mockHandleSignUp.mockResolvedValue({ ok: true })
+    mockHandleSignUp.mockResolvedValue({ success: true })
 
     const { result } = renderHook(() => useSignUpForm())
 
@@ -64,9 +62,8 @@ describe('useSignUpForm', () => {
         password: 'password123',
       })
     )
-    await waitFor(() => expect(mockRouterRefresh).toHaveBeenCalled())
     await waitFor(() =>
-      expect(mockRouterReplace).toHaveBeenCalledWith('/dashboard')
+      expect(mockRouterReplace).toHaveBeenCalledWith('/auth/check-email')
     )
   })
 
