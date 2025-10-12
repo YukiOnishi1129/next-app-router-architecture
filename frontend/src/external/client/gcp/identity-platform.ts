@@ -268,6 +268,42 @@ export class IdentityPlatformClient {
   }
 
   /**
+   * Update account password
+   */
+  async updateAccountPassword(
+    idToken: string,
+    password: string
+  ): Promise<{ idToken?: string; refreshToken?: string }> {
+    const response = await fetch(
+      `${this.baseUrl}/accounts:update?key=${this.config.apiKey}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          idToken,
+          password,
+          returnSecureToken: true,
+        }),
+      }
+    )
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(
+        `Failed to update password: ${error.error?.message || 'Unknown error'}`
+      )
+    }
+
+    const data = await response.json()
+    return {
+      idToken: data.idToken as string | undefined,
+      refreshToken: data.refreshToken as string | undefined,
+    }
+  }
+
+  /**
    * Confirm email verification using OOB code
    */
   async confirmEmailVerification(oobCode: string): Promise<void> {

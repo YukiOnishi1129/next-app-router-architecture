@@ -4,12 +4,14 @@ import { ZodError } from 'zod'
 
 import { getSessionServer } from '@/features/auth/servers/session.server'
 import { refreshIdTokenServer } from '@/features/auth/servers/token.server'
+import { signOutServer } from '@/features/auth/servers/signout.server'
 
 import {
   updateAccountRoleSchema,
   updateAccountStatusSchema,
   updateAccountNameSchema,
   requestAccountEmailChangeSchema,
+  updateAccountPasswordSchema,
 } from '@/external/dto/account'
 
 import {
@@ -26,8 +28,10 @@ import type {
   UpdateAccountStatusInput,
   UpdateAccountNameInput,
   RequestAccountEmailChangeInput,
+  UpdateAccountPasswordInput,
   UpdateAccountResponse,
   RequestAccountEmailChangeResponse,
+  UpdateAccountPasswordResponse,
 } from '@/external/dto/account'
 
 const APP_BASE_URL =
@@ -305,11 +309,131 @@ export async function requestAccountEmailChangeServer(
   }
 }
 
+export async function updateAccountPasswordServer(
+  data: UpdateAccountPasswordInput
+): Promise<UpdateAccountPasswordResponse> {
+  try {
+    const session = await getSessionServer()
+    if (!session?.account) {
+      return { success: false, error: 'Unauthorized' }
+    }
+
+    const validated = updateAccountPasswordSchema.parse(data)
+
+    if (validated.accountId !== session.account.id) {
+      return {
+        success: false,
+        error: 'You can only update your own password',
+      }
+    }
+
+    if (validated.currentPassword === validated.newPassword) {
+      return {
+        success: false,
+        error: 'Your new password must be different from the current one.',
+      }
+    }
+
+    const account = await accountManagementService.findAccountById(
+      validated.accountId
+    )
+    if (!account) {
+      return { success: false, error: 'Account not found' }
+    }
+
+    const email = account.getEmail().getValue()
+
+    let reauthenticatedToken: string
+    try {
+      const authResult =
+        await authenticationService.signInWithEmailPassword(
+          email,
+          validated.currentPassword
+        )
+      reauthenticatedToken = authResult.idToken
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Failed to authenticate'
+      if (message.includes('INVALID_LOGIN_CREDENTIALS')) {
+        return {
+          success: false,
+          error: 'The current password you entered is incorrect.',
+        }
+      }
+      return {
+        success: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Failed to verify current password.',
+      }
+    }
+
+    try {
+      await authenticationService.updateAccountPassword(
+        reauthenticatedToken,
+        validated.newPassword
+      )
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Failed to update password'
+      if (message.includes('CREDENTIAL_TOO_OLD_LOGIN_AGAIN')) {
+        return {
+          success: false,
+          error:
+            'For security reasons, please sign out and sign in again before changing your password.',
+        }
+      }
+      if (message.includes('WEAK_PASSWORD')) {
+        return {
+          success: false,
+          error:
+            'Please choose a stronger password with at least 8 characters.',
+        }
+      }
+      return { success: false, error: message }
+    }
+
+    await auditService.logAction({
+      action: 'account.password.change',
+      entityType: 'ACCOUNT',
+      entityId: validated.accountId,
+      accountId: session.account.id,
+      eventType: AuditEventType.ACCOUNT_UPDATED,
+      description: 'Account password updated',
+      metadata: {
+        isSelfUpdate: true,
+      },
+      context: SERVER_AUDIT_CONTEXT,
+    })
+
+    await signOutServer()
+
+    return {
+      success: true,
+      requiresReauthentication: true,
+    }
+  } catch (error) {
+    if (error instanceof ZodError) {
+      return { success: false, error: 'Invalid input data' }
+    }
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : 'Failed to update account password',
+    }
+  }
+}
+
 export type {
   UpdateAccountRoleInput,
   UpdateAccountStatusInput,
   UpdateAccountNameInput,
   RequestAccountEmailChangeInput,
+  UpdateAccountPasswordInput,
   UpdateAccountResponse,
   RequestAccountEmailChangeResponse,
+  UpdateAccountPasswordResponse,
 } from '@/external/dto/account'

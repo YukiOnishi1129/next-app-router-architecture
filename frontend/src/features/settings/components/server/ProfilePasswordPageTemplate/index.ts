@@ -1,0 +1,1 @@
+export { ProfilePasswordPageTemplate } from './ProfilePasswordPageTemplate'

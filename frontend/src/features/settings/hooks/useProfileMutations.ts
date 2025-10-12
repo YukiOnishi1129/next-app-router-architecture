@@ -5,6 +5,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   requestAccountEmailChangeAction,
   updateAccountNameAction,
+  updateAccountPasswordAction,
 } from '@/external/handler/account/command.action'
 
 import { settingsKeys } from '../queries/keys'
@@ -38,6 +39,20 @@ export const useRequestEmailChangeMutation = () => {
       const response = await requestAccountEmailChangeAction(input)
       if (!response.success) {
         throw new Error(response.error ?? 'Failed to request email change')
+      }
+      return response
+    },
+  })
+}
+
+export const useUpdatePasswordMutation = () => {
+  return useMutation({
+    mutationFn: async (
+      input: Parameters<typeof updateAccountPasswordAction>[0]
+    ) => {
+      const response = await updateAccountPasswordAction(input)
+      if (!response.success) {
+        throw new Error(response.error ?? 'Failed to update password')
       }
       return response
     },

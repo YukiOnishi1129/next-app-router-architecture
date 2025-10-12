@@ -66,6 +66,23 @@ export async function ProfilePageTemplate({
             </Link>
           </div>
         </Card>
+
+        <Card className="flex h-full flex-col justify-between p-6">
+          <div className="space-y-1">
+            <p className="text-muted-foreground text-sm">Password</p>
+            <p className="text-xl leading-tight font-medium">
+              Keep your account secure
+            </p>
+          </div>
+          <div className="pt-4">
+            <Link
+              href="/settings/profile/password"
+              className="text-primary text-sm font-medium hover:underline"
+            >
+              Update password →
+            </Link>
+          </div>
+        </Card>
       </div>
     </section>
   )

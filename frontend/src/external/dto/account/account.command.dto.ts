@@ -24,11 +24,26 @@ export const requestAccountEmailChangeSchema = z.object({
   newEmail: z.email(),
 })
 
+export const updateAccountPasswordSchema = z.object({
+  accountId: z.string(),
+  currentPassword: z.string().min(8),
+  newPassword: z
+    .string()
+    .min(8)
+    .refine(
+      (value) => !value.includes(' '),
+      'Password cannot contain whitespace characters.'
+    ),
+})
+
 export type UpdateAccountRoleInput = z.input<typeof updateAccountRoleSchema>
 export type UpdateAccountStatusInput = z.input<typeof updateAccountStatusSchema>
 export type UpdateAccountNameInput = z.input<typeof updateAccountNameSchema>
 export type RequestAccountEmailChangeInput = z.input<
   typeof requestAccountEmailChangeSchema
+>
+export type UpdateAccountPasswordInput = z.input<
+  typeof updateAccountPasswordSchema
 >
 
 export type UpdateAccountResponse = {
@@ -41,4 +56,10 @@ export type RequestAccountEmailChangeResponse = {
   success: boolean
   error?: string
   pendingEmail?: string
+}
+
+export type UpdateAccountPasswordResponse = {
+  success: boolean
+  error?: string
+  requiresReauthentication?: boolean
 }

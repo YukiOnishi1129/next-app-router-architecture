@@ -3,7 +3,13 @@ import Link from 'next/link'
 import { LoginForm } from '@/features/auth/components/client/LoginForm'
 import { redirectIfAuthenticatedServer } from '@/features/auth/servers/redirect.server'
 
-export async function LoginPageTemplate() {
+type LoginPageTemplateProps = {
+  passwordUpdated?: boolean
+}
+
+export async function LoginPageTemplate({
+  passwordUpdated = false,
+}: LoginPageTemplateProps) {
   await redirectIfAuthenticatedServer()
 
   return (
@@ -15,6 +21,13 @@ export async function LoginPageTemplate() {
           account.
         </p>
       </header>
+
+      {passwordUpdated ? (
+        <div className="rounded-md border border-emerald-300/60 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-700">
+          Your password was updated successfully. Sign in with your new password
+          to continue.
+        </div>
+      ) : null}
 
       <LoginForm />
 
