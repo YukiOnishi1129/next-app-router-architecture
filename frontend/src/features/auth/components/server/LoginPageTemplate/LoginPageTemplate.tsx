@@ -3,7 +3,15 @@ import Link from 'next/link'
 import { LoginForm } from '@/features/auth/components/client/LoginForm'
 import { redirectIfAuthenticatedServer } from '@/features/auth/servers/redirect.server'
 
-export async function LoginPageTemplate() {
+type LoginPageTemplateProps = {
+  passwordUpdated?: boolean
+  passwordReset?: boolean
+}
+
+export async function LoginPageTemplate({
+  passwordUpdated = false,
+  passwordReset = false,
+}: LoginPageTemplateProps) {
   await redirectIfAuthenticatedServer()
 
   return (
@@ -16,7 +24,30 @@ export async function LoginPageTemplate() {
         </p>
       </header>
 
+      {passwordUpdated ? (
+        <div className="rounded-md border border-emerald-300/60 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-700">
+          Your password was updated successfully. Sign in with your new password
+          to continue.
+        </div>
+      ) : null}
+
+      {passwordReset ? (
+        <div className="rounded-md border border-emerald-300/60 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-700">
+          Password reset complete. Sign in with your new password to access the
+          workspace.
+        </div>
+      ) : null}
+
       <LoginForm />
+
+      <p className="text-center text-sm">
+        <Link
+          href="/password-reset"
+          className="text-muted-foreground hover:text-primary font-medium hover:underline"
+        >
+          Forgot your password?
+        </Link>
+      </p>
 
       <p className="text-muted-foreground text-center text-sm">
         No account yet?{' '}

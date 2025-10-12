@@ -196,7 +196,10 @@ export class IdentityPlatformClient {
   /**
    * Send password reset email
    */
-  async sendPasswordResetEmail(email: string): Promise<void> {
+  async sendPasswordResetEmail(
+    email: string,
+    options?: { continueUrl?: string; canHandleCodeInApp?: boolean }
+  ): Promise<void> {
     const response = await fetch(
       `${this.baseUrl}/accounts:sendOobCode?key=${this.config.apiKey}`,
       {
@@ -207,6 +210,8 @@ export class IdentityPlatformClient {
         body: JSON.stringify({
           requestType: 'PASSWORD_RESET',
           email,
+          continueUrl: options?.continueUrl,
+          canHandleCodeInApp: options?.canHandleCodeInApp ?? true,
         }),
       }
     )
@@ -262,6 +267,42 @@ export class IdentityPlatformClient {
 
     return {
       account,
+      idToken: data.idToken as string | undefined,
+      refreshToken: data.refreshToken as string | undefined,
+    }
+  }
+
+  /**
+   * Update account password
+   */
+  async updateAccountPassword(
+    idToken: string,
+    password: string
+  ): Promise<{ idToken?: string; refreshToken?: string }> {
+    const response = await fetch(
+      `${this.baseUrl}/accounts:update?key=${this.config.apiKey}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          idToken,
+          password,
+          returnSecureToken: true,
+        }),
+      }
+    )
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(
+        `Failed to update password: ${error.error?.message || 'Unknown error'}`
+      )
+    }
+
+    const data = await response.json()
+    return {
       idToken: data.idToken as string | undefined,
       refreshToken: data.refreshToken as string | undefined,
     }

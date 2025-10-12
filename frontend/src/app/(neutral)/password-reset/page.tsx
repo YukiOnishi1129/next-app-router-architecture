@@ -1,4 +1,4 @@
-import { Button } from '@/shared/components/ui/button'
+import { PasswordResetForm } from '@/features/auth/components/client/PasswordResetForm'
 
 export default function PasswordResetPage(
   _props: PageProps<'/password-reset'>
@@ -10,20 +10,7 @@ export default function PasswordResetPage(
         Enter your email address and we&apos;ll send you instructions to reset
         your password.
       </p>
-      <form className="space-y-3">
-        <label className="block text-sm font-medium">
-          Email
-          <input
-            className="border-border bg-background focus:ring-primary mt-1 w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none"
-            type="email"
-            name="email"
-            required
-          />
-        </label>
-        <Button type="submit" className="w-full sm:w-auto">
-          Send instructions
-        </Button>
-      </form>
+      <PasswordResetForm />
     </section>
   )
 }
