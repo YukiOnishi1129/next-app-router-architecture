@@ -2,6 +2,7 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 
+import { notificationKeys } from '@/features/notifications/queries/keys'
 import { requestKeys } from '@/features/requests/queries/keys'
 
 import { submitRequestAction } from '@/external/handler/request/command.action'
@@ -23,6 +24,12 @@ export const useSubmitRequestMutation = (requestId: string) => {
           queryKey: requestKeys.detail(requestId),
         }),
         queryClient.invalidateQueries({ queryKey: requestKeys.all }),
+        queryClient.invalidateQueries({
+          queryKey: notificationKeys.list(false),
+        }),
+        queryClient.invalidateQueries({
+          queryKey: notificationKeys.list(true),
+        }),
       ])
     },
   })
