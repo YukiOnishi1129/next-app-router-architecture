@@ -1,2 +1,1 @@
-export * from './SignOutPageContainer'
-export * from './SignOutMessage'
+export { SignOutPage } from './SignOutPage'
