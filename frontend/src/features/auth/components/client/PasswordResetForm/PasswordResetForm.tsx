@@ -66,8 +66,9 @@ export function PasswordResetForm() {
     <form className="space-y-4" onSubmit={onSubmit}>
       {submittedEmail ? (
         <div className="rounded-md border border-emerald-300/60 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-700">
-          We sent password reset instructions to {submittedEmail}. If you don&apos;t
-          see the email, check your spam folder or try again in a few minutes.
+          We sent password reset instructions to {submittedEmail}. If you
+          don&apos;t see the email, check your spam folder or try again in a few
+          minutes.
         </div>
       ) : null}
 

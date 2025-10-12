@@ -1,10 +1,9 @@
 import Link from 'next/link'
 
+import { getSessionServer } from '@/features/auth/servers/session.server'
 import { ProfilePasswordForm } from '@/features/settings/components/client/ProfilePasswordForm'
 
 import { Card } from '@/shared/components/ui/card'
-
-import { getSessionServer } from '@/features/auth/servers/session.server'
 
 export async function ProfilePasswordPageTemplate() {
   const session = await getSessionServer()

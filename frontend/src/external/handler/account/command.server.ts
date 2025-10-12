@@ -3,8 +3,8 @@ import 'server-only'
 import { ZodError } from 'zod'
 
 import { getSessionServer } from '@/features/auth/servers/session.server'
-import { refreshIdTokenServer } from '@/features/auth/servers/token.server'
 import { signOutServer } from '@/features/auth/servers/signout.server'
+import { refreshIdTokenServer } from '@/features/auth/servers/token.server'
 
 import {
   updateAccountRoleSchema,
@@ -345,11 +345,10 @@ export async function updateAccountPasswordServer(
 
     let reauthenticatedToken: string
     try {
-      const authResult =
-        await authenticationService.signInWithEmailPassword(
-          email,
-          validated.currentPassword
-        )
+      const authResult = await authenticationService.signInWithEmailPassword(
+        email,
+        validated.currentPassword
+      )
       reauthenticatedToken = authResult.idToken
     } catch (error) {
       const message =
