@@ -9,6 +9,7 @@ import { signIn } from 'next-auth/react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 
+import { deleteEmailChangePreviousEmailCookieAction } from '@/features/auth/actions/email-change.action'
 import { CREDENTIAL_TYPE } from '@/features/auth/constants/credential'
 
 import type { FieldErrors, UseFormRegister } from 'react-hook-form'
@@ -71,6 +72,8 @@ export const useEmailChangeLoginForm = (
           if (!result || result.error) {
             throw new Error(result?.error ?? 'Failed to sign in with new email')
           }
+
+          await deleteEmailChangePreviousEmailCookieAction()
 
           router.refresh()
           router.replace('/auth/email-change/complete')

@@ -1,7 +1,7 @@
 import { cookies } from 'next/headers'
 import 'server-only'
 
-const PREVIOUS_EMAIL_COOKIE = 'email-change.previous-email'
+export const PREVIOUS_EMAIL_COOKIE = 'email-change.previous-email'
 const COOKIE_MAX_AGE = 60 * 5 // 5 minutes
 
 export const setEmailChangePreviousEmailCookieServer = async (

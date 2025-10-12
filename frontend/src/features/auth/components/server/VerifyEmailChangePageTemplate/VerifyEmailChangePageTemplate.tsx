@@ -3,7 +3,18 @@ import { redirect } from 'next/navigation'
 import { SignOutRedirect } from '@/features/auth/components/client/SignOutRedirect'
 import { getSessionServer } from '@/features/auth/servers/session.server'
 
-export async function VerifyEmailChangePageTemplate() {
+type VerifyEmailChangePageTemplateProps = {
+  oobCode?: string
+}
+
+export async function VerifyEmailChangePageTemplate({
+  oobCode,
+}: VerifyEmailChangePageTemplateProps) {
+  // if (!oobCode) {
+  //   redirect('/login?emailChange=missing-oob-code')
+  // }
+  console.log('oobCode', oobCode)
+
   const session = await getSessionServer()
   if (!session?.account) {
     redirect('/login')
