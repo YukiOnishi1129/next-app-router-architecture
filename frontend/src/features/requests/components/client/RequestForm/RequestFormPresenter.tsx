@@ -22,6 +22,10 @@ type RequestFormPresenterProps<
   isSubmitting?: boolean
   submitLabel?: string
   showAssigneeField?: boolean
+  assigneeOptions?: Option[]
+  assigneeOptionsLoading?: boolean
+  assigneeDisabled?: boolean
+  assigneeHelperText?: string | null
 }
 
 export function RequestFormPresenter<
@@ -35,6 +39,10 @@ export function RequestFormPresenter<
   isSubmitting = false,
   submitLabel = 'Submit request',
   showAssigneeField = true,
+  assigneeOptions = [],
+  assigneeOptionsLoading = false,
+  assigneeDisabled = false,
+  assigneeHelperText,
 }: RequestFormPresenterProps<TFormValues>) {
   const {
     register,
@@ -116,12 +124,30 @@ export function RequestFormPresenter<
 
       {showAssigneeField ? (
         <label className="block text-sm font-medium">
-          Assignee ID (optional)
-          <input
+          Assignee (optional)
+          <select
             className="border-border bg-background focus:ring-primary mt-1 w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none"
             {...register('assigneeId' as Path<TFormValues>)}
             aria-invalid={Boolean(errors.assigneeId)}
-          />
+            disabled={assigneeDisabled}
+          >
+            <option value="">Unassigned</option>
+            {assigneeOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+          {assigneeOptionsLoading ? (
+            <p className="text-muted-foreground mt-1 text-xs">
+              Loading assignees…
+            </p>
+          ) : null}
+          {assigneeHelperText && !errors.assigneeId?.message ? (
+            <p className="text-muted-foreground mt-1 text-xs">
+              {assigneeHelperText}
+            </p>
+          ) : null}
           {errors.assigneeId?.message ? (
             <p className="text-destructive mt-1 text-xs">
               {String(errors.assigneeId.message)}

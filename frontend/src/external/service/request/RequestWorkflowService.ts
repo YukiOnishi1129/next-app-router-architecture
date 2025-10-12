@@ -50,6 +50,10 @@ export class RequestWorkflowService {
     // Validate request data
     this.validateRequestData(data)
 
+    if (data.assigneeId && data.assigneeId === requester.getId().getValue()) {
+      throw new Error('Requests cannot be assigned to the requester')
+    }
+
     // Create new request with initial status
     const request = Request.create({
       title: data.title,
