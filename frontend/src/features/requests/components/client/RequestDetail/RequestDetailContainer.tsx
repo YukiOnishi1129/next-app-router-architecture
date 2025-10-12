@@ -26,7 +26,6 @@ export function RequestDetailContainer({
     canReject,
     canReopen,
     onApprove,
-    onReject,
     onReopen,
     onReopenAndSubmit,
     isApproving,
@@ -39,6 +38,13 @@ export function RequestDetailContainer({
     approveSuccessMessage,
     rejectSuccessMessage,
     reopenSuccessMessage,
+    showRejectForm,
+    rejectReason,
+    rejectFormError,
+    onRejectToggle,
+    onRejectReasonChange,
+    onRejectSubmit,
+    onEdit,
   } = useRequestDetail({ requestId, highlightCommentId })
 
   return (
@@ -56,7 +62,6 @@ export function RequestDetailContainer({
       canReject={canReject}
       canReopen={canReopen}
       onApprove={onApprove}
-      onReject={onReject}
       onReopen={onReopen}
       onReopenAndSubmit={onReopenAndSubmit}
       isApproving={isApproving}
@@ -69,6 +74,13 @@ export function RequestDetailContainer({
       approveSuccessMessage={approveSuccessMessage}
       rejectSuccessMessage={rejectSuccessMessage}
       reopenSuccessMessage={reopenSuccessMessage}
+      showRejectForm={showRejectForm}
+      rejectReason={rejectReason}
+      rejectFormError={rejectFormError}
+      onRejectToggle={onRejectToggle}
+      onRejectReasonChange={onRejectReasonChange}
+      onRejectSubmit={onRejectSubmit}
+      onEdit={onEdit}
     />
   )
 }

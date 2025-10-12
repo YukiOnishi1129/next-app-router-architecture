@@ -1,8 +1,7 @@
 'use client'
 
 import { Badge } from '@/shared/components/ui/badge'
-
-import { RequestStatus } from '@/external/domain/request/request-status'
+import { RequestStatus } from '@/shared/types/request'
 
 import type { ComponentProps } from 'react'
 

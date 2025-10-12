@@ -1,9 +1,5 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-
-import { useRouter } from 'next/navigation'
-
 import { RequestHistory } from '@/features/requests/components/client/RequestHistory'
 
 import { Button } from '@/shared/components/ui/button'
@@ -28,9 +24,15 @@ type RequestDetailPresenterProps = {
   canReject?: boolean
   canReopen?: boolean
   onApprove?: () => void
-  onReject?: (reason: string) => void
   onReopen?: () => void
   onReopenAndSubmit?: () => void
+  onEdit?: () => void
+  showRejectForm?: boolean
+  rejectReason?: string
+  rejectFormError?: string | null
+  onRejectToggle?: () => void
+  onRejectReasonChange?: (value: string) => void
+  onRejectSubmit?: () => void
   isApproving?: boolean
   isRejecting?: boolean
   isReopening?: boolean
@@ -57,9 +59,15 @@ export function RequestDetailPresenter({
   canReject = false,
   canReopen = false,
   onApprove,
-  onReject,
   onReopen,
   onReopenAndSubmit,
+  onEdit,
+  showRejectForm = false,
+  rejectReason = '',
+  rejectFormError,
+  onRejectToggle,
+  onRejectReasonChange,
+  onRejectSubmit,
   isApproving = false,
   isRejecting = false,
   isReopening = false,
@@ -71,66 +79,6 @@ export function RequestDetailPresenter({
   rejectSuccessMessage = null,
   reopenSuccessMessage = null,
 }: RequestDetailPresenterProps) {
-  const [showRejectForm, setShowRejectForm] = useState(false)
-  const [rejectReason, setRejectReason] = useState('')
-  const [rejectFormError, setRejectFormError] = useState<string | null>(null)
-  const router = useRouter()
-
-  useEffect(() => {
-    if (!canReject) {
-      setShowRejectForm(false)
-      setRejectReason('')
-      setRejectFormError(null)
-    }
-  }, [canReject])
-
-  useEffect(() => {
-    if (rejectSuccessMessage) {
-      setShowRejectForm(false)
-      setRejectReason('')
-      setRejectFormError(null)
-    }
-  }, [rejectSuccessMessage])
-
-  const handleApproveClick = () => {
-    if (!onApprove) {
-      return
-    }
-    onApprove()
-  }
-
-  const handleRejectToggle = () => {
-    setShowRejectForm((prev) => !prev)
-    setRejectFormError(null)
-  }
-
-  const handleRejectSubmit = () => {
-    if (!onReject) {
-      return
-    }
-    const trimmed = rejectReason.trim()
-    if (!trimmed) {
-      setRejectFormError('Please provide a rejection reason.')
-      return
-    }
-    setRejectFormError(null)
-    onReject(trimmed)
-  }
-
-  const handleReopenClick = () => {
-    if (!onReopen) {
-      return
-    }
-    onReopen()
-  }
-
-  const handleReopenAndSubmitClick = () => {
-    if (!onReopenAndSubmit) {
-      return
-    }
-    onReopenAndSubmit()
-  }
-
   if (errorMessage) {
     return (
       <div className="text-destructive border-destructive/40 bg-destructive/10 rounded-md border p-4 text-sm">
@@ -139,56 +87,37 @@ export function RequestDetailPresenter({
     )
   }
 
-  if (isLoading) {
+  if (isLoading || !request) {
     return (
-      <div className="text-muted-foreground space-y-2 text-sm">
-        Loading request details...
-      </div>
-    )
-  }
-
-  if (!request) {
-    return (
-      <div className="border-muted-foreground/40 text-muted-foreground rounded-md border border-dashed p-6 text-center text-sm">
-        Request not found.
+      <div className="space-y-3">
+        <div className="border-border bg-muted/30 h-24 animate-pulse rounded-md border" />
+        <div className="border-border bg-muted/30 h-24 animate-pulse rounded-md border" />
       </div>
     )
   }
 
   return (
     <div className="space-y-6">
-      {isRefetching ? (
-        <p className="text-muted-foreground text-xs">Refreshing…</p>
-      ) : null}
-
-      {approveSuccessMessage ? (
-        <div className="rounded-md border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">
-          {approveSuccessMessage}
+      <header className="space-y-4">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="space-y-1">
+            <h1 className="text-2xl font-semibold">{request.title}</h1>
+            <p className="text-muted-foreground text-sm">
+              {formatEnumLabel(request.type)} ·{' '}
+              {formatEnumLabel(request.priority)}
+            </p>
+          </div>
+          <RequestStatusBadge status={request.status} />
         </div>
-      ) : null}
-      {rejectSuccessMessage ? (
-        <div className="rounded-md border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">
-          {rejectSuccessMessage}
-        </div>
-      ) : null}
-      {reopenSuccessMessage ? (
-        <div className="rounded-md border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">
-          {reopenSuccessMessage}
-        </div>
-      ) : null}
-
-      <header className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-semibold">{request.title}</h1>
-        </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap gap-2">
           {canApprove ? (
             <Button
               type="button"
+              variant="default"
               disabled={
                 isApproving || isRejecting || isReopening || isResubmitting
               }
-              onClick={handleApproveClick}
+              onClick={() => onApprove?.()}
             >
               {isApproving ? 'Approving…' : 'Approve'}
             </Button>
@@ -200,7 +129,7 @@ export function RequestDetailPresenter({
               disabled={
                 isApproving || isRejecting || isReopening || isResubmitting
               }
-              onClick={handleRejectToggle}
+              onClick={() => onRejectToggle?.()}
             >
               {showRejectForm ? 'Cancel' : 'Reject'}
             </Button>
@@ -210,7 +139,7 @@ export function RequestDetailPresenter({
               type="button"
               variant="outline"
               disabled={isSubmitting || isReopening || isResubmitting}
-              onClick={() => router.push(`/requests/${request.id}/edit`)}
+              onClick={() => onEdit?.()}
             >
               Edit request
             </Button>
@@ -220,7 +149,7 @@ export function RequestDetailPresenter({
               type="button"
               variant="outline"
               disabled={isReopening || isResubmitting}
-              onClick={handleReopenClick}
+              onClick={() => onReopen?.()}
             >
               {isReopening ? 'Reopening…' : 'Reopen request'}
             </Button>
@@ -232,7 +161,7 @@ export function RequestDetailPresenter({
               disabled={
                 isReopening || isResubmitting || isApproving || isRejecting
               }
-              onClick={handleReopenAndSubmitClick}
+              onClick={() => onReopenAndSubmit?.()}
             >
               {isResubmitting ? 'Resubmitting…' : 'Reopen & submit'}
             </Button>
@@ -242,14 +171,33 @@ export function RequestDetailPresenter({
               type="button"
               variant="default"
               disabled={isSubmitting || isReopening || isResubmitting}
-              onClick={onSubmit}
+              onClick={() => onSubmit?.()}
             >
               {isSubmitting ? 'Submitting…' : 'Submit request'}
             </Button>
           ) : null}
-          <RequestStatusBadge status={request.status} />
         </div>
       </header>
+
+      {isRefetching ? (
+        <p className="text-muted-foreground text-xs">Refreshing…</p>
+      ) : null}
+
+      {approveSuccessMessage ? (
+        <div className="text-primary border-primary/40 bg-primary/10 rounded-md border p-4 text-sm">
+          {approveSuccessMessage}
+        </div>
+      ) : null}
+      {rejectSuccessMessage ? (
+        <div className="text-primary border-primary/40 bg-primary/10 rounded-md border p-4 text-sm">
+          {rejectSuccessMessage}
+        </div>
+      ) : null}
+      {reopenSuccessMessage ? (
+        <div className="text-primary border-primary/40 bg-primary/10 rounded-md border p-4 text-sm">
+          {reopenSuccessMessage}
+        </div>
+      ) : null}
 
       {approveError ? (
         <div className="text-destructive border-destructive/40 bg-destructive/10 rounded-md border p-4 text-sm">
@@ -266,7 +214,6 @@ export function RequestDetailPresenter({
           {reopenError}
         </div>
       ) : null}
-
       {submitError ? (
         <div className="text-destructive border-destructive/40 bg-destructive/10 rounded-md border p-4 text-sm">
           {submitError}
@@ -285,7 +232,7 @@ export function RequestDetailPresenter({
             <textarea
               className="border-border focus-visible:ring-primary/80 bg-background min-h-[120px] w-full rounded-md border p-2 text-sm focus-visible:ring-2 focus-visible:outline-none"
               value={rejectReason}
-              onChange={(event) => setRejectReason(event.target.value)}
+              onChange={(event) => onRejectReasonChange?.(event.target.value)}
               disabled={isRejecting}
               placeholder="Reason for rejecting this request"
             />
@@ -297,15 +244,15 @@ export function RequestDetailPresenter({
             <Button
               type="button"
               variant="ghost"
-              onClick={handleRejectToggle}
+              onClick={() => onRejectToggle?.()}
               disabled={isRejecting}
             >
               Back
             </Button>
             <Button
               type="button"
-              disabled={isRejecting || !rejectReason.trim()}
-              onClick={handleRejectSubmit}
+              disabled={isRejecting || !rejectReason?.trim()}
+              onClick={() => onRejectSubmit?.()}
             >
               {isRejecting ? 'Rejecting…' : 'Submit rejection'}
             </Button>

@@ -67,6 +67,8 @@ Two common patterns:
 
 Pick one per feature and stay consistent to reduce confusion.
 
+> **Avoid pass-through wrappers**: if an action just forwards to `@/external/handler/**/query.server` or `command.server`, call the external handler directly from the consumer. Keep orchestration (validation, revalidation, optimistic UI) inside feature actions so there is exactly one surface per workflow.
+
 ---
 
 ## Security Boundaries

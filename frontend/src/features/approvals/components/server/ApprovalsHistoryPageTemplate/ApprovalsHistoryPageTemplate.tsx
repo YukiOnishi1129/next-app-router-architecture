@@ -1,3 +1,5 @@
+import Link from 'next/link'
+
 import { dehydrate, HydrationBoundary } from '@tanstack/react-query'
 
 import { ApprovalsHistory } from '@/features/approvals/components/client/ApprovalsHistory'
@@ -41,11 +43,21 @@ export async function ApprovalsHistoryPageTemplate({
 
   return (
     <section className="space-y-6 px-6 py-8">
-      <header className="space-y-2">
-        <h1 className="text-2xl font-semibold">Approval history</h1>
-        <p className="text-muted-foreground text-sm">
-          See the requests you&apos;ve already approved or rejected.
-        </p>
+      <header className="space-y-4">
+        <div>
+          <Link
+            href="/approvals"
+            className="text-muted-foreground hover:text-foreground inline-flex items-center gap-2 text-sm font-medium transition"
+          >
+            ← Back to pending approvals
+          </Link>
+        </div>
+        <div className="space-y-2">
+          <h1 className="text-2xl font-semibold">Approval history</h1>
+          <p className="text-muted-foreground text-sm">
+            See the requests you&apos;ve already approved or rejected.
+          </p>
+        </div>
       </header>
 
       <HydrationBoundary state={dehydrate(queryClient)}>

@@ -50,6 +50,7 @@ const eslintConfig = [
       'local-rules/require-server-only': 'error',
       'local-rules/restrict-action-imports': 'error',
       'local-rules/use-nextjs-helpers': 'error',
+      'local-rules/no-external-domain-imports': 'off',
       'import/order': [
         'error',
         {
@@ -114,6 +115,24 @@ const eslintConfig = [
           caughtErrorsIgnorePattern: '^_',
         },
       ],
+    },
+  },
+  {
+    files: ['src/features/**', 'src/shared/**', 'src/app/**'],
+    rules: {
+      'local-rules/no-external-domain-imports': 'error',
+    },
+  },
+  {
+    files: ['src/external/**'],
+    rules: {
+      'local-rules/no-external-domain-imports': 'off',
+    },
+  },
+  {
+    files: ['src/features/**/types/**', 'src/shared/**/types/**'],
+    rules: {
+      'local-rules/no-external-domain-imports': 'off',
     },
   },
 ]

@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
+import { useRouter } from 'next/navigation'
+
 import { useApproveRequestMutation } from '@/features/approvals/hooks/mutation/useApproveRequestMutation'
 import { useRejectRequestMutation } from '@/features/approvals/hooks/mutation/useRejectRequestMutation'
 import { useAuthSession } from '@/features/auth/hooks/useAuthSession'
@@ -9,8 +11,7 @@ import { useReopenRequestMutation } from '@/features/requests/hooks/mutation/use
 import { useSubmitRequestMutation } from '@/features/requests/hooks/mutation/useSubmitRequestMutation'
 import { useRequestDetailQuery } from '@/features/requests/hooks/query/useRequestDetailQuery'
 import { mapRequestDtoToDetail } from '@/features/requests/queries/requestList.helpers'
-
-import { RequestStatus } from '@/external/domain/request/request-status'
+import { RequestStatus } from '@/features/requests/types'
 
 import type { RequestDetail } from '@/features/requests/types'
 
@@ -23,6 +24,7 @@ export const useRequestDetail = ({
   requestId,
   highlightCommentId,
 }: UseRequestDetailParams) => {
+  const router = useRouter()
   const { data, isPending, isFetching, error } =
     useRequestDetailQuery(requestId)
   const { session } = useAuthSession()
@@ -40,6 +42,9 @@ export const useRequestDetail = ({
     string | null
   >(null)
   const [isResubmitting, setIsResubmitting] = useState(false)
+  const [showRejectForm, setShowRejectForm] = useState(false)
+  const [rejectReason, setRejectReason] = useState('')
+  const [rejectFormError, setRejectFormError] = useState<string | null>(null)
 
   const detail = useMemo<RequestDetail | null>(
     () => (data ? mapRequestDtoToDetail(data) : null),
@@ -180,6 +185,49 @@ export const useRequestDetail = ({
     return () => window.clearTimeout(timer)
   }, [reopenSuccessMessage])
 
+  useEffect(() => {
+    if (!canReview) {
+      setShowRejectForm(false)
+      setRejectReason('')
+      setRejectFormError(null)
+    }
+  }, [canReview])
+
+  useEffect(() => {
+    if (!rejectSuccessMessage) {
+      return
+    }
+    setShowRejectForm(false)
+    setRejectReason('')
+    setRejectFormError(null)
+  }, [rejectSuccessMessage])
+
+  const handleRejectToggle = useCallback(() => {
+    setShowRejectForm((prev) => !prev)
+    setRejectFormError(null)
+  }, [])
+
+  const handleRejectReasonChange = useCallback((value: string) => {
+    setRejectReason(value)
+  }, [])
+
+  const handleRejectSubmit = useCallback(() => {
+    const trimmed = rejectReason.trim()
+    if (!trimmed) {
+      setRejectFormError('Please provide a rejection reason.')
+      return
+    }
+    setRejectFormError(null)
+    handleReject(trimmed)
+  }, [handleReject, rejectReason])
+
+  const handleEdit = useCallback(() => {
+    if (!detail) {
+      return
+    }
+    router.push(`/requests/${detail.id}/edit`)
+  }, [detail, router])
+
   return {
     detail,
     highlightCommentId: highlightCommentId ?? null,
@@ -197,7 +245,6 @@ export const useRequestDetail = ({
     canReject: canReview,
     canReopen,
     onApprove: handleApprove,
-    onReject: handleReject,
     onReopen: handleReopen,
     onReopenAndSubmit: handleReopenAndSubmit,
     isApproving: approveMutation.isPending,
@@ -219,5 +266,12 @@ export const useRequestDetail = ({
     approveSuccessMessage,
     rejectSuccessMessage,
     reopenSuccessMessage,
+    showRejectForm,
+    rejectReason,
+    rejectFormError,
+    onRejectToggle: handleRejectToggle,
+    onRejectReasonChange: handleRejectReasonChange,
+    onRejectSubmit: handleRejectSubmit,
+    onEdit: handleEdit,
   }
 }

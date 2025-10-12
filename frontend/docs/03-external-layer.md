@@ -9,6 +9,7 @@ The external layer hosts code that must run **only on the server**: database acc
 1. **Enforce `server-only`** – Files such as `command.server.ts`, `query.server.ts`, and anything in `service/**` begin with `import 'server-only'`. A custom ESLint rule (`require-server-only`) ensures compliance.
 2. **Share contracts via DTOs** – Zod schemas and TypeScript types live in `external/dto/**`. Handlers import DTOs for validation and response typing; Server Actions (when present) reuse the same DTOs. Importing types directly from `*.action.ts` triggers `restrict-action-imports`.
 3. **CQRS-style separation** – Commands and queries live in separate modules. Auth handlers are invoked directly by NextAuth and therefore skip `.action.ts`, whereas other domains expose Server Actions alongside server modules.
+4. **Keep domain models internal** – `external/domain/**` entities stay on the server. Feature and shared layers consume DTOs or re-exported types (e.g. `@/features/requests/types/status`) instead of importing from `@/external/domain/**` directly.
 
 ```text
 external/

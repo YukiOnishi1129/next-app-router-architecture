@@ -489,6 +489,7 @@ export type {
   RequestSummaryResponse,
   ReviewerRequestListInput,
   ReviewerSummaryResponse,
+  PendingApprovalListResponse,
 } from '@/external/dto/request'
 
 export async function listPendingApprovalsServer(): Promise<PendingApprovalListResponse> {

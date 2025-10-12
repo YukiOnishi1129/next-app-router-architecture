@@ -2,7 +2,7 @@ import {
   RequestPriority,
   RequestStatus,
   RequestType,
-} from '@/external/domain/request/request-status'
+} from '@/features/requests/types'
 
 export type PendingApproval = {
   id: string
