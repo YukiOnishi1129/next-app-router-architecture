@@ -16,6 +16,7 @@ export function ProfileFormPresenter({
 }: ProfileFormPresenterProps) {
   return (
     <form className="space-y-6" onSubmit={onSubmit}>
+      <input type="hidden" {...register('accountId')} />
       <header className="space-y-1">
         <h2 className="text-base font-medium">Profile settings</h2>
         <p className="text-muted-foreground text-sm">

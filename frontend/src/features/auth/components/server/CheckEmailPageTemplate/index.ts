@@ -1,0 +1,1 @@
+export { CheckEmailPageTemplate } from './CheckEmailPageTemplate'

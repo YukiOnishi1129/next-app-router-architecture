@@ -1,6 +1,6 @@
 import { useCallback } from 'react'
 
-import { signIn } from 'next-auth/react'
+import { signUpAction } from '@/features/auth/actions/sign-up.action'
 
 export const useSignUp = () => {
   const handleSignUp = useCallback(
@@ -14,15 +14,13 @@ export const useSignUp = () => {
       password: string
     }) => {
       try {
-        const result = await signIn('credentials', {
-          redirect: false,
+        const result = await signUpAction({
           name,
           email,
           password,
-          action: 'signup',
         })
-        if (result?.error) {
-          throw new Error(result.error)
+        if (!result.success) {
+          throw new Error(result.error ?? 'Failed to sign up')
         }
         return result
       } catch (error) {

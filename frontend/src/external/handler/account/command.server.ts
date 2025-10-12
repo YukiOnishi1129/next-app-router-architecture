@@ -3,6 +3,11 @@ import 'server-only'
 import { ZodError } from 'zod'
 
 import { getSessionServer } from '@/features/auth/servers/session.server'
+import {
+  refreshIdTokenServer,
+  setIdTokenCookieServer,
+  setRefreshTokenCookieServer,
+} from '@/features/auth/servers/token.server'
 
 import {
   updateAccountRoleSchema,
@@ -13,6 +18,7 @@ import {
 import {
   auditService,
   accountManagementService,
+  authenticationService,
   SERVER_AUDIT_CONTEXT,
   AuditEventType,
   mapAccountToDto,
@@ -183,6 +189,44 @@ export async function updateAccountProfileServer(
     )
     if (!targetAccount) {
       return { success: false, error: 'Account not found' }
+    }
+
+    const emailChanged = targetAccount.getEmail().getValue() !== validated.email
+    const nameChanged = targetAccount.getName() !== validated.name
+
+    if (emailChanged && !isSelfUpdate) {
+      return {
+        success: false,
+        error: 'Only the account owner can change their email address',
+      }
+    }
+
+    if (isSelfUpdate && (emailChanged || nameChanged)) {
+      try {
+        const idToken = await refreshIdTokenServer()
+        const identityResult = await authenticationService.updateAccountProfile(
+          idToken,
+          {
+            email: emailChanged ? validated.email : undefined,
+            displayName: nameChanged ? validated.name : undefined,
+          }
+        )
+
+        if (identityResult.idToken) {
+          await setIdTokenCookieServer(identityResult.idToken)
+        }
+        if (identityResult.refreshToken) {
+          await setRefreshTokenCookieServer(identityResult.refreshToken)
+        }
+      } catch (error) {
+        return {
+          success: false,
+          error:
+            error instanceof Error
+              ? error.message
+              : 'Failed to update identity profile',
+        }
+      }
     }
 
     const updatedAccount = await accountManagementService.updateAccountProfile(

@@ -72,12 +72,11 @@ export function useSignUpForm(): SignUpFormPresenterProps {
             email: data.email,
             password: data.password,
           })
-          if (!result || result.error) {
+          if (!result?.success) {
             throw new Error(result?.error ?? 'Failed to sign up')
           }
 
-          router.refresh()
-          router.replace('/dashboard')
+          router.replace('/auth/check-email')
         } catch (error) {
           setServerError(
             error instanceof Error ? error.message : 'Failed to sign up'

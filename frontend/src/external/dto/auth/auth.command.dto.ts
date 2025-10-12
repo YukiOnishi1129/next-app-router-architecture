@@ -22,10 +22,12 @@ export type SignInCommandRequest = z.input<typeof signInCommandSchema>
 export type SignInCommandResponse = {
   success: boolean
   error?: string
+  errorCode?: string
   account?: Account
   idToken?: string
   refreshToken?: string
   redirectUrl?: Route
+  requiresEmailVerification?: boolean
 }
 
 export const signUpCommandSchema = z.object({
@@ -41,9 +43,8 @@ export type SignUpCommandResponse = {
   success: boolean
   error?: string
   account?: Account
-  idToken?: string
-  refreshToken?: string
   redirectUrl?: Route
+  verificationEmailSent?: boolean
 }
 
 export const refreshIdTokenCommandSchema = z.object({

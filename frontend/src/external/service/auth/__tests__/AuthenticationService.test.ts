@@ -89,7 +89,8 @@ describe('AuthenticationService (Identity Platform)', () => {
       const result = await service.signUpWithEmailPassword(
         'test@example.com',
         'password',
-        'Test Account'
+        'Test Account',
+        { verificationContinueUrl: 'http://localhost/auth/verify' }
       )
 
       expect(mockClient.signUpWithEmailPassword).toHaveBeenCalledWith({
@@ -98,7 +99,12 @@ describe('AuthenticationService (Identity Platform)', () => {
         displayName: 'Test Account',
       })
       expect(mockClient.getAccountInfo).toHaveBeenCalledWith('id-token')
-      expect(mockClient.sendEmailVerification).toHaveBeenCalledWith('id-token')
+      expect(mockClient.sendEmailVerification).toHaveBeenCalledWith(
+        'id-token',
+        {
+          continueUrl: 'http://localhost/auth/verify',
+        }
+      )
 
       expect(result).toMatchObject({
         idToken: 'id-token',
