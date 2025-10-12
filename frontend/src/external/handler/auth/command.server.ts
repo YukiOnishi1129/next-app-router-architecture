@@ -2,11 +2,6 @@ import 'server-only'
 
 import { ZodError } from 'zod'
 
-import {
-  setIdTokenCookieServer,
-  setRefreshTokenCookieServer,
-} from '@/features/auth/servers/token.server'
-
 import { signInCommandSchema, signUpCommandSchema } from '@/external/dto/auth'
 
 import {
@@ -24,6 +19,13 @@ import type {
 } from '@/external/dto/auth'
 import type { Route } from 'next'
 
+const APP_BASE_URL =
+  process.env.NEXT_PUBLIC_APP_URL ??
+  (process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : 'http://localhost:3000')
+const EMAIL_VERIFICATION_PATH = '/auth/verify'
+
 export async function loginCommandServer(
   data: SignInCommandRequest
 ): Promise<SignInCommandResponse> {
@@ -35,20 +37,36 @@ export async function loginCommandServer(
       validated.password
     )
 
+    const redirectUrl = validated.redirectUrl as Route | undefined
+
+    if (!authResult.userInfo.emailVerified) {
+      const verificationUrl = new URL(EMAIL_VERIFICATION_PATH, APP_BASE_URL)
+      if (redirectUrl) {
+        verificationUrl.searchParams.set('next', redirectUrl)
+      }
+      try {
+        await authService.sendVerificationEmail(authResult.idToken, {
+          verificationContinueUrl: verificationUrl.toString(),
+        })
+      } catch (error) {
+        console.error('Failed to re-send verification email', error)
+      }
+      return {
+        success: false,
+        error: 'EMAIL_NOT_VERIFIED',
+        errorCode: 'EMAIL_NOT_VERIFIED',
+        requiresEmailVerification: true,
+      }
+    }
+
     const user = await accountManagementService.getOrCreateAccount({
       email: authResult.userInfo.email,
       name: authResult.userInfo.name,
       externalId: authResult.userInfo.id,
+      previousEmail: validated.previousEmail,
     })
 
     await auditService.logAccountLogin(user, SERVER_CONTEXT)
-
-    await Promise.all([
-      setRefreshTokenCookieServer(authResult.refreshToken),
-      setIdTokenCookieServer(authResult.idToken),
-    ])
-
-    const redirectUrl = validated.redirectUrl as Route | undefined
 
     return {
       success: true,
@@ -80,16 +98,39 @@ export async function loginCommandServer(
   }
 }
 
+export async function confirmEmailVerificationServer(oobCode: string): Promise<{
+  success: boolean
+  error?: string
+}> {
+  try {
+    await authService.confirmEmailVerification(oobCode)
+    return { success: true }
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to verify email',
+    }
+  }
+}
+
 export async function signUpCommandServer(
   data: SignUpCommandRequest
 ): Promise<SignUpCommandResponse> {
   try {
     const validated = signUpCommandSchema.parse(data)
 
+    const verificationUrl = new URL(EMAIL_VERIFICATION_PATH, APP_BASE_URL)
+    if (validated.redirectUrl) {
+      verificationUrl.searchParams.set('next', validated.redirectUrl)
+    }
+
     const authResult = await authService.signUpWithEmailPassword(
       validated.email,
       validated.password,
-      validated.name
+      validated.name,
+      {
+        verificationContinueUrl: verificationUrl.toString(),
+      }
     )
 
     const user = await accountManagementService.getOrCreateAccount({
@@ -100,15 +141,6 @@ export async function signUpCommandServer(
         validated.email.split('@')[0],
       externalId: authResult.userInfo.id,
     })
-
-    await auditService.logAccountLogin(user, SERVER_CONTEXT)
-
-    await Promise.all([
-      setRefreshTokenCookieServer(authResult.refreshToken),
-      setIdTokenCookieServer(authResult.idToken),
-    ])
-
-    const redirectUrl = validated.redirectUrl as Route | undefined
 
     return {
       success: true,
@@ -121,9 +153,7 @@ export async function signUpCommandServer(
         createdAt: user.getCreatedAt().toISOString(),
         updatedAt: user.getUpdatedAt().toISOString(),
       },
-      idToken: authResult.idToken,
-      refreshToken: authResult.refreshToken,
-      redirectUrl: redirectUrl || '/dashboard',
+      verificationEmailSent: true,
     }
   } catch (error) {
     if (error instanceof ZodError) {

@@ -186,8 +186,12 @@ export class RequestApprovalService {
       return false
     }
 
-    // Business rule: Only admins can approve (no manager role in domain)
-    if (!account.isAdmin()) {
+    const isAssignee =
+      request.getAssigneeId()?.getValue() === account.getId().getValue()
+    const isAdmin = account.isAdmin()
+
+    // Business rule: Either admins or explicitly assigned approvers can approve
+    if (!isAdmin && !isAssignee) {
       return false
     }
 
@@ -206,7 +210,7 @@ export class RequestApprovalService {
     const account = await this.accountRepository.findById(
       AccountId.create(approverId)
     )
-    if (!account || !account.isAdmin()) {
+    if (!account) {
       return []
     }
 
@@ -220,7 +224,10 @@ export class RequestApprovalService {
     const allPendingRequests = [...submittedRequests, ...inReviewRequests]
 
     return allPendingRequests.filter(
-      (request) => request.getRequesterId().getValue() !== approverId
+      (request) =>
+        request.getRequesterId().getValue() !== approverId &&
+        (account.isAdmin() ||
+          request.getAssigneeId()?.getValue() === approverId)
     )
   }
 

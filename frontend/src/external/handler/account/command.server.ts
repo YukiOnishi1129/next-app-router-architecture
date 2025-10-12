@@ -3,16 +3,19 @@ import 'server-only'
 import { ZodError } from 'zod'
 
 import { getSessionServer } from '@/features/auth/servers/session.server'
+import { refreshIdTokenServer } from '@/features/auth/servers/token.server'
 
 import {
   updateAccountRoleSchema,
   updateAccountStatusSchema,
-  updateAccountProfileSchema,
+  updateAccountNameSchema,
+  requestAccountEmailChangeSchema,
 } from '@/external/dto/account'
 
 import {
   auditService,
   accountManagementService,
+  authenticationService,
   SERVER_AUDIT_CONTEXT,
   AuditEventType,
   mapAccountToDto,
@@ -21,9 +24,18 @@ import {
 import type {
   UpdateAccountRoleInput,
   UpdateAccountStatusInput,
-  UpdateAccountProfileInput,
+  UpdateAccountNameInput,
+  RequestAccountEmailChangeInput,
   UpdateAccountResponse,
+  RequestAccountEmailChangeResponse,
 } from '@/external/dto/account'
+
+const APP_BASE_URL =
+  process.env.NEXT_PUBLIC_APP_URL ??
+  (process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : 'http://localhost:3000')
+const EMAIL_CHANGE_VERIFICATION_PATH = '/auth/verify-email-change'
 
 async function ensureAdmin(sessionAccountId: string) {
   const currentAccount =
@@ -153,8 +165,8 @@ export async function updateAccountStatusServer(
   }
 }
 
-export async function updateAccountProfileServer(
-  data: UpdateAccountProfileInput
+export async function updateAccountNameServer(
+  data: UpdateAccountNameInput
 ): Promise<UpdateAccountResponse> {
   try {
     const session = await getSessionServer()
@@ -162,7 +174,7 @@ export async function updateAccountProfileServer(
       return { success: false, error: 'Unauthorized' }
     }
 
-    const validated = updateAccountProfileSchema.parse(data)
+    const validated = updateAccountNameSchema.parse(data)
 
     const currentAccount = await accountManagementService.findAccountById(
       session.account.id
@@ -185,29 +197,28 @@ export async function updateAccountProfileServer(
       return { success: false, error: 'Account not found' }
     }
 
-    const updatedAccount = await accountManagementService.updateAccountProfile(
-      validated.accountId,
-      validated.name,
-      validated.email
-    )
+    const nameChanged = targetAccount.getName() !== validated.name
 
-    await auditService.logAction({
-      action: 'account.profile.update',
-      entityType: 'ACCOUNT',
-      entityId: validated.accountId,
-      accountId: session.account.id,
-      metadata: {
-        updatedFields: [
-          targetAccount.getName() !== validated.name ? 'name' : undefined,
-          targetAccount.getEmail().getValue() !== validated.email
-            ? 'email'
-            : undefined,
-        ].filter(Boolean),
-        isSelfUpdate,
-      },
-      eventType: AuditEventType.ACCOUNT_UPDATED,
-      context: SERVER_AUDIT_CONTEXT,
-    })
+    const updatedAccount = nameChanged
+      ? await accountManagementService.updateAccount(validated.accountId, {
+          name: validated.name,
+        })
+      : targetAccount
+
+    if (nameChanged) {
+      await auditService.logAction({
+        action: 'account.profile.update',
+        entityType: 'ACCOUNT',
+        entityId: validated.accountId,
+        accountId: session.account.id,
+        metadata: {
+          updatedFields: ['name'],
+          isSelfUpdate,
+        },
+        eventType: AuditEventType.ACCOUNT_UPDATED,
+        context: SERVER_AUDIT_CONTEXT,
+      })
+    }
 
     return {
       success: true,
@@ -227,9 +238,78 @@ export async function updateAccountProfileServer(
   }
 }
 
+export async function requestAccountEmailChangeServer(
+  data: RequestAccountEmailChangeInput
+): Promise<RequestAccountEmailChangeResponse> {
+  try {
+    const session = await getSessionServer()
+    if (!session?.account) {
+      return { success: false, error: 'Unauthorized' }
+    }
+
+    const validated = requestAccountEmailChangeSchema.parse(data)
+
+    if (validated.accountId !== session.account.id) {
+      return {
+        success: false,
+        error: 'Only the account owner can request an email change',
+      }
+    }
+
+    const account = await accountManagementService.findAccountById(
+      validated.accountId
+    )
+    if (!account) {
+      return { success: false, error: 'Account not found' }
+    }
+
+    if (account.getEmail().getValue() === validated.newEmail) {
+      return {
+        success: true,
+        pendingEmail: validated.newEmail,
+      }
+    }
+
+    const idToken = await refreshIdTokenServer()
+    const verificationUrl = new URL(
+      EMAIL_CHANGE_VERIFICATION_PATH,
+      APP_BASE_URL
+    )
+
+    await authenticationService.sendEmailChangeVerification(
+      idToken,
+      validated.newEmail,
+      {
+        verificationContinueUrl: verificationUrl.toString(),
+      }
+    )
+
+    return {
+      success: true,
+      pendingEmail: validated.newEmail,
+    }
+  } catch (error) {
+    if (error instanceof ZodError) {
+      return { success: false, error: 'Invalid input data' }
+    }
+    const message =
+      error instanceof Error ? error.message : 'Failed to request email change'
+    if (message.includes('CREDENTIAL_TOO_OLD_LOGIN_AGAIN')) {
+      return {
+        success: false,
+        error:
+          'Please sign out and sign in again before changing your email address. This helps keep your account secure.',
+      }
+    }
+    return { success: false, error: message }
+  }
+}
+
 export type {
   UpdateAccountRoleInput,
   UpdateAccountStatusInput,
-  UpdateAccountProfileInput,
+  UpdateAccountNameInput,
+  RequestAccountEmailChangeInput,
   UpdateAccountResponse,
+  RequestAccountEmailChangeResponse,
 } from '@/external/dto/account'

@@ -8,6 +8,8 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 
+import { useAccountListQuery } from '@/features/account/hooks/query/useAccountListQuery'
+import { useAuthSession } from '@/features/auth/hooks/useAuthSession'
 import { requestKeys } from '@/features/requests/queries/keys'
 import {
   createRequestSchema,
@@ -32,6 +34,20 @@ export const useRequestForm = () => {
       priority: RequestPriority.MEDIUM,
       assigneeId: '',
     },
+  })
+
+  const { session } = useAuthSession()
+  const canAssignRequests = session?.account?.roles?.includes('ADMIN') ?? false
+  const currentAccountId = session?.account?.id ?? null
+  const assignableAccountsInput = useMemo(
+    () => ({
+      limit: 100,
+    }),
+    []
+  )
+  const accountListQuery = useAccountListQuery({
+    enabled: canAssignRequests,
+    input: assignableAccountsInput,
   })
 
   const router = useRouter()
@@ -85,6 +101,28 @@ export const useRequestForm = () => {
     []
   )
 
+  const assigneeOptions = useMemo(() => {
+    const accounts = accountListQuery.data?.accounts ?? []
+    return accounts
+      .filter((account) => account.id !== currentAccountId)
+      .map((account) => ({
+        value: account.id,
+        label: `${account.name} (${account.email})`,
+      }))
+  }, [accountListQuery.data?.accounts, currentAccountId])
+
+  const isAssigneeOptionsLoading =
+    canAssignRequests &&
+    (accountListQuery.isLoading || accountListQuery.isFetching)
+  const isAssigneeSelectDisabled = !canAssignRequests
+  const assigneeHelperText = !canAssignRequests
+    ? 'Only administrators can assign a request to a specific approver.'
+    : accountListQuery.isError
+      ? 'Unable to load assignee options.'
+      : assigneeOptions.length === 0
+        ? 'No other accounts are available to assign at the moment.'
+        : null
+
   return {
     form,
     handleSubmit,
@@ -92,5 +130,9 @@ export const useRequestForm = () => {
     priorityOptions,
     serverError,
     isSubmitting: mutation.isPending || form.formState.isSubmitting,
+    assigneeOptions,
+    isAssigneeOptionsLoading,
+    isAssigneeSelectDisabled,
+    assigneeHelperText,
   }
 }

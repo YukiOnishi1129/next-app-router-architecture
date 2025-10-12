@@ -11,6 +11,10 @@ export function RequestFormContainer() {
     priorityOptions,
     serverError,
     isSubmitting,
+    assigneeOptions,
+    isAssigneeOptionsLoading,
+    isAssigneeSelectDisabled,
+    assigneeHelperText,
   } = useRequestForm()
 
   return (
@@ -21,6 +25,10 @@ export function RequestFormContainer() {
       priorityOptions={priorityOptions}
       serverError={serverError}
       isSubmitting={isSubmitting}
+      assigneeOptions={assigneeOptions}
+      assigneeOptionsLoading={isAssigneeOptionsLoading}
+      assigneeDisabled={isAssigneeSelectDisabled}
+      assigneeHelperText={assigneeHelperText}
     />
   )
 }

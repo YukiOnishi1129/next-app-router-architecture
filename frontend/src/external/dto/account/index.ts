@@ -1,11 +1,14 @@
 export {
   updateAccountRoleSchema,
   updateAccountStatusSchema,
-  updateAccountProfileSchema,
+  updateAccountNameSchema,
+  requestAccountEmailChangeSchema,
   type UpdateAccountRoleInput,
   type UpdateAccountStatusInput,
-  type UpdateAccountProfileInput,
+  type UpdateAccountNameInput,
+  type RequestAccountEmailChangeInput,
   type UpdateAccountResponse,
+  type RequestAccountEmailChangeResponse,
 } from './account.command.dto'
 export {
   listAccountsSchema,

@@ -3,14 +3,17 @@
 import {
   updateAccountRoleServer,
   updateAccountStatusServer,
-  updateAccountProfileServer,
+  updateAccountNameServer,
+  requestAccountEmailChangeServer,
 } from './command.server'
 
 import type {
   UpdateAccountRoleInput,
   UpdateAccountStatusInput,
-  UpdateAccountProfileInput,
+  UpdateAccountNameInput,
+  RequestAccountEmailChangeInput,
   UpdateAccountResponse,
+  RequestAccountEmailChangeResponse,
 } from './command.server'
 
 export async function updateAccountRoleAction(
@@ -25,15 +28,23 @@ export async function updateAccountStatusAction(
   return updateAccountStatusServer(data)
 }
 
-export async function updateAccountProfileAction(
-  data: UpdateAccountProfileInput
+export async function updateAccountNameAction(
+  data: UpdateAccountNameInput
 ): Promise<UpdateAccountResponse> {
-  return updateAccountProfileServer(data)
+  return updateAccountNameServer(data)
+}
+
+export async function requestAccountEmailChangeAction(
+  data: RequestAccountEmailChangeInput
+): Promise<RequestAccountEmailChangeResponse> {
+  return requestAccountEmailChangeServer(data)
 }
 
 export type {
   UpdateAccountRoleInput,
   UpdateAccountStatusInput,
-  UpdateAccountProfileInput,
+  UpdateAccountNameInput,
+  RequestAccountEmailChangeInput,
   UpdateAccountResponse,
+  RequestAccountEmailChangeResponse,
 } from './command.server'

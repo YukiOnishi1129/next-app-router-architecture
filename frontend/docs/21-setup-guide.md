@@ -20,6 +20,7 @@ git clone <repository-url>
 cd next-app-router-architecture
 cp frontend/.env.example frontend/.env
 # Update secrets / API keys in frontend/.env
+# Ensure NEXT_PUBLIC_APP_URL points to the URL that should receive verification links (e.g. http://localhost:3000)
 ```
 
 Install dependencies and start Postgres:

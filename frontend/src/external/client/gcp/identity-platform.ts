@@ -126,7 +126,13 @@ export class IdentityPlatformClient {
   /**
    * Send email verification
    */
-  async sendEmailVerification(idToken: string): Promise<void> {
+  async sendEmailVerification(
+    idToken: string,
+    options?: {
+      continueUrl?: string
+      canHandleCodeInApp?: boolean
+    }
+  ): Promise<void> {
     const response = await fetch(
       `${this.baseUrl}/accounts:sendOobCode?key=${this.config.apiKey}`,
       {
@@ -137,6 +143,8 @@ export class IdentityPlatformClient {
         body: JSON.stringify({
           requestType: 'VERIFY_EMAIL',
           idToken,
+          continueUrl: options?.continueUrl,
+          canHandleCodeInApp: options?.canHandleCodeInApp ?? true,
         }),
       }
     )
@@ -145,6 +153,42 @@ export class IdentityPlatformClient {
       const error = await response.json()
       throw new Error(
         `Failed to send verification email: ${error.error?.message || 'Unknown error'}`
+      )
+    }
+  }
+
+  /**
+   * Send email change verification
+   */
+  async sendEmailChangeVerification(
+    idToken: string,
+    newEmail: string,
+    options?: {
+      continueUrl?: string
+      canHandleCodeInApp?: boolean
+    }
+  ): Promise<void> {
+    const response = await fetch(
+      `${this.baseUrl}/accounts:sendOobCode?key=${this.config.apiKey}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          requestType: 'VERIFY_AND_CHANGE_EMAIL',
+          idToken,
+          newEmail,
+          continueUrl: options?.continueUrl,
+          canHandleCodeInApp: options?.canHandleCodeInApp ?? true,
+        }),
+      }
+    )
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(
+        `Failed to send email change verification: ${error.error?.message || 'Unknown error'}`
       )
     }
   }
@@ -183,8 +227,9 @@ export class IdentityPlatformClient {
     updates: {
       displayName?: string
       photoUrl?: string
+      email?: string
     }
-  ): Promise<AccountInfo> {
+  ): Promise<AccountProfileUpdateResult> {
     const response = await fetch(
       `${this.baseUrl}/accounts:update?key=${this.config.apiKey}`,
       {
@@ -195,7 +240,7 @@ export class IdentityPlatformClient {
         body: JSON.stringify({
           idToken,
           ...updates,
-          returnSecureToken: false,
+          returnSecureToken: Boolean(updates.email),
         }),
       }
     )
@@ -207,8 +252,79 @@ export class IdentityPlatformClient {
       )
     }
 
-    // Return updated user info
-    return this.getAccountInfo(idToken)
+    const data = await response.json()
+    const tokenForLookup = (data.idToken as string | undefined) ?? idToken
+
+    const account = await this.getAccountInfo(tokenForLookup)
+    if (!account) {
+      throw new Error('Failed to retrieve updated account information')
+    }
+
+    return {
+      account,
+      idToken: data.idToken as string | undefined,
+      refreshToken: data.refreshToken as string | undefined,
+    }
+  }
+
+  /**
+   * Confirm email verification using OOB code
+   */
+  async confirmEmailVerification(oobCode: string): Promise<void> {
+    const response = await fetch(
+      `${this.baseUrl}/accounts:update?key=${this.config.apiKey}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          oobCode,
+        }),
+      }
+    )
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(
+        `Failed to verify email: ${error.error?.message || 'Unknown error'}`
+      )
+    }
+  }
+
+  /**
+   * Confirm email change using OOB code
+   */
+  async confirmEmailChange(oobCode: string): Promise<{
+    email: string
+    localId: string
+  }> {
+    const response = await fetch(
+      `${this.baseUrl}/accounts:update?key=${this.config.apiKey}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          oobCode,
+          returnSecureToken: false,
+        }),
+      }
+    )
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(
+        `Failed to confirm email change: ${error.error?.message || 'Unknown error'}`
+      )
+    }
+
+    const data = await response.json()
+    return {
+      email: data.email,
+      localId: data.localId,
+    }
   }
 
   /**
@@ -309,4 +425,9 @@ export class IdentityPlatformClient {
       return false
     }
   }
+}
+export interface AccountProfileUpdateResult {
+  account: AccountInfo
+  idToken?: string
+  refreshToken?: string
 }

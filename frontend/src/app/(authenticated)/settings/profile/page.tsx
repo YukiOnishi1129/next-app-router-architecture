@@ -1,5 +1,13 @@
 import { ProfilePageTemplate } from '@/features/settings/components/server/ProfilePageTemplate'
 
-export default function ProfilePage(_props: PageProps<'/settings/profile'>) {
-  return <ProfilePageTemplate />
+export default async function ProfilePage(
+  props: PageProps<'/settings/profile'>
+) {
+  const params = await props.searchParams
+  const updatedParam = Array.isArray(params.updated)
+    ? params.updated[0]
+    : params.updated
+  const updatedField = updatedParam === 'name' ? updatedParam : undefined
+
+  return <ProfilePageTemplate updatedField={updatedField} />
 }

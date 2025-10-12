@@ -2,6 +2,8 @@ import { useCallback } from 'react'
 
 import { signIn } from 'next-auth/react'
 
+import { CREDENTIAL_TYPE } from '@/features/auth/constants/credential'
+
 export const useSignIn = () => {
   const handleSignIn = useCallback(async (email: string, password: string) => {
     try {
@@ -9,7 +11,7 @@ export const useSignIn = () => {
         redirect: false,
         email,
         password,
-        action: 'login',
+        action: CREDENTIAL_TYPE.LOGIN,
       })
       if (result?.error) {
         throw new Error(result.error)

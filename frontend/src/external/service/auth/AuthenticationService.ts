@@ -11,6 +11,8 @@ import {
   AccountInfo,
 } from '@/external/client/gcp/identity-platform'
 
+import type { AccountProfileUpdateResult } from '@/external/client/gcp/identity-platform'
+
 export interface AuthToken {
   token: string
   refreshToken: string
@@ -43,7 +45,10 @@ export class AuthenticationService {
   async signUpWithEmailPassword(
     email: string,
     password: string,
-    displayName?: string
+    displayName?: string,
+    options?: {
+      verificationContinueUrl?: string
+    }
   ): Promise<EmailPasswordAuthResult> {
     // Sign up the user
     const authResult =
@@ -59,7 +64,12 @@ export class AuthenticationService {
     )
 
     // Send verification email
-    await this.identityPlatformClient.sendEmailVerification(authResult.idToken)
+    await this.identityPlatformClient.sendEmailVerification(
+      authResult.idToken,
+      {
+        continueUrl: options?.verificationContinueUrl,
+      }
+    )
 
     // Calculate expiration time
     const expiresAt = new Date()
@@ -152,8 +162,7 @@ export class AuthenticationService {
         refreshToken: newTokens.refreshToken,
         expiresIn: newTokens.expiresIn,
       }
-    } catch (error) {
-      console.error('Token refresh failed:', error)
+    } catch {
       return null
     }
   }
@@ -175,8 +184,9 @@ export class AuthenticationService {
     updates: {
       displayName?: string
       photoUrl?: string
+      email?: string
     }
-  ): Promise<AccountInfo> {
+  ): Promise<AccountProfileUpdateResult> {
     return await this.identityPlatformClient.updateAccountProfile(
       idToken,
       updates
@@ -188,6 +198,79 @@ export class AuthenticationService {
    */
   async sendPasswordResetEmail(email: string): Promise<void> {
     return await this.identityPlatformClient.sendPasswordResetEmail(email)
+  }
+
+  /**
+   * Send verification email
+   */
+  async sendVerificationEmail(
+    idToken: string,
+    options?: { verificationContinueUrl?: string }
+  ): Promise<void> {
+    try {
+      await this.identityPlatformClient.sendEmailVerification(idToken, {
+        continueUrl: options?.verificationContinueUrl,
+      })
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        error.message.includes('UNAUTHORIZED_DOMAIN')
+      ) {
+        // Fallback to default Identity Platform redirect host when the custom
+        // domain is not allowlisted (common in local development).
+        await this.identityPlatformClient.sendEmailVerification(idToken)
+        return
+      }
+      throw error
+    }
+  }
+
+  /**
+   * Send email change verification
+   */
+  async sendEmailChangeVerification(
+    idToken: string,
+    newEmail: string,
+    options?: { verificationContinueUrl?: string }
+  ): Promise<void> {
+    try {
+      await this.identityPlatformClient.sendEmailChangeVerification(
+        idToken,
+        newEmail,
+        {
+          continueUrl: options?.verificationContinueUrl,
+        }
+      )
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        error.message.includes('UNAUTHORIZED_DOMAIN')
+      ) {
+        await this.identityPlatformClient.sendEmailChangeVerification(
+          idToken,
+          newEmail
+        )
+        return
+      }
+      throw error
+    }
+  }
+
+  /**
+   * Confirm email verification using OOB code
+   */
+  async confirmEmailVerification(oobCode: string): Promise<void> {
+    return this.identityPlatformClient.confirmEmailVerification(oobCode)
+  }
+
+  /**
+   * Confirm email change and return updated email information
+   */
+  async confirmEmailChange(oobCode: string): Promise<{
+    email: string
+    localId: string
+  }> {
+    return this.identityPlatformClient.confirmEmailChange(oobCode)
   }
 
   /**

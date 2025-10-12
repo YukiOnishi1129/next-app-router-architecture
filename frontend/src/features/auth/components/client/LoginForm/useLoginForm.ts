@@ -60,6 +60,17 @@ export function useLoginForm(): LoginFormPresenterProps {
           router.refresh()
           router.replace('/dashboard')
         } catch (error) {
+          if (
+            error instanceof Error &&
+            error.message === 'EMAIL_NOT_VERIFIED'
+          ) {
+            router.replace('/auth/check-email')
+            setServerError(
+              'Please verify your email before signing in. We have sent a new verification link.'
+            )
+            return
+          }
+
           setServerError(
             error instanceof Error ? error.message : 'Failed to sign in'
           )

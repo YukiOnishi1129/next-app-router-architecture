@@ -27,6 +27,7 @@ export interface CreateAccountData {
   name: string
   externalId?: string
   roles?: AccountRole[]
+  previousEmail?: string
 }
 
 export interface UpdateAccountData {
@@ -184,20 +185,30 @@ export class AccountManagementService {
    * Get or create account
    */
   async getOrCreateAccount(data: CreateAccountData): Promise<Account> {
-    const existingAccount = await this.accountRepository.findByEmail(
-      new Email(data.email)
-    )
+    const newEmail = new Email(data.email)
+    const existingAccount = await this.accountRepository.findByEmail(newEmail)
 
     if (existingAccount) {
-      // Update account info if needed
-      if (existingAccount.getName() !== data.name) {
-        existingAccount.updateProfile(
-          data.name,
-          existingAccount.getEmail().getValue()
-        )
+      const currentName = existingAccount.getName()
+      const currentEmail = existingAccount.getEmail().getValue()
+
+      if (currentName !== data.name || currentEmail !== data.email) {
+        existingAccount.updateProfile(data.name, data.email)
         await this.accountRepository.save(existingAccount)
       }
       return existingAccount
+    }
+
+    if (data.previousEmail && data.previousEmail !== data.email) {
+      const previousAccount = await this.accountRepository.findByEmail(
+        new Email(data.previousEmail)
+      )
+
+      if (previousAccount) {
+        previousAccount.updateProfile(data.name, data.email)
+        await this.accountRepository.save(previousAccount)
+        return previousAccount
+      }
     }
 
     return this.createAccount(data)

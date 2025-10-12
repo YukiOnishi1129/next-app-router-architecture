@@ -1,0 +1,1 @@
+export { SignOutPageTemplate } from './SignOutPageTemplate'
