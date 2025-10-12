@@ -63,3 +63,16 @@ export type RefreshIdTokenCommandResponse = {
   refreshToken?: string
   expiresIn?: string
 }
+
+export const requestPasswordResetCommandSchema = z.object({
+  email: z.email(),
+})
+
+export type RequestPasswordResetCommandRequest = z.input<
+  typeof requestPasswordResetCommandSchema
+>
+
+export type RequestPasswordResetCommandResponse = {
+  success: boolean
+  error?: string
+}

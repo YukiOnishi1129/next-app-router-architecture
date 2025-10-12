@@ -209,8 +209,14 @@ export class AuthenticationService {
   /**
    * Send password reset email
    */
-  async sendPasswordResetEmail(email: string): Promise<void> {
-    return await this.identityPlatformClient.sendPasswordResetEmail(email)
+  async sendPasswordResetEmail(
+    email: string,
+    options?: { continueUrl?: string; canHandleCodeInApp?: boolean }
+  ): Promise<void> {
+    return await this.identityPlatformClient.sendPasswordResetEmail(
+      email,
+      options
+    )
   }
 
   /**

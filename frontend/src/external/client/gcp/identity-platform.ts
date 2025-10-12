@@ -196,7 +196,10 @@ export class IdentityPlatformClient {
   /**
    * Send password reset email
    */
-  async sendPasswordResetEmail(email: string): Promise<void> {
+  async sendPasswordResetEmail(
+    email: string,
+    options?: { continueUrl?: string; canHandleCodeInApp?: boolean }
+  ): Promise<void> {
     const response = await fetch(
       `${this.baseUrl}/accounts:sendOobCode?key=${this.config.apiKey}`,
       {
@@ -207,6 +210,8 @@ export class IdentityPlatformClient {
         body: JSON.stringify({
           requestType: 'PASSWORD_RESET',
           email,
+          continueUrl: options?.continueUrl,
+          canHandleCodeInApp: options?.canHandleCodeInApp ?? true,
         }),
       }
     )

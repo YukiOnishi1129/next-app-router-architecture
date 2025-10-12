@@ -2,7 +2,11 @@ import 'server-only'
 
 import { ZodError } from 'zod'
 
-import { signInCommandSchema, signUpCommandSchema } from '@/external/dto/auth'
+import {
+  signInCommandSchema,
+  signUpCommandSchema,
+  requestPasswordResetCommandSchema,
+} from '@/external/dto/auth'
 
 import {
   authService,
@@ -16,6 +20,8 @@ import type {
   SignInCommandRequest,
   SignInCommandResponse,
   SignUpCommandRequest,
+  RequestPasswordResetCommandRequest,
+  RequestPasswordResetCommandResponse,
 } from '@/external/dto/auth'
 import type { Route } from 'next'
 
@@ -25,6 +31,7 @@ const APP_BASE_URL =
     ? `https://${process.env.VERCEL_URL}`
     : 'http://localhost:3000')
 const EMAIL_VERIFICATION_PATH = '/auth/verify'
+const PASSWORD_RESET_COMPLETE_PATH = '/login'
 
 export async function loginCommandServer(
   data: SignInCommandRequest
@@ -166,6 +173,55 @@ export async function signUpCommandServer(
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Sign up failed',
+    }
+  }
+}
+
+export async function requestPasswordResetCommandServer(
+  data: RequestPasswordResetCommandRequest
+): Promise<RequestPasswordResetCommandResponse> {
+  try {
+    const validated = requestPasswordResetCommandSchema.parse(data)
+
+    try {
+      const resetRedirectUrl = new URL(
+        PASSWORD_RESET_COMPLETE_PATH,
+        APP_BASE_URL
+      )
+      resetRedirectUrl.searchParams.set('passwordReset', '1')
+
+      await authService.sendPasswordResetEmail(validated.email, {
+        continueUrl: resetRedirectUrl.toString(),
+      })
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'Failed to send password reset email'
+
+      if (message.includes('EMAIL_NOT_FOUND')) {
+        // Avoid revealing whether the email address exists
+        return { success: true }
+      }
+
+      return {
+        success: false,
+        error: message,
+      }
+    }
+
+    return { success: true }
+  } catch (error) {
+    if (error instanceof ZodError) {
+      return { success: false, error: 'Invalid email format' }
+    }
+
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : 'Failed to request password reset',
     }
   }
 }
