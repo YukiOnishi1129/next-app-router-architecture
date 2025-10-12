@@ -31,10 +31,7 @@ export async function ProfileEmailPageTemplate() {
       </div>
 
       <Card className="max-w-lg p-6">
-        <ProfileEmailForm
-          accountId={account.id}
-          initialEmail={account.email}
-        />
+        <ProfileEmailForm accountId={account.id} initialEmail={account.email} />
       </Card>
     </section>
   )

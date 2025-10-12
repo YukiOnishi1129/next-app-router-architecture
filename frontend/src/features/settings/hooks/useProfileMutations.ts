@@ -13,7 +13,9 @@ export const useUpdateProfileNameMutation = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (input: Parameters<typeof updateAccountNameAction>[0]) => {
+    mutationFn: async (
+      input: Parameters<typeof updateAccountNameAction>[0]
+    ) => {
       const response = await updateAccountNameAction(input)
       if (!response.success) {
         throw new Error(response.error ?? 'Failed to update profile name')

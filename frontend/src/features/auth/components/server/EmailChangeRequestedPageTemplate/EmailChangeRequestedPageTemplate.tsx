@@ -10,8 +10,8 @@ export async function EmailChangeRequestedPageTemplate() {
       <h1 className="text-2xl font-semibold">Check your inbox</h1>
       <p className="text-muted-foreground text-sm">
         We sent a confirmation email to your new address. Follow the link inside
-        to finish updating your account. You&apos;ll be asked to sign in again with
-        the new email once it&apos;s verified.
+        to finish updating your account. You&apos;ll be asked to sign in again
+        with the new email once it&apos;s verified.
       </p>
       <div className="border-border/60 bg-muted/30 text-muted-foreground rounded-md border border-dashed p-5 text-sm">
         <p className="text-foreground font-medium">Haven&apos;t received it?</p>

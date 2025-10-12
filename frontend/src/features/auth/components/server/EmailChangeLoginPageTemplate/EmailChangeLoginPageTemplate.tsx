@@ -1,9 +1,9 @@
 import Link from 'next/link'
 
-import { EmailChangeLoginForm } from '@/features/auth/components/client/EmailChangeLoginForm'
 import { EmailChangeLoginCookieCleaner } from '@/features/auth/components/client/EmailChangeLoginCookieCleaner'
-import { redirectIfAuthenticatedServer } from '@/features/auth/servers/redirect.server'
+import { EmailChangeLoginForm } from '@/features/auth/components/client/EmailChangeLoginForm'
 import { getEmailChangePreviousEmailCookieServer } from '@/features/auth/servers/email-change.server'
+import { redirectIfAuthenticatedServer } from '@/features/auth/servers/redirect.server'
 
 type EmailChangeLoginPageTemplateProps = {
   verified?: boolean
@@ -21,7 +21,9 @@ export async function EmailChangeLoginPageTemplate(
       <EmailChangeLoginCookieCleaner enabled={Boolean(previousEmail)} />
       <section className="space-y-6">
         <header className="space-y-2 text-center">
-          <h1 className="text-2xl font-semibold">Sign in with your new email</h1>
+          <h1 className="text-2xl font-semibold">
+            Sign in with your new email
+          </h1>
           <p className="text-muted-foreground text-sm">
             Enter the email you used before the change and the newly verified
             email so we can link your account correctly.

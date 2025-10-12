@@ -1,12 +1,12 @@
 import { useCallback } from 'react'
 
 import { useRouter } from 'next/navigation'
-import { signOut } from 'next-auth/react'
 
 import { useQueryClient } from '@tanstack/react-query'
+import { signOut } from 'next-auth/react'
 
-import { deleteAuthCookiesAction } from '@/features/auth/actions/token.action'
 import { setEmailChangePreviousEmailCookieAction } from '@/features/auth/actions/email-change.action'
+import { deleteAuthCookiesAction } from '@/features/auth/actions/token.action'
 
 import type { Route } from 'next'
 

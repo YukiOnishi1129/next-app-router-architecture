@@ -1,9 +1,8 @@
 'use client'
 
-import {
-  EmailChangeLoginFormContainer,
-  type EmailChangeLoginFormContainerProps,
-} from './EmailChangeLoginFormContainer'
+import { EmailChangeLoginFormContainer } from './EmailChangeLoginFormContainer'
+
+import type { EmailChangeLoginFormContainerProps } from './EmailChangeLoginFormContainer'
 
 export const EmailChangeLoginForm = (
   props: EmailChangeLoginFormContainerProps
