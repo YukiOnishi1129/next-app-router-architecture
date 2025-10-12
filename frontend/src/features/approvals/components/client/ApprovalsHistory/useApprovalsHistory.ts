@@ -6,8 +6,10 @@ import { useReviewedApprovalsQuery } from '@/features/approvals/hooks/query/useR
 import { RequestStatus } from '@/features/requests/types'
 
 import type { ReviewerSummary } from '@/external/dto/request'
-import type { ReviewerStatus } from '@/features/approvals/types'
-import type { ApprovalsHistoryTab } from '@/features/approvals/types'
+import type {
+  ReviewerStatus,
+  ApprovalsHistoryTab,
+} from '@/features/approvals/types'
 
 const TAB_DEFINITIONS: Array<
   Pick<ApprovalsHistoryTab, 'key' | 'label' | 'description'>

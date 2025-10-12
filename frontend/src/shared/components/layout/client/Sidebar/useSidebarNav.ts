@@ -18,6 +18,11 @@ const NAV_ITEMS: Array<{
   isActive: (path: string) => boolean
 }> = [
   {
+    href: '/dashboard',
+    label: 'Dashboard',
+    isActive: (path) => path.startsWith('/dashboard'),
+  },
+  {
     href: '/requests',
     label: 'My Requests',
     isActive: (path) =>
@@ -30,14 +35,9 @@ const NAV_ITEMS: Array<{
     isActive: (path) => path.startsWith('/approvals'),
   },
   {
-    href: '/notifications',
-    label: 'Notifications',
-    isActive: (path) => path.startsWith('/notifications'),
-  },
-  {
-    href: '/dashboard',
-    label: 'Dashboard',
-    isActive: (path) => path.startsWith('/dashboard'),
+    href: '/settings/profile',
+    label: 'Settings',
+    isActive: (path) => path.startsWith('/settings'),
   },
 ]
 
