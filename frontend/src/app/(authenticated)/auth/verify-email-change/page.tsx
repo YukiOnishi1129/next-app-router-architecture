@@ -8,9 +8,5 @@ export default async function VerifyEmailChangePage(
     ? searchParams.oobCode[0]
     : searchParams.oobCode
 
-  return (
-    <VerifyEmailChangePageTemplate
-      oobCode={oobCodeParam}
-    />
-  )
+  return <VerifyEmailChangePageTemplate oobCode={oobCodeParam} />
 }

@@ -36,7 +36,10 @@ export async function EmailChangeLoginPageTemplate(
 
       <p className="text-muted-foreground text-center text-sm">
         Need to use your original sign-in?{' '}
-        <Link href="/login" className="text-primary font-semibold hover:underline">
+        <Link
+          href="/login"
+          className="text-primary font-semibold hover:underline"
+        >
           Go back to the standard login page
         </Link>
       </p>
