@@ -11,6 +11,10 @@ export function CheckEmailPageTemplate() {
           We sent a verification link to your inbox. Open the email and follow
           the instructions to activate your account.
         </p>
+        <p className="text-muted-foreground text-sm">
+          If you requested an email change, be sure to confirm it using the new
+          address before signing in again.
+        </p>
       </header>
       <div className="border-border/60 bg-muted/20 text-muted-foreground rounded-md border border-dashed p-6 text-sm">
         <p className="text-foreground font-medium">Tips</p>

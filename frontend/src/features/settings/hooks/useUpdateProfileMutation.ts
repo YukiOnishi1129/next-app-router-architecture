@@ -15,7 +15,13 @@ export const useUpdateProfileMutation = () => {
     ) => {
       const response = await updateAccountProfileAction(input)
       if (!response.success) {
-        throw new Error(response.error ?? 'Failed to update profile')
+        const errorMessage = response.error ?? 'Failed to update profile'
+        if (errorMessage.includes('OPERATION_NOT_ALLOWED')) {
+          throw new Error(
+            'This email requires verification before it can be used. Check the inbox of the new address for a verification link.'
+          )
+        }
+        throw new Error(errorMessage)
       }
       return response
     },

@@ -1,7 +1,8 @@
 import Link from 'next/link'
-import type { Route } from 'next'
 
 import { confirmEmailVerificationServer } from '@/external/handler/auth/command.server'
+
+import type { Route } from 'next'
 
 type VerifyEmailPageTemplateProps = {
   oobCode?: string | null

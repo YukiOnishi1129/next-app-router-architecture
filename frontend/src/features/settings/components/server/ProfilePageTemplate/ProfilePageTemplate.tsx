@@ -5,13 +5,11 @@ import { Card } from '@/shared/components/ui/card'
 import { getCurrentAccountServer } from '@/external/handler/account/query.server'
 
 type ProfilePageTemplateProps = {
-  updatedField?: 'name' | 'email'
+  updatedField?: 'name'
 }
 
-const SUCCESS_MESSAGES: Record<'name' | 'email', string> = {
+const SUCCESS_MESSAGES: Record<'name', string> = {
   name: 'Your name was updated successfully.',
-  email:
-    'Your email was updated. If prompted, complete the verification sent to the new address.',
 }
 
 export async function ProfilePageTemplate({

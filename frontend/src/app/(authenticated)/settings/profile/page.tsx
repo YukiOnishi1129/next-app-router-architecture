@@ -7,10 +7,7 @@ export default async function ProfilePage(
   const updatedParam = Array.isArray(params.updated)
     ? params.updated[0]
     : params.updated
-  const updatedField =
-    updatedParam === 'name' || updatedParam === 'email'
-      ? updatedParam
-      : undefined
+  const updatedField = updatedParam === 'name' ? updatedParam : undefined
 
   return <ProfilePageTemplate updatedField={updatedField} />
 }

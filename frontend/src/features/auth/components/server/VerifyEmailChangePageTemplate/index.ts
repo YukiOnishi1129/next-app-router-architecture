@@ -1,0 +1,1 @@
+export { VerifyEmailChangePageTemplate } from './VerifyEmailChangePageTemplate'

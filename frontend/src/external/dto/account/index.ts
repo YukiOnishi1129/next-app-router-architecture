@@ -6,6 +6,9 @@ export {
   type UpdateAccountStatusInput,
   type UpdateAccountProfileInput,
   type UpdateAccountResponse,
+  confirmEmailChangeSchema,
+  type ConfirmEmailChangeInput,
+  type ConfirmEmailChangeResponse,
 } from './account.command.dto'
 export {
   listAccountsSchema,

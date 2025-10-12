@@ -227,10 +227,51 @@ export class AuthenticationService {
   }
 
   /**
+   * Send email change verification
+   */
+  async sendEmailChangeVerification(
+    idToken: string,
+    newEmail: string,
+    options?: { verificationContinueUrl?: string }
+  ): Promise<void> {
+    try {
+      await this.identityPlatformClient.sendEmailChangeVerification(
+        idToken,
+        newEmail,
+        {
+          continueUrl: options?.verificationContinueUrl,
+        }
+      )
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        error.message.includes('UNAUTHORIZED_DOMAIN')
+      ) {
+        await this.identityPlatformClient.sendEmailChangeVerification(
+          idToken,
+          newEmail
+        )
+        return
+      }
+      throw error
+    }
+  }
+
+  /**
    * Confirm email verification using OOB code
    */
   async confirmEmailVerification(oobCode: string): Promise<void> {
     return this.identityPlatformClient.confirmEmailVerification(oobCode)
+  }
+
+  /**
+   * Confirm email change and return updated email information
+   */
+  async confirmEmailChange(oobCode: string): Promise<{
+    email: string
+    localId: string
+  }> {
+    return this.identityPlatformClient.confirmEmailChange(oobCode)
   }
 
   /**

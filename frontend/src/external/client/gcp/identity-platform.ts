@@ -158,6 +158,42 @@ export class IdentityPlatformClient {
   }
 
   /**
+   * Send email change verification
+   */
+  async sendEmailChangeVerification(
+    idToken: string,
+    newEmail: string,
+    options?: {
+      continueUrl?: string
+      canHandleCodeInApp?: boolean
+    }
+  ): Promise<void> {
+    const response = await fetch(
+      `${this.baseUrl}/accounts:sendOobCode?key=${this.config.apiKey}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          requestType: 'VERIFY_AND_CHANGE_EMAIL',
+          idToken,
+          newEmail,
+          continueUrl: options?.continueUrl,
+          canHandleCodeInApp: options?.canHandleCodeInApp ?? true,
+        }),
+      }
+    )
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(
+        `Failed to send email change verification: ${error.error?.message || 'Unknown error'}`
+      )
+    }
+  }
+
+  /**
    * Send password reset email
    */
   async sendPasswordResetEmail(email: string): Promise<void> {
@@ -253,6 +289,41 @@ export class IdentityPlatformClient {
       throw new Error(
         `Failed to verify email: ${error.error?.message || 'Unknown error'}`
       )
+    }
+  }
+
+  /**
+   * Confirm email change using OOB code
+   */
+  async confirmEmailChange(oobCode: string): Promise<{
+    email: string
+    localId: string
+  }> {
+    const response = await fetch(
+      `${this.baseUrl}/accounts:update?key=${this.config.apiKey}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          oobCode,
+          returnSecureToken: false,
+        }),
+      }
+    )
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(
+        `Failed to confirm email change: ${error.error?.message || 'Unknown error'}`
+      )
+    }
+
+    const data = await response.json()
+    return {
+      email: data.email,
+      localId: data.localId,
     }
   }
 

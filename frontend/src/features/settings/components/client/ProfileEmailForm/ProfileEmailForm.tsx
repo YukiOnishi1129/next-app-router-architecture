@@ -55,14 +55,17 @@ export function ProfileEmailForm({
       void (async () => {
         setServerError(null)
         try {
-          await updateProfileMutation.mutateAsync({
+          const response = await updateProfileMutation.mutateAsync({
             accountId,
             name: currentName,
             email: values.email,
           })
           reset(values, { keepDirty: false })
-          router.replace('/settings/profile?updated=email')
-          router.refresh()
+          if (response.verificationEmailSent) {
+            router.replace('/auth/check-email')
+          } else {
+            router.replace('/settings/profile')
+          }
         } catch (error) {
           setServerError(
             error instanceof Error
