@@ -7,20 +7,11 @@ import { RequestStatus } from '@/features/requests/types'
 
 import type { ReviewerSummary } from '@/external/dto/request'
 import type { ReviewerStatus } from '@/features/approvals/types'
-import type { RequestsStatusRoute } from '@/features/requests/types'
-type TabDefinition = {
-  key: ReviewerStatus
-  label: string
-  description: string
-}
+import type { ApprovalsHistoryTab } from '@/features/approvals/types'
 
-type TabViewModel = TabDefinition & {
-  href: RequestsStatusRoute
-  count: number
-  isActive: boolean
-}
-
-const TAB_DEFINITIONS: TabDefinition[] = [
+const TAB_DEFINITIONS: Array<
+  Pick<ApprovalsHistoryTab, 'key' | 'label' | 'description'>
+> = [
   {
     key: RequestStatus.APPROVED,
     label: 'Approved by me',
@@ -44,7 +35,7 @@ export const useApprovalsHistory = ({
 }: UseApprovalsHistoryParams) => {
   const query = useReviewedApprovalsQuery(status)
 
-  const tabs = useMemo<TabViewModel[]>(() => {
+  const tabs = useMemo(() => {
     const counts = {
       [RequestStatus.APPROVED]: summary.approved,
       [RequestStatus.REJECTED]: summary.rejected,
@@ -52,7 +43,7 @@ export const useApprovalsHistory = ({
 
     return TAB_DEFINITIONS.map((tab) => ({
       ...tab,
-      href: `/approvals/history?status=${tab.key}` as RequestsStatusRoute,
+      href: `/approvals/history?status=${tab.key}` as ApprovalsHistoryTab['href'],
       count: counts[tab.key],
       isActive: tab.key === status,
     }))

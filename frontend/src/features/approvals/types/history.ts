@@ -1,11 +1,14 @@
-import type { ReviewerStatus } from '@/features/approvals/types'
-import type { RequestsStatusRoute } from '@/features/requests/types'
+import type { ReviewerStatus } from './reviewer'
+import type { Route } from 'next'
+
+type ApprovalsHistoryRoute =
+  Route<`/approvals/history?status=${'APPROVED' | 'REJECTED'}`>
 
 export type ApprovalsHistoryTab = {
   key: ReviewerStatus
   label: string
   description: string
   count: number
-  href: RequestsStatusRoute
+  href: ApprovalsHistoryRoute
   isActive: boolean
 }
