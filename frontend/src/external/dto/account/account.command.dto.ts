@@ -42,15 +42,3 @@ export type RequestAccountEmailChangeResponse = {
   error?: string
   pendingEmail?: string
 }
-
-export const confirmEmailChangeSchema = z.object({
-  accountId: z.string(),
-})
-
-export type ConfirmEmailChangeInput = z.input<typeof confirmEmailChangeSchema>
-
-export type ConfirmEmailChangeResponse = {
-  success: boolean
-  error?: string
-  account?: Account
-}

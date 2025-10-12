@@ -10,7 +10,6 @@ import {
   updateAccountStatusSchema,
   updateAccountNameSchema,
   requestAccountEmailChangeSchema,
-  confirmEmailChangeSchema,
 } from '@/external/dto/account'
 
 import {
@@ -29,8 +28,6 @@ import type {
   RequestAccountEmailChangeInput,
   UpdateAccountResponse,
   RequestAccountEmailChangeResponse,
-  ConfirmEmailChangeInput,
-  ConfirmEmailChangeResponse,
 } from '@/external/dto/account'
 
 const APP_BASE_URL =
@@ -308,73 +305,6 @@ export async function requestAccountEmailChangeServer(
   }
 }
 
-export async function confirmEmailChangeServer(
-  data: ConfirmEmailChangeInput
-): Promise<ConfirmEmailChangeResponse> {
-  try {
-    const validated = confirmEmailChangeSchema.parse(data)
-
-    const account = await accountManagementService.findAccountById(
-      validated.accountId
-    )
-    if (!account) {
-      return { success: false, error: 'Account not found' }
-    }
-
-    const idToken = await refreshIdTokenServer()
-    const identityAccount = await authenticationService.verifyToken(idToken)
-
-    if (!identityAccount?.email) {
-      return {
-        success: false,
-        error: 'Unable to verify email change. Please try again.',
-      }
-    }
-
-    const newEmail = identityAccount.email
-
-    if (account.getEmail().getValue() === newEmail) {
-      return {
-        success: true,
-        account: mapAccountToDto(account),
-      }
-    }
-
-    const updatedAccount = await accountManagementService.updateAccount(
-      validated.accountId,
-      { email: newEmail }
-    )
-
-    await auditService.logAction({
-      action: 'account.email.change',
-      entityType: 'ACCOUNT',
-      entityId: validated.accountId,
-      accountId: validated.accountId,
-      metadata: {
-        newEmail,
-      },
-      eventType: AuditEventType.ACCOUNT_UPDATED,
-      context: SERVER_AUDIT_CONTEXT,
-    })
-
-    return {
-      success: true,
-      account: mapAccountToDto(updatedAccount),
-    }
-  } catch (error) {
-    if (error instanceof ZodError) {
-      return { success: false, error: 'Invalid input data' }
-    }
-    return {
-      success: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : 'Failed to confirm email change',
-    }
-  }
-}
-
 export type {
   UpdateAccountRoleInput,
   UpdateAccountStatusInput,
@@ -382,6 +312,4 @@ export type {
   RequestAccountEmailChangeInput,
   UpdateAccountResponse,
   RequestAccountEmailChangeResponse,
-  ConfirmEmailChangeInput,
-  ConfirmEmailChangeResponse,
 } from '@/external/dto/account'
