@@ -3,6 +3,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 
 import { notificationKeys } from '@/features/notifications/queries/keys'
+
 import { markNotificationReadAction } from '@/external/handler/notification/command.action'
 
 export const useMarkNotificationReadMutation = () => {

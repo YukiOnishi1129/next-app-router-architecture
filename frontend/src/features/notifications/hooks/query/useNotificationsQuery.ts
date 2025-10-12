@@ -3,6 +3,7 @@
 import { useQuery } from '@tanstack/react-query'
 
 import { notificationKeys } from '@/features/notifications/queries/keys'
+
 import { listNotificationsAction } from '@/external/handler/notification/query.action'
 
 export const useNotificationsQuery = (unreadOnly = false) =>

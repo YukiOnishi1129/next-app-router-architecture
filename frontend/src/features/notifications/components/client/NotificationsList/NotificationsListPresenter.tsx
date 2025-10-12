@@ -1,14 +1,13 @@
 'use client'
 
-import Link from 'next/link'
+import { NotificationCard } from '@/features/notifications/components/client/NotificationCard'
 
-import { Card } from '@/shared/components/ui/card'
-import { formatDateTime, formatEnumLabel } from '@/shared/lib/format'
 import { cn } from '@/shared/lib/utils'
 
+import type { NotificationCardProps } from '@/features/notifications/components/client/NotificationCard'
 import type { NotificationItem } from '@/features/notifications/types'
 
-type NotificationsListPresenterProps = {
+export type NotificationsListPresenterProps = {
   notifications: NotificationItem[]
   unreadNotifications: NotificationItem[]
   total: number
@@ -18,7 +17,7 @@ type NotificationsListPresenterProps = {
   errorMessage?: string
   activeTab: 'unread' | 'all'
   onTabChange: (tab: 'unread' | 'all') => void
-  onNotificationClick: (notificationId: string) => Promise<void>
+  onNotificationClick: NotificationCardProps['onClick']
 }
 
 export function NotificationsListPresenter({
@@ -124,44 +123,5 @@ export function NotificationsListPresenter({
         </section>
       </div>
     </section>
-  )
-}
-
-function NotificationCard({
-  notification,
-  onClick,
-}: {
-  notification: NotificationItem
-  onClick: (notificationId: string) => Promise<void>
-}) {
-  return (
-    <Card className="border-border/80 bg-background p-4 text-sm">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="space-y-1">
-          <p className="text-muted-foreground text-xs tracking-wide uppercase">
-            {formatEnumLabel(notification.type)}
-          </p>
-          <h2 className="text-base font-semibold">{notification.title}</h2>
-        </div>
-        <span className="text-muted-foreground text-xs">
-          {formatDateTime(notification.createdAt, {
-            dateStyle: 'medium',
-            timeStyle: 'short',
-          })}
-        </span>
-      </div>
-      <p className="text-muted-foreground text-sm">{notification.message}</p>
-      {notification.relatedEntityId ? (
-        <Link
-          href={`/requests/${notification.relatedEntityId}`}
-          className="text-primary hover:text-primary/80 text-xs font-medium"
-          onClick={async () => {
-            await onClick(notification.id)
-          }}
-        >
-          View related request
-        </Link>
-      ) : null}
-    </Card>
   )
 }

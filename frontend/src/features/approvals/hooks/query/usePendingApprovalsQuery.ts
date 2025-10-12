@@ -3,6 +3,7 @@
 import { useQuery } from '@tanstack/react-query'
 
 import { approvalKeys } from '@/features/approvals/queries/keys'
+
 import { listPendingApprovalsAction } from '@/external/handler/request/query.action'
 
 export const usePendingApprovalsQuery = () =>

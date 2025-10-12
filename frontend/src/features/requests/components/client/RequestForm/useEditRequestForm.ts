@@ -16,9 +16,9 @@ import {
 } from '@/features/requests/schemas'
 import { RequestPriority, RequestType } from '@/features/requests/types'
 
-import { updateRequestAction } from '@/external/handler/request/command.action'
-
 import { formatEnumLabel } from '@/shared/lib/format'
+
+import { updateRequestAction } from '@/external/handler/request/command.action'
 
 import type { UpdateRequestFormValues } from '@/features/requests/schemas'
 import type { FormEvent } from 'react'

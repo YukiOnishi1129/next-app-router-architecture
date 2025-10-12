@@ -2,8 +2,9 @@
 
 import { useQuery } from '@tanstack/react-query'
 
-import { listReviewedApprovalsAction } from '@/external/handler/request/query.action'
 import { approvalKeys } from '@/features/approvals/queries/keys'
+
+import { listReviewedApprovalsAction } from '@/external/handler/request/query.action'
 
 import type { ReviewerStatus } from '@/features/approvals/types'
 
