@@ -2,7 +2,8 @@ import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: 'Verify Email Change | Request & Approval System',
-  description: 'Confirm your new email address to finish updating your account.',
+  description:
+    'Confirm your new email address to finish updating your account.',
 }
 
 export default function VerifyEmailChangeLayout({
