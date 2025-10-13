@@ -6,9 +6,9 @@ import { useAuthSession } from '@/features/auth/hooks/useAuthSession'
 import { useReopenRequestMutation } from '@/features/requests/hooks/mutation/useReopenRequestMutation'
 import { useSubmitRequestMutation } from '@/features/requests/hooks/mutation/useSubmitRequestMutation'
 import { useRequestDetailQuery } from '@/features/requests/hooks/query/useRequestDetailQuery'
-import { RequestStatus } from '@/features/requests/types'
+import { RequestStatus, RequestType, RequestPriority } from '@/features/requests/types'
 
-import { act, renderHook } from '@/test/test-utils'
+import { act, renderHook, waitFor } from '@/test/test-utils'
 
 import { useRequestDetail } from './useRequestDetail'
 
@@ -65,8 +65,7 @@ describe('useRequestDetail', () => {
     title: 'Upgrade laptops',
     description: 'Purchase new devices',
     status: RequestStatus.DRAFT,
-    type: 'PROCUREMENT',
-    priority: 'HIGH',
+    type: RequestType.EQUIPMENT,
     requesterId: 'user-1',
     requesterName: 'Alice',
     assigneeId: null,
@@ -120,7 +119,7 @@ describe('useRequestDetail', () => {
       useRequestDetail({ requestId: 'req-1', highlightCommentId: null })
     )
 
-    expect(result.current.canSubmit).toBe(true)
+    await waitFor(() => expect(result.current.canSubmit).toBe(true))
     expect(result.current.isLoading).toBe(false)
 
     act(() => {
@@ -166,7 +165,7 @@ describe('useRequestDetail', () => {
       useRequestDetail({ requestId: 'req-1', highlightCommentId: null })
     )
 
-    expect(result.current.canApprove).toBe(true)
+    await waitFor(() => expect(result.current.canApprove).toBe(true))
     expect(result.current.canReject).toBe(true)
     expect(result.current.canReopen).toBe(false)
 

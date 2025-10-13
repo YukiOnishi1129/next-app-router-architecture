@@ -1,6 +1,11 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 
 import { useRequestListQuery } from '@/features/requests/hooks/query/useRequestListQuery'
+import {
+  RequestPriority,
+  RequestStatus,
+  RequestType,
+} from '@/features/requests/types'
 
 import { renderHook } from '@/test/test-utils'
 
@@ -16,9 +21,9 @@ const mockRequest = {
   id: 'req-1',
   title: 'Purchase laptops',
   description: 'Need new devices',
-  status: 'DRAFT',
-  type: 'PROCUREMENT',
-  priority: 'HIGH',
+  status: RequestStatus.DRAFT,
+  type: RequestType.EQUIPMENT,
+  priority: RequestPriority.HIGH,
   requesterId: 'acc-1',
   requesterName: 'Alice',
   assigneeId: null,
@@ -49,8 +54,8 @@ describe('useRequestList', () => {
       data: baseResponse,
       isPending: false,
       isFetching: false,
-      error: undefined,
-    })
+      error: null,
+    } as unknown as ReturnType<typeof useRequestListQuery>)
 
     const { result } = renderHook(() =>
       useRequestList({ filters: { mineOnly: true } })
@@ -61,9 +66,9 @@ describe('useRequestList', () => {
       {
         id: 'req-1',
         title: 'Purchase laptops',
-        status: 'DRAFT',
-        type: 'PROCUREMENT',
-        priority: 'HIGH',
+        status: RequestStatus.DRAFT,
+        type: RequestType.EQUIPMENT,
+        priority: RequestPriority.HIGH,
         createdAt: '2024-01-01T00:00:00.000Z',
         submittedAt: null,
       },
@@ -80,7 +85,7 @@ describe('useRequestList', () => {
       isPending: true,
       isFetching: false,
       error,
-    })
+    } as unknown as ReturnType<typeof useRequestListQuery>)
 
     const { result } = renderHook(() =>
       useRequestList({ filters: { mineOnly: true } })
@@ -97,8 +102,8 @@ describe('useRequestList', () => {
       data: baseResponse,
       isPending: false,
       isFetching: true,
-      error: undefined,
-    })
+      error: null,
+    } as unknown as ReturnType<typeof useRequestListQuery>)
 
     const { result } = renderHook(() =>
       useRequestList({ filters: { mineOnly: true } })

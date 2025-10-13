@@ -4,6 +4,12 @@ import { render, screen } from '@/test/test-utils'
 
 import { RequestDetailContainer } from './RequestDetailContainer'
 
+import {
+  RequestPriority,
+  RequestStatus,
+  RequestType,
+} from '@/features/requests/types'
+
 const mockUseRequestDetail = vi.hoisted(() => vi.fn())
 
 vi.mock('./useRequestDetail', () => ({
@@ -20,9 +26,9 @@ describe('RequestDetailContainer', () => {
       id: 'req-1',
       title: 'Upgrade laptops',
       description: 'Purchase devices',
-      status: 'DRAFT',
-      type: 'PROCUREMENT',
-      priority: 'HIGH',
+      status: RequestStatus.DRAFT,
+      type: RequestType.EQUIPMENT,
+      priority: RequestPriority.HIGH,
       requesterId: 'user-1',
       requesterName: 'Alice',
       assigneeId: null,

@@ -4,7 +4,12 @@ import { render, screen } from '@/test/test-utils'
 
 import { RequestListContainer } from './RequestListContainer'
 
-import type { RequestSummary } from '@/features/requests/types'
+import {
+  RequestPriority,
+  RequestStatus,
+  RequestType,
+  type RequestSummary,
+} from '@/features/requests/types'
 
 const mockUseRequestList = vi.hoisted(() => vi.fn())
 
@@ -16,9 +21,9 @@ const summaries: RequestSummary[] = [
   {
     id: 'req-1',
     title: 'Purchase laptops',
-    status: 'DRAFT',
-    type: 'PROCUREMENT',
-    priority: 'HIGH',
+    status: RequestStatus.DRAFT,
+    type: RequestType.EQUIPMENT,
+    priority: RequestPriority.HIGH,
     createdAt: '2024-01-01T00:00:00.000Z',
     submittedAt: null,
   },
