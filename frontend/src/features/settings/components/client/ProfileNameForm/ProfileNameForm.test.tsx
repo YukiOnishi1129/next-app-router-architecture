@@ -1,9 +1,9 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 
-import { render, screen, waitFor } from '@/test/test-utils'
-import { user } from '@/test/test-utils'
+import { render, screen, waitFor, user } from '@/test/test-utils'
 
 import { ProfileNameFormContainer } from './ProfileNameFormContainer'
+
 import type { Account } from '@/features/account/types/account'
 
 const mutateAsync = vi.fn()
@@ -39,7 +39,10 @@ describe('ProfileNameFormContainer', () => {
   })
 
   it('submits an updated name', async () => {
-    mutateAsync.mockResolvedValueOnce({ success: true, account: updatedAccount })
+    mutateAsync.mockResolvedValueOnce({
+      success: true,
+      account: updatedAccount,
+    })
 
     render(
       <ProfileNameFormContainer accountId="account-1" initialName="Jane" />

@@ -11,9 +11,7 @@ type SignOutRedirectContainerProps = {
   previousEmail?: string
 }
 
-export function SignOutRedirectContainer(
-  props: SignOutRedirectContainerProps
-) {
+export function SignOutRedirectContainer(props: SignOutRedirectContainerProps) {
   const state = useSignOutRedirect(props)
 
   return <SignOutRedirectPresenter {...state} />

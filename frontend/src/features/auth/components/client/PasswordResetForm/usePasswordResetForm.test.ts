@@ -1,11 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { ChangeEvent, FormEvent } from 'react'
-
 import { act, renderHook, waitFor } from '@/test/test-utils'
 
 import { requestPasswordResetCommandAction } from '@/external/handler/auth/command.action'
+
 import { usePasswordResetForm } from './usePasswordResetForm'
+
+import type { ChangeEvent, FormEvent } from 'react'
 
 vi.mock('@/external/handler/auth/command.action', () => ({
   requestPasswordResetCommandAction: vi.fn(),

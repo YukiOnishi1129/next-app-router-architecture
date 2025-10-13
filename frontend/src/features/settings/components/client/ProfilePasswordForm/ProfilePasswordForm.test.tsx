@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { render, screen, waitFor } from '@/test/test-utils'
-import { user } from '@/test/test-utils'
+import { render, screen, waitFor, user } from '@/test/test-utils'
 
 import { ProfilePasswordFormContainer } from './ProfilePasswordFormContainer'
 

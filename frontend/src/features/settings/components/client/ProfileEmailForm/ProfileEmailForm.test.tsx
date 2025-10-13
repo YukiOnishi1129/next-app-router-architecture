@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { render, screen, waitFor } from '@/test/test-utils'
-import { user } from '@/test/test-utils'
+import { render, screen, waitFor, user } from '@/test/test-utils'
 
 import { ProfileEmailFormContainer } from './ProfileEmailFormContainer'
 
@@ -32,7 +31,9 @@ describe('ProfileEmailFormContainer', () => {
       />
     )
 
-    const emailInput = screen.getByLabelText('Email address') as HTMLInputElement
+    const emailInput = screen.getByLabelText(
+      'Email address'
+    ) as HTMLInputElement
     expect(emailInput.value).toBe('jane@example.com')
 
     await user.clear(emailInput)

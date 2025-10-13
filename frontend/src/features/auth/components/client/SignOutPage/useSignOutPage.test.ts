@@ -26,7 +26,9 @@ describe('useSignOutPage', () => {
     await waitFor(() => expect(mockHandleSignOut).toHaveBeenCalledTimes(1))
 
     expect(result.current.title).toBe('Signing out…')
-    expect(result.current.description).toContain('redirecting you to the login page')
+    expect(result.current.description).toContain(
+      'redirecting you to the login page'
+    )
     expect(result.current.errorMessage).toBeUndefined()
     expect(consoleSpy).not.toHaveBeenCalled()
   })

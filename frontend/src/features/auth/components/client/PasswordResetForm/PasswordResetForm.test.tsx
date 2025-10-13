@@ -1,9 +1,11 @@
+'use client'
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { render, screen, waitFor } from '@/test/test-utils'
-import { user } from '@/test/test-utils'
+import { render, screen, waitFor, user } from '@/test/test-utils'
 
 import { requestPasswordResetCommandAction } from '@/external/handler/auth/command.action'
+
 import { PasswordResetForm } from './PasswordResetForm'
 
 vi.mock('@/external/handler/auth/command.action', () => ({
@@ -31,7 +33,9 @@ describe('PasswordResetForm container', () => {
       'forgot@example.com'
     )
 
-    await user.click(screen.getByRole('button', { name: 'Send reset instructions' }))
+    await user.click(
+      screen.getByRole('button', { name: 'Send reset instructions' })
+    )
 
     await waitFor(() =>
       expect(mockedRequestPasswordResetCommandAction).toHaveBeenCalledWith({

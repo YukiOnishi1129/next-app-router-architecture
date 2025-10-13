@@ -25,7 +25,9 @@ export function useSignOutPage(): SignOutPagePresenterProps {
       } catch (error) {
         if (!isMounted) return
         console.error('Failed to sign out', error)
-        setErrorMessage('We ran into a problem signing you out. Please try again.')
+        setErrorMessage(
+          'We ran into a problem signing you out. Please try again.'
+        )
       }
     })()
 
