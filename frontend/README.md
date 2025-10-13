@@ -1,36 +1,40 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Frontend Overview
 
-## Getting Started
+This directory hosts the Next.js App Router implementation of the Request & Approval System. It showcases sustainable patterns for combining Server Components, Server Actions, TanStack Query, and React Hook Form.
 
-First, run the development server:
+---
+
+## Development
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
+pnpm db:up        # Postgres (Docker)
+pnpm db:migrate   # apply schema
+pnpm dev          # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Regenerate typed routes whenever you add or remove a `page.tsx`:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+pnpm typegen
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Key commands:
 
-## Learn More
+| Command | Purpose |
+|---------|---------|
+| `pnpm lint` | Run ESLint with architecture rules (`eslint-local-rules/`). |
+| `pnpm test` | Run Vitest unit tests (hooks, presenters, server templates). |
+| `pnpm db:seed` | Seed sample data (optional). |
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Architecture Cliff Notes
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- **Routes & layouts:** `src/app/(group)/...` stay thin—each page defers to a feature server template. Layouts export metadata and use `LayoutProps<'/path'>`.
+- **Features:** `src/features/<domain>` contain client/server components, hooks, queries, actions, and tests following the Container ➜ Presenter ➜ Hook split.
+- **Shared layer:** `src/shared` exposes layout chrome (Header, Sidebar), UI primitives (shadcn-based), and providers (TanStack Query, Auth).
+- **External layer:** `src/external` contains DTOs, handlers, services, repositories, and third-party clients. Only handlers cross into features.
+- **Custom ESLint rules:** `eslint-local-rules/` enforce boundaries (`restrict-service-imports`, `restrict-action-imports`, `use-nextjs-helpers`, etc.).
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+For a deeper dive—including component anatomy and data-fetching patterns—open [`frontend/docs/README.md`](./docs/README.md). System-level guidance lives in [`docs/README.md`](../docs/README.md).
