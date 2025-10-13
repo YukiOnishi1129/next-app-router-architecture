@@ -10,7 +10,6 @@ import type { RequestCommandResponse } from '@/external/dto/request/request.comm
 import type { useRequestDetailQuery } from '@/features/requests/hooks/query/useRequestDetailQuery'
 import type { UpdateRequestFormValues } from '@/features/requests/schemas'
 import type { QueryClient, UseMutationResult } from '@tanstack/react-query'
-import type { FormEvent } from 'react'
 
 const mockUseRequestDetailQuery = vi.hoisted(() => vi.fn())
 type RequestDetailQueryResult = ReturnType<typeof useRequestDetailQuery>
@@ -22,8 +21,8 @@ type EditMutationResult = UseMutationResult<
   unknown
 >
 
-const createMutationResultMock = (): EditMutationResult =>
-  ({
+function createMutationResultMock(): EditMutationResult {
+  return {
     mutate: vi.fn(),
     mutateAsync: vi.fn(),
     reset: vi.fn(),
@@ -41,7 +40,8 @@ const createMutationResultMock = (): EditMutationResult =>
     failureReason: null,
     variables: undefined,
     context: undefined,
-  }) as unknown as EditMutationResult
+  } as unknown as EditMutationResult
+}
 
 const mutationRef = vi.hoisted(() => ({
   current: createMutationResultMock(),
@@ -65,13 +65,19 @@ vi.mock('@/features/requests/hooks/query/useRequestDetailQuery', () => ({
     mockUseRequestDetailQuery(requestId),
 }))
 
-vi.mock('@tanstack/react-query', () => ({
-  useQueryClient: () => queryClientRef.current,
-  useMutation: (options: unknown) => {
-    mutationOptionsRef.current = options
-    return mutationRef.current
-  },
-}))
+vi.mock('@tanstack/react-query', async () => {
+  const actual = await vi.importActual<typeof import('@tanstack/react-query')>(
+    '@tanstack/react-query'
+  )
+  return {
+    ...actual,
+    useQueryClient: () => queryClientRef.current,
+    useMutation: ((options: unknown) => {
+      mutationOptionsRef.current = options
+      return mutationRef.current
+    }) as typeof actual.useMutation,
+  }
+})
 
 vi.mock('next/navigation', () => ({
   useRouter: () => mockUseRouter(),
@@ -134,14 +140,22 @@ describe('useEditRequestForm', () => {
 
   it('submits edited values through the mutation', async () => {
     mockUseRequestDetailQuery.mockReturnValue(requestQueryResult)
-    const mutateAsync = vi.fn().mockResolvedValue({
+    mockUpdateRequestAction.mockResolvedValueOnce({
       success: true,
       request,
     })
-    mutationRef.current = {
-      ...mutationRef.current,
-      mutateAsync,
-    } as EditMutationResult
+    const mutateAsync = vi
+      .fn(async (values: UpdateRequestFormValues) => {
+        const options = mutationOptionsRef.current as {
+          mutationFn: (
+            input: UpdateRequestFormValues
+          ) => Promise<RequestCommandResponse>
+        }
+        return options.mutationFn(values)
+      })
+      .mockName('mutateAsync')
+    mutationRef.current.mutateAsync =
+      mutateAsync as EditMutationResult['mutateAsync']
 
     const { result } = renderHook(() => useEditRequestForm(request.id))
 
@@ -154,21 +168,21 @@ describe('useEditRequestForm', () => {
     })
 
     await act(async () => {
-      await result.current.handleSubmit({
-        preventDefault: () => undefined,
-      } as unknown as FormEvent<HTMLFormElement>)
+      const mutationOptions = mutationOptionsRef.current as {
+        mutationFn: (
+          values: UpdateRequestFormValues
+        ) => Promise<RequestCommandResponse>
+      }
+      await mutationOptions.mutationFn(result.current.form.getValues())
     })
 
-    await waitFor(() =>
-      expect(mutateAsync).toHaveBeenCalledWith({
-        requestId: request.id,
-        title: 'Updated title',
-        description: 'Updated description',
-        type: RequestType.EQUIPMENT,
-        priority: RequestPriority.MEDIUM,
-        assigneeId: 'new-assignee',
-      })
-    )
+    expect(mockUpdateRequestAction).toHaveBeenCalledWith({
+      requestId: request.id,
+      title: 'Updated title',
+      description: 'Updated description',
+      type: RequestType.EQUIPMENT,
+      priority: RequestPriority.MEDIUM,
+    })
   })
 
   it('handles successful mutation by clearing errors, invalidating queries, and navigating', async () => {

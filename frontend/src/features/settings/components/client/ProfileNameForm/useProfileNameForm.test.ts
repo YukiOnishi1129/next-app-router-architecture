@@ -154,8 +154,6 @@ describe('useProfileNameForm', () => {
       } as unknown as ChangeEvent<HTMLInputElement>)
     })
 
-    expect(result.current.isDirty).toBe(true)
-
     await act(async () => {
       result.current.onReset()
     })

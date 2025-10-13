@@ -16,18 +16,20 @@ const mockUsePasswordInput = vi.hoisted(() =>
   }))
 )
 
-const MockPasswordInputPresenter = forwardRef<
-  HTMLInputElement,
-  PasswordInputPresenterProps
->((props, _ref) => {
-  presenterSpy(props)
-  return <div data-testid="password-input-presenter" />
-})
-MockPasswordInputPresenter.displayName = 'MockPasswordInputPresenter'
+vi.mock('./PasswordInputPresenter', () => {
+  const MockPasswordInputPresenter = forwardRef<
+    HTMLInputElement,
+    PasswordInputPresenterProps
+  >((props, _ref) => {
+    presenterSpy(props)
+    return <div data-testid="password-input-presenter" />
+  })
+  MockPasswordInputPresenter.displayName = 'MockPasswordInputPresenter'
 
-vi.mock('./PasswordInputPresenter', () => ({
-  PasswordInputPresenter: MockPasswordInputPresenter,
-}))
+  return {
+    PasswordInputPresenter: MockPasswordInputPresenter,
+  }
+})
 
 vi.mock('./usePasswordInput', () => ({
   usePasswordInput: () => mockUsePasswordInput(),
