@@ -37,7 +37,6 @@ const mockRequest = {
 }
 
 const baseResponse = {
-  success: true,
   requests: [mockRequest],
   total: 1,
   limit: 50,

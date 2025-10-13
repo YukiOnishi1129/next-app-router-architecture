@@ -1,15 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { render, screen } from '@/test/test-utils'
-
-import { RequestListContainer } from './RequestListContainer'
-
 import {
   RequestPriority,
   RequestStatus,
   RequestType,
-  type RequestSummary,
 } from '@/features/requests/types'
+
+import { render, screen } from '@/test/test-utils'
+
+import { RequestListContainer } from './RequestListContainer'
+
+import type { RequestSummary } from '@/features/requests/types'
 
 const mockUseRequestList = vi.hoisted(() => vi.fn())
 
