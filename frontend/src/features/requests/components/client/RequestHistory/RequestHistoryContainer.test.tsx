@@ -37,7 +37,11 @@ describe('RequestHistoryContainer', () => {
     render(<RequestHistoryContainer requestId="req-1" />)
 
     expect(mockUseRequestHistory).toHaveBeenCalledWith('req-1')
-    expect(screen.getByText('Created')).toBeInTheDocument()
+    const logTitle = screen.getByText('Request Created')
+    expect(logTitle).toBeInTheDocument()
+    const logItem = logTitle.closest('li')
+    expect(logItem).not.toBeNull()
+    expect(logItem?.textContent).toMatch(/Created\s+—\s+Alice/)
   })
 
   it('renders loading indicator', () => {

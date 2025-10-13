@@ -149,6 +149,9 @@ describe('usePendingApprovalCard', () => {
 
     act(() => {
       result.current.handleRejectReasonChange(' Not a match ')
+    })
+
+    act(() => {
       result.current.handleRejectSubmit()
     })
 
