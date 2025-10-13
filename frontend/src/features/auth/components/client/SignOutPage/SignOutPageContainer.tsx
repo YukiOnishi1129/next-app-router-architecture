@@ -1,7 +1,10 @@
 'use client'
 
-import { SignOutMessage } from './SignOutMessage'
+import { SignOutPagePresenter } from './SignOutPagePresenter'
+import { useSignOutPage } from './useSignOutPage'
 
 export function SignOutPageContainer() {
-  return <SignOutMessage />
+  const state = useSignOutPage()
+
+  return <SignOutPagePresenter {...state} />
 }

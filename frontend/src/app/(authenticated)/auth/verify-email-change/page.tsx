@@ -1,7 +1,12 @@
 import { VerifyEmailChangePageTemplate } from '@/features/auth/components/server/VerifyEmailChangePageTemplate'
 
 export default async function VerifyEmailChangePage(
-  _props: PageProps<'/auth/verify-email-change'>
+  props: PageProps<'/auth/verify-email-change'>
 ) {
-  return <VerifyEmailChangePageTemplate />
+  const searchParams = await props.searchParams
+  const oobCodeParam = Array.isArray(searchParams.oobCode)
+    ? searchParams.oobCode[0]
+    : searchParams.oobCode
+
+  return <VerifyEmailChangePageTemplate oobCode={oobCodeParam} />
 }

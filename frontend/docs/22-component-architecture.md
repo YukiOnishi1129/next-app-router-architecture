@@ -44,12 +44,12 @@ features/<feature>/components/
 | `FooPresenter.tsx` | Pure UI. Receives data via props and renders without side effects. |
 | `useFoo.ts` | Encapsulates business logic used by the container (forms, mutations, derived state). |
 | `Foo.tsx` | Barrel export of the container (re-export of `FooContainer`). |
-| `index.ts` (inside `Foo/`) | Local barrel that groups the container, presenter, hooks, and hook exports; also re-exports stories/tests when needed. |
+| `index.ts` (inside `Foo/`) | Public barrel that re-exports **only** the component for consumers (`export { Foo } from './Foo'`). Keep hooks/presenters internal. |
 | `index.ts` (inside `components/`) | Public surface so consumers can `import { Foo } from '@/features/<feature>/components'`. |
 | `index.ts` (inside `server/<Component>/`) | Local barrel for server-side exports; keeps server imports consistent (`import { BarPageTemplate } from '@/features/<feature>/components/server'`). |
 
 Standalone UI pieces (e.g., `PasswordInput`) that have no external dependencies can live as a single presenter file. They should still sit under `components/client` when they rely on client-side state and must prefix the file with `"use client"`.  
-Even in this case, add an `index.ts` inside the component folder (e.g. `client/PasswordInput/index.ts`) to expose the presenter and types. The parent `components/index.ts` should re-export exclusively from these local barrels to keep import paths uniform.  
+Even in this case, add an `index.ts` inside the component folder (e.g. `client/PasswordInput/index.ts`) that re-exports only the component (`export { PasswordInput } from './PasswordInput'`). The parent `components/index.ts` should re-export exclusively from these local barrels to keep import paths uniform.  
 Apply the same rule on the server side: every `components/server/<Component>/` directory owns an `index.ts` that exports the page template / partial and any helper functions.
 
 ---
@@ -59,7 +59,8 @@ Apply the same rule on the server side: every `components/server/<Component>/` d
 ### Client components
 
 - Use React Hook Form, TanStack Query, router APIs, etc.
-- Keep complex effects (API calls, navigation) inside containers; presenters may own local UI state (e.g., toggles) but not side effects.
+- Keep complex effects (API calls, navigation) inside containers or dedicated hooks; presenters may own local UI state (e.g., toggles) but **must not** contain side effects, async flows, or service calls.
+- When logic in a container grows, move it into a dedicated hook (`useFoo.ts`) so both the container and tests stay focused.
 - Reuse primitives from `shared/components/ui/*`, and merge Tailwind classes via `cn` (`shared/lib/utils`).
 - Provide labels (`htmlFor` + `id`), `aria-invalid`, and `aria-describedby` wiring for accessibility.
 

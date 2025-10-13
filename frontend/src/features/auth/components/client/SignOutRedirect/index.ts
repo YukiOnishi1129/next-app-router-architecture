@@ -1,1 +1,1 @@
-export * from './SignOutRedirect'
+export { SignOutRedirect } from './SignOutRedirect'

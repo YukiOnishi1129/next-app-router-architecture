@@ -1,5 +1,5 @@
-import { SignOutPageContainer } from '@/features/auth/components/client/SignOutPage'
+import { SignOutPage } from '@/features/auth/components/client/SignOutPage'
 
 export function SignOutPageTemplate() {
-  return <SignOutPageContainer />
+  return <SignOutPage />
 }
